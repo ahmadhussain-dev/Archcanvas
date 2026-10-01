@@ -69,6 +69,7 @@ import { showCustomConfirm, showCustomAlert, showCustomPrompt, showProjectListMo
 import { createCustomDropdown } from './js/Dropdown.js';
 import { handleHotkeys } from './js/Hotkeys.js';
 import { Store, showToast, formatTimestamp, readLocalSave } from './js/Store.js';
+import { EMBEDDED, blankFloorplan, initEmbedBridge } from './js/Embed.js';
 import { EntityManager } from './js/EntityManager.js';
 import { Viewer3D } from './js/Viewer3D.js';
 import * as DragHandler from './js/DragHandler.js';
@@ -518,7 +519,7 @@ function applyCameraSettings() {
 if (initialLocalSave.buildingData) restoreFloorplanMaterials(initialLocalSave.buildingData);
 let testMap = createEditor({
   scene,
-  floorplan: initialLocalSave.buildingData || BLUEPRINT3D_TEST_FLOORPLAN,
+  floorplan: EMBEDDED ? blankFloorplan() : (initialLocalSave.buildingData || BLUEPRINT3D_TEST_FLOORPLAN),
   options: { renderingEnabled: false }
 });
 window.testMap = testMap;
@@ -1073,6 +1074,12 @@ function resetInteractionState() {
 
 window.Context = appState;
 initAppEventBindings(appState);
+
+initEmbedBridge({
+  testMap,
+  store,
+  loadBuildingText: (text) => FileManager.loadBuildingFile({ text: async () => text })
+});
 
 function getSnapEnabled() {
   return snapEnabled;

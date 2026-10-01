@@ -12,6 +12,8 @@
 // =============================================
 // localStorage  
 // =============================================
+import { EMBEDDED } from './Embed.js';
+
 const STORAGE_KEY_BUILDING = 'blueprint3d-building-data';
 const STORAGE_KEY_MATERIAL = 'blueprint3d-material-library';
 const STORAGE_KEY_UI_STATE = 'blueprint3d-ui-state';
@@ -22,6 +24,8 @@ const STORAGE_KEY_PROJECT_PREFIX = 'blueprint3d-project-';
 const STORAGE_KEY_CURRENT_PROJECT = 'blueprint3d-current-project';
 
 export function readLocalSave() {
+  // Inside ArchCanvas the project comes from the server, not from this browser.
+  if (EMBEDDED) return { buildingData: null, materialLibrary: null, uiState: null };
   try {
     const rawBuilding = localStorage.getItem(STORAGE_KEY_BUILDING);
     const rawMaterial = localStorage.getItem(STORAGE_KEY_MATERIAL);
@@ -286,6 +290,7 @@ export class Store extends EventEmitter {
    */
   startAutoSave(getExtra = () => ({})) {
     this.stopAutoSave();
+    if (EMBEDDED) return; // ArchCanvas saves versions to the server instead.
     this._getAutoSaveExtra = getExtra;
     this._autoSaveTimer = setInterval(() => {
       this._performAutoSave();
