@@ -43,6 +43,19 @@ function formatFeet(feet) {
   return String(round(feet, Math.abs(feet) >= 1 ? 1 : 2));
 }
 
+/** A plan label for a room: its size in feet and inches when it is a plain
+ *  rectangle, otherwise its area. */
+export function formatRoomSize(room, squareMetres) {
+  const square = !room.shape || room.shape === 'square';
+  if (!useFeet || !square) return formatArea(squareMetres);
+  return `${feetInches(room.width)} × ${feetInches(room.depth)}`;
+}
+
+function feetInches(metres) {
+  const inches = Math.round((Number(metres) || 0) / M_PER_FT * 12);
+  return `${Math.floor(inches / 12)}'-${inches % 12}"`;
+}
+
 function feetStep(metreStep) {
   if (!(metreStep > 0)) return 'any';
   if (metreStep >= 0.1) return '0.5';

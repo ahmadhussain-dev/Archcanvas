@@ -107,6 +107,9 @@ export function formatFloorDisplayName(name) {
     const match = name.match(/[\u4e00-\u9fa5]/);
     return match ? match[0] : name.slice(0, 2);
   }
+  if (/^ground\b/i.test(name)) return 'G';
+  const number = name.match(/\d+/);
+  if (number) return number[0];
   return name.slice(0, 2);
 }
 
