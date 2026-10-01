@@ -230,10 +230,10 @@ export const hotpotFurniture = {
   components: [
     { id: 'base', label: 'Component', defaultColor: '#5d4037' },
     { id: 'pot', label: 'Component', defaultColor: '#8d6e63' },
-    { id: 'handles', label: 'Metal Item', defaultColor: '#3e2723' },
+    { id: 'handles', label: 'Metal handles', defaultColor: '#3e2723' },
     { id: 'soupRed', label: 'Component', defaultColor: '#c62828' },
     { id: 'soupWhite', label: 'Component', defaultColor: '#fffde7' },
-    { id: 'divider', label: ' ItemS Item', defaultColor: '#d7ccc8' },
+    { id: 'divider', label: 'S-shaped divider', defaultColor: '#d7ccc8' },
     { id: 'chimney', label: 'Component', defaultColor: '#6d4c41' },
     { id: 'beef', label: 'Component', defaultColor: '#b71c1c' },
     { id: 'tofu', label: 'Component', defaultColor: '#fff59d' }
@@ -1156,7 +1156,7 @@ export const wineBottleFurniture = {
   unit: 'm',
   defaultSize: { width: 0.1, depth: 0.1, height: 0.32 },
   components: [
-    { id: 'bottle', label: ' ItemGlass Item', defaultColor: '#1b3a24' },
+    { id: 'bottle', label: 'Glass bottle', defaultColor: '#1b3a24' },
     { id: 'label', label: 'Component', defaultColor: '#fff8e7' },
     { id: 'cap', label: 'Component', defaultColor: '#b71c1c' }
   ],
@@ -1371,7 +1371,7 @@ export const fruitPlatterFurniture = {
   unit: 'm',
   defaultSize: { width: 0.35, depth: 0.35, height: 0.15 },
   components: [
-    { id: 'plate', label: 'Glass Item', defaultColor: '#e0f7fa' },
+    { id: 'plate', label: 'Glass plate', defaultColor: '#e0f7fa' },
     { id: 'apple', label: 'Component', defaultColor: '#e53935' },
     { id: 'orange', label: 'Component', defaultColor: '#fb8c00' },
     { id: 'grape', label: 'Component', defaultColor: '#8e24aa' }
@@ -1413,7 +1413,7 @@ export const teapotTeaCupsFurniture = {
   unit: 'm',
   defaultSize: { width: 0.42, depth: 0.3, height: 0.15 },
   components: [
-    { id: 'tray', label: ' Item/ Item', defaultColor: '#4e2e1e' },
+    { id: 'tray', label: 'Tea tray', defaultColor: '#4e2e1e' },
     { id: 'teapot', label: 'Component', defaultColor: '#6d4c41' },
     { id: 'cup', label: 'Component', defaultColor: '#d7ccc8' }
   ],

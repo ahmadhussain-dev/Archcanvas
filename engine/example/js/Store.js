@@ -208,7 +208,7 @@ export class Store extends EventEmitter {
       this.emit('saved');
       return true;
     } catch (error) {
-      console.error('Save Item localStorage  Item:', error);
+      console.error('Failed to save to localStorage:', error);
       this.emit('saveError', error);
       return false;
     }
@@ -230,7 +230,7 @@ export class Store extends EventEmitter {
         uiState: rawUI ? JSON.parse(rawUI) : null,
       };
     } catch (error) {
-      console.error(' Item localStorage  Item:', error);
+      console.error('Failed to read from localStorage:', error);
       return { buildingData: null, materialLibrary: null, uiState: null };
     }
   }
@@ -254,7 +254,7 @@ export class Store extends EventEmitter {
       localStorage.removeItem(STORAGE_KEY_UI_STATE);
       localStorage.removeItem(STORAGE_KEY_SAVE_TS);
     } catch (error) {
-      console.error(' Item localStorage  Item:', error);
+      console.error('Failed to clear localStorage:', error);
     }
   }
 
@@ -404,7 +404,7 @@ export class Store extends EventEmitter {
       this.emit('saved');
       return true;
     } catch (error) {
-      console.error('Save Item:', error);
+      console.error('Failed to save project:', error);
       this.emit('saveError', error);
       return false;
     }
@@ -425,7 +425,7 @@ export class Store extends EventEmitter {
       localStorage.setItem(STORAGE_KEY_CURRENT_PROJECT, this.currentProjectName);
       return data;
     } catch (error) {
-      console.error(' Item:', error);
+      console.error('Failed to load project:', error);
       return null;
     }
   }
@@ -441,7 +441,7 @@ export class Store extends EventEmitter {
       const index = this.listProjects().filter((p) => p.id !== id);
       this._saveProjectIndex(index);
     } catch (error) {
-      console.error('Delete Item:', error);
+      console.error('Failed to delete project:', error);
     }
   }
 

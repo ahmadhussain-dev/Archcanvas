@@ -838,7 +838,7 @@ store.on('saved', () => {
 
 //  Save ，  toast  
 store.on('autoSaved', () => {
-  showToast(' ItemSave');
+  showToast('Auto-saved');
   if (window.testMap && typeof window.testMap.requestReflectionUpdate === 'function') {
     window.testMap.requestReflectionUpdate();
   } else if (typeof testMap !== 'undefined' && testMap && typeof testMap.requestReflectionUpdate === 'function') {
@@ -848,7 +848,7 @@ store.on('autoSaved', () => {
 
 //  
 store.on('saveError', () => {
-  showToast(' Item? Item ItemocalStorage  Item Item');
+  showToast('Auto-save failed: browser storage (localStorage) may be full');
 });
 
 //   10  Save
@@ -895,7 +895,7 @@ if (snapToggleBtn) {
     const saved = initialLocalSave;
     if (saved.buildingData) {
       // The saved floorplan was supplied to the constructor, so no second rebuild is needed.
-      showToast(' Item');
+      showToast('Restored your last saved design');
     }
     if (saved.materialLibrary && saved.materialLibrary.length) {
       const storedStr = localStorage.getItem('custom_material_sources');
@@ -961,7 +961,7 @@ if (snapToggleBtn) {
 
   const removedCount = beforeCount - materialLibrary.length;
   if (removedCount > 0) {
-    console.log(`[ Item]  Item ${removedCount}  Item`);
+    console.log(`[Material cleanup] Removed ${removedCount} unused derived textures`);
   }
 })();
 syncLocalToStore();

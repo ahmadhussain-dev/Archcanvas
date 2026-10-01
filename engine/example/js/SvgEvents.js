@@ -458,7 +458,7 @@ function onClick(event) {
   } else if (ctx.isAddRoomMode()) {
     ctx.pushHistory();
     const count = ctx.getRoomCounter();
-    const room = ctx.testMap.addRoom({ x: snapped[0], z: snapped[1], shape: ctx.roomShapeFromMode(), name: ` ItemRoom ${count}` });
+    const room = ctx.testMap.addRoom({ x: snapped[0], z: snapped[1], shape: ctx.roomShapeFromMode(), name: `Room ${count}` });
     ctx.incrementRoomCounter();
     ctx.refreshShadows();
     ctx.selectRoom(room.id);

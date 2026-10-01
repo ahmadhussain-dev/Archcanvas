@@ -50,7 +50,7 @@ export const bedDoubleFurniture = {
     { id: 'frame', label: 'Bed Base Frame', defaultColor: '#6e5948' },
     { id: 'mattress', label: 'Mattress', defaultColor: '#fcfbfa' },
     { id: 'blanket', label: 'Grey Sheets', defaultColor: '#86919e' },
-    { id: 'pillow', label: ' ItemPillows', defaultColor: '#ffffff' },
+    { id: 'pillow', label: 'Pillows', defaultColor: '#ffffff' },
     { id: 'headboard', label: 'Backrest Board', defaultColor: '#544437' }
   ],
   interaction: {
@@ -190,7 +190,7 @@ export const bunkBedFurniture = {
   components: [
     { id: 'frame', label: 'Component', defaultColor: '#aa7f55' },
     { id: 'blankets', label: 'Component', defaultColor: '#89a5ad' },
-    { id: 'pillows', label: ' ItemPillows', defaultColor: '#ffffff' }
+    { id: 'pillows', label: 'Pillows', defaultColor: '#ffffff' }
   ],
   interaction: {
     type: 'lie',
@@ -326,7 +326,7 @@ export const vanityFurniture = {
   isMirror: true,
   components: [
     { id: 'desk', label: 'Component', defaultColor: '#ebccd7' },
-    { id: 'mirror', label: 'Emissive Item', defaultColor: '#e6efff' },
+    { id: 'mirror', label: 'Lit mirror', defaultColor: '#e6efff' },
     { id: 'drawer', label: 'Component', defaultColor: '#cca6b4' }
   ],
   build(registry, item, node, size) {
@@ -450,8 +450,8 @@ export const stationeryFurniture = {
   unit: 'm',
   defaultSize: { width: 0.3, depth: 0.25, height: 0.15 },
   components: [
-    { id: 'book', label: ' ItemComputer', defaultColor: '#fd7e14' },
-    { id: 'holder', label: 'Metal Item', defaultColor: '#2b2b2b' },
+    { id: 'book', label: 'Notebook', defaultColor: '#fd7e14' },
+    { id: 'holder', label: 'Metal holder', defaultColor: '#2b2b2b' },
     { id: 'pens', label: 'Component', defaultColor: '#0056b3' }
   ],
   build(registry, item, node, size) {

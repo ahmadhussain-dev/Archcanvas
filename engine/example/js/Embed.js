@@ -11,6 +11,7 @@
  *   app -> editor : load {building, plot, name} | snapshot {requestId}
  */
 import { FloorplanDocument, stringifyBuildingFile } from '../../src/index.js';
+import { initDisplayUnits } from './Units.js';
 
 export const EMBEDDED = typeof window !== 'undefined'
   && new URLSearchParams(window.location.search).has('embed')
@@ -68,6 +69,7 @@ export function plotBuildingFile({ widthFt, depthFt, floors, roofHeightFt, name 
 export function initEmbedBridge({ testMap, store, loadBuildingText }) {
   if (!EMBEDDED) return;
   document.documentElement.classList.add('archcanvas-embed');
+  initDisplayUnits();
   let listening = false;
 
   const post = (type, data = {}) => window.parent.postMessage({ source: SOURCE, type, ...data }, window.location.origin);

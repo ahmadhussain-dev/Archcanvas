@@ -165,7 +165,7 @@ export const gameConsoleFurniture = {
   defaultSize: { width: 0.3, depth: 0.25, height: 0.2 },
   components: [
     { id: 'console', label: 'Component', defaultColor: '#fafafa' },
-    { id: 'accent', label: 'Decor Item', defaultColor: '#2979ff' },
+    { id: 'accent', label: 'Accent trim', defaultColor: '#2979ff' },
     { id: 'controller', label: 'Component', defaultColor: '#212121' }
   ],
   build(registry, item, node, size) {
@@ -241,7 +241,7 @@ export const aromaDiffuserFurniture = {
   unit: 'm',
   defaultSize: { width: 0.15, depth: 0.15, height: 0.2 },
   components: [
-    { id: 'body', label: 'PP Item', defaultColor: '#fcfcfc' },
+    { id: 'body', label: 'Plastic body', defaultColor: '#fcfcfc' },
     { id: 'base', label: 'Component', defaultColor: '#bcaaa4' }
   ],
   build(registry, item, node, size) {
@@ -311,7 +311,7 @@ export const stereoSpeakerFurniture = {
   defaultSize: { width: 0.35, depth: 0.3, height: 0.7 },
   components: [
     { id: 'cabinet', label: 'Component', defaultColor: '#75482e' },
-    { id: 'grille', label: 'Fabric Item', defaultColor: '#393735' },
+    { id: 'grille', label: 'Fabric grille', defaultColor: '#393735' },
     { id: 'woofer', label: 'Component', defaultColor: '#202326' },
     { id: 'tweeter', label: 'Component', defaultColor: '#d2b48c' },
     { id: 'accent', label: 'Component', defaultColor: '#77ddaa' }
@@ -397,7 +397,7 @@ export const vendingMachineFurniture = {
   isSwitchable: true,
   components: [
     { id: 'body', label: 'Component', defaultColor: '#d32f2f' },
-    { id: 'glassDisplay', label: 'Emissive Item', defaultColor: '#80deea' },
+    { id: 'glassDisplay', label: 'Lit display window', defaultColor: '#80deea' },
     { id: 'selectionButtons', label: 'Component', defaultColor: '#ffeb3b' },
     { id: 'pickupSlot', label: 'Component', defaultColor: '#212121' }
   ],

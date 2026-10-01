@@ -200,9 +200,9 @@ export function initFurnitureButtons() {
   const clearSearchBtn = document.getElementById('btn-clear-furniture-search');
   const groups = [
     { label: '', items: ['all', 'custom'] },
-    { label: ' ItemFurniture', items: ['tables', 'seating', 'storage', 'bedroom', 'kitchen', 'bathroom'] },
-    { label: ' ItemAppliances', items: ['appliances', 'lighting', 'decor', 'food', 'textiles', 'clothing', 'plants'] },
-    { label: ' ItemOutdoor', items: ['outdoor', 'landscape', 'flora'] }
+    { label: 'Furniture', items: ['tables', 'seating', 'storage', 'bedroom', 'kitchen', 'bathroom'] },
+    { label: 'Appliances & decor', items: ['appliances', 'lighting', 'decor', 'food', 'textiles', 'clothing', 'plants'] },
+    { label: 'Outdoor', items: ['outdoor', 'landscape', 'flora'] }
   ];
 
   if (categorySelect && categorySelect.children.length === 0) {

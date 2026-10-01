@@ -2,6 +2,7 @@ import { getRoomVertices, isItemSnappedToBookshelfOrMannequin } from '../../src/
 
 import { createStoreProxy } from '../store/proxyHelper.js';
 import { render2DFurniturePlacementPreview } from './FurniturePlacementController.js';
+import { formatArea } from './Units.js';
 
 let rawCtx = null;
 const ctx = createStoreProxy(() => rawCtx);
@@ -178,6 +179,8 @@ export function renderRoom(room) {
   const centerX = sumX / vertices.length;
   const centerZ = sumZ / vertices.length;
   const svgCenter = worldToSvg(centerX, centerZ);
+  // ArchCanvas: the plot outline is labelled in the page header, not on the plan.
+  if (room.id === 'plot') return;
 
   //  Room 
   let area = 0;
@@ -216,7 +219,7 @@ export function renderRoom(room) {
     'text-anchor': 'middle',
     'dominant-baseline': 'middle'
   });
-  areaNode.textContent = `${formattedArea} ㎡`;
+  areaNode.textContent = formatArea(formattedArea);
 
   labelGroup.appendChild(nameNode);
   labelGroup.appendChild(areaNode);

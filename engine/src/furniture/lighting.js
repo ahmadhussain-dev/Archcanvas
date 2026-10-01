@@ -53,10 +53,10 @@ export const chandelierLight = {
     range: 5.0
   },
   components: [
-    { id: 'rod', label: 'Metal Item', defaultColor: '#434343' },
+    { id: 'rod', label: 'Metal rod', defaultColor: '#434343' },
     { id: 'hub', label: 'Component', defaultColor: '#c5a059' },
     { id: 'arm', label: 'Component', defaultColor: '#aa8040' },
-    { id: 'bulb', label: 'Emissive Item', defaultColor: '#fffae6' }
+    { id: 'bulb', label: 'Bulb', defaultColor: '#fffae6' }
   ],
   build(registry, item, node, size) {
     const rodH = size.height * 0.45;
@@ -127,8 +127,8 @@ export const wallSconceLight = {
   components: [
     { id: 'mount', label: 'Component', defaultColor: '#2b2b2b' },
     { id: 'arm', label: 'Component', defaultColor: '#bf9c60' },
-    { id: 'shade', label: 'Metal Item', defaultColor: '#424242' },
-    { id: 'bulb', label: 'Emissive Item', defaultColor: '#fffae6' }
+    { id: 'shade', label: 'Metal shade', defaultColor: '#424242' },
+    { id: 'bulb', label: 'Bulb', defaultColor: '#fffae6' }
   ],
   build(registry, item, node, size) {
     const mountD = size.depth * 0.15;
@@ -179,8 +179,8 @@ export const floorLampLight = {
   components: [
     { id: 'base', label: 'Component', defaultColor: '#303030' },
     { id: 'pole', label: 'Component', defaultColor: '#1d1d1d' },
-    { id: 'shade', label: 'Textiles Item', defaultColor: '#ece7db' },
-    { id: 'glow', label: 'Emissive Item', defaultColor: '#fffae6' }
+    { id: 'shade', label: 'Fabric shade', defaultColor: '#ece7db' },
+    { id: 'glow', label: 'Light glow', defaultColor: '#fffae6' }
   ],
   build(registry, item, node, size) {
     const baseH = size.height * 0.03;
@@ -228,7 +228,7 @@ export const arcFloorLampLight = {
     { id: 'base', label: 'Component', defaultColor: '#303030' },
     { id: 'pole', label: 'Component', defaultColor: '#1d1d1d' },
     { id: 'shade', label: 'Component', defaultColor: '#ece7db' },
-    { id: 'glow', label: 'Emissive Item', defaultColor: '#fffae6' }
+    { id: 'glow', label: 'Light glow', defaultColor: '#fffae6' }
   ],
   build(registry, item, node, size) {
     const baseH = size.height * 0.03;
@@ -297,7 +297,7 @@ export const deskLampLight = {
     { id: 'base', label: 'Component', defaultColor: '#607d8b' },
     { id: 'arm', label: 'Component', defaultColor: '#cfd8dc' },
     { id: 'shade', label: 'Component', defaultColor: '#546e7a' },
-    { id: 'bulb', label: 'EmissiveLED', defaultColor: '#ffffff' }
+    { id: 'bulb', label: 'LED bulb', defaultColor: '#ffffff' }
   ],
   build(registry, item, node, size) {
     const baseH = size.height * 0.08;
@@ -338,7 +338,7 @@ export const deskLampLight = {
 // 6.  Headboard  (Bedside Lamp)
 export const bedsideLampLight = {
   type: 'bedside_lamp_light',
-  name: 'Headboard',
+  name: 'Bedside Lamp Light',
   unit: 'm',
   defaultSize: { width: 0.25, depth: 0.25, height: 0.35 },
   emissiveComponents: ['glow'],
@@ -530,8 +530,8 @@ export const lavaLampLight = {
     range: 2.5
   },
   components: [
-    { id: 'base', label: 'Metal Item', defaultColor: '#a1a1a1' },
-    { id: 'glass', label: ' ItemGlass', defaultColor: '#ffffff' },
+    { id: 'base', label: 'Metal base', defaultColor: '#a1a1a1' },
+    { id: 'glass', label: 'Glass bottle', defaultColor: '#ffffff' },
     { id: 'glow', label: 'Component', defaultColor: '#ff99ff' },
     { id: 'lava', label: 'Component', defaultColor: '#ff33aa' }
   ],
@@ -590,7 +590,7 @@ export const gardenLanternPostFurniture = {
   components: [
     { id: 'base', label: 'Component', defaultColor: '#75777d' },
     { id: 'pole', label: 'Component', defaultColor: '#555a62' },
-    { id: 'glass', label: 'Glass Item', defaultColor: '#ffffff' },
+    { id: 'glass', label: 'Glass shade', defaultColor: '#ffffff' },
     { id: 'cap', label: 'Component', defaultColor: '#3a3a3a' },
     { id: 'bulb', label: 'Component', defaultColor: '#f7e5a6' }
   ],
@@ -668,7 +668,7 @@ export const gardenBollardLightFurniture = {
   components: [
     { id: 'base', label: 'Component', defaultColor: '#474747' },
     { id: 'pole', label: 'Component', defaultColor: '#5c5c5c' },
-    { id: 'glass', label: 'Glass Item', defaultColor: '#ffffff' },
+    { id: 'glass', label: 'Glass shade', defaultColor: '#ffffff' },
     { id: 'cap', label: 'Component', defaultColor: '#3a3a3a' },
     { id: 'bulb', label: 'Component', defaultColor: '#ffebb3' }
   ],
@@ -815,7 +815,7 @@ export const chandelierFurniture = {
   defaultSize: { width: 0.5, depth: 0.5, height: 0.9 },
   placeType: 'ceiling',
   components: [
-    { id: 'shade', label: 'Design Item', defaultColor: '#ffffff' },
+    { id: 'shade', label: 'Shade', defaultColor: '#ffffff' },
     { id: 'light', label: 'Component', defaultColor: '#fff5d6' },
     { id: 'cord', label: 'Component', defaultColor: '#2b2b2b' }
   ],
@@ -847,7 +847,7 @@ export const landscapeStoneLantern = {
   unit: 'm',
   defaultSize: { width: 0.4, depth: 0.4, height: 0.9 },
   components: [
-    { id: 'lantern-stone', label: ' ItemRock Item', defaultColor: '#b0bec5' },
+    { id: 'lantern-stone', label: 'Stone lantern', defaultColor: '#b0bec5' },
     { id: 'lantern-light', label: 'Component', defaultColor: '#ffe082' }
   ],
   build(registry, item, node, size) {

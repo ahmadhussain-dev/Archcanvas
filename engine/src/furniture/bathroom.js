@@ -101,7 +101,7 @@ export const toiletFurniture = {
 export const bathtubFurniture = {
   type: 'bathtub',
   waterControllable: true,
-  name: ' Item',
+  name: 'Bathtub',
   unit: 'm',
   defaultSize: { width: 0.8, depth: 1.65, height: 0.6 },
   components: [
@@ -152,7 +152,7 @@ export const bathtubFurniture = {
 export const sinkBathroomFurniture = {
   type: 'sink_bathroom',
   waterControllable: true,
-  name: ' Item',
+  name: 'Bathroom Sink',
   unit: 'm',
   defaultSize: { width: 0.5, depth: 0.45, height: 0.85 },
   components: [
@@ -227,7 +227,7 @@ export const showerCabinFurniture = {
   defaultSize: { width: 0.9, depth: 0.9, height: 2.05 },
   components: [
     { id: 'tray', label: 'Component', defaultColor: '#ffffff' },
-    { id: 'glass', label: ' ItemGlass', defaultColor: '#d6efff' },
+    { id: 'glass', label: 'Glass panels', defaultColor: '#d6efff' },
     { id: 'shower', label: 'Component', defaultColor: '#cccccc' }
   ],
   build(registry, item, node, size) {
@@ -265,7 +265,7 @@ export const mirrorBathroomFurniture = {
   isMirror: true,
   components: [
     { id: 'mirror', label: 'Mirror', defaultColor: '#edf3f7' },
-    { id: 'frame', label: ' ItemEmissive Item', defaultColor: '#fffae6' }
+    { id: 'frame', label: 'Light strip', defaultColor: '#fffae6' }
   ],
   build(registry, item, node, size) {
     const frameD = size.width;
@@ -404,13 +404,13 @@ export const bathroomShelfFurniture = {
 
 export const bathroomMirrorCabinetFurniture = {
   type: 'bathroom_mirror_cabinet',
-  name: 'Bathroom',
+  name: 'Bathroom Mirror Cabinet',
   unit: 'm',
   defaultSize: { width: 0.6, depth: 0.15, height: 0.75 },
   placeType: 'wall',
   components: [
     { id: 'cabinet', label: 'Component', defaultColor: '#f5f5f5' },
-    { id: 'mirror', label: 'Mirror Item', defaultColor: '#e0f7fa' }
+    { id: 'mirror', label: 'Mirror', defaultColor: '#e0f7fa' }
   ],
   build(registry, item, node, size) {
     boxComponent(registry, item, bathroomMirrorCabinetFurniture, 'cabinet', {

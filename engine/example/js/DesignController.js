@@ -25,7 +25,7 @@ export function isAddOpeningMode(value = Context.mode) {
 
 export function handleModeChange(newMode) {
   document.body.classList.toggle('mode-delete-wall', newMode === 'delete-wall');
-  if (newMode === 'delete-wall') Context.showToast('Delete Item');
+  if (newMode === 'delete-wall') Context.showToast('Click a wall to delete it');
   Context.refresh3DGrid();
 }
 
@@ -62,7 +62,7 @@ export function setDesignMode(newMode, lockBrush = false) {
     if (button.dataset.designMode !== 'brush') return;
     button.classList.toggle('locked', Context.designModeBrushLocked);
     const shortcut = button.querySelector('.mode-shortcut');
-    if (shortcut) shortcut.textContent = isActive ? (Context.designModeBrushLocked ? 'B /  ItemLock' : 'B /  ItemLock') : 'B';
+    if (shortcut) shortcut.textContent = isActive ? (Context.designModeBrushLocked ? 'B / Locked' : 'B / Click again to lock') : 'B';
   });
 
   document.body.classList.remove(
@@ -132,7 +132,7 @@ export function executeDesignTool(target) {
   const hasMaterial = Context.editor.activeMaterialDescriptor
     || (Context.editor.activeMaterialArray?.length > 0);
   if (Context.designMode === 'brush' && !hasMaterial) {
-    Context.showToast(' ItemSelect Item');
+    Context.showToast('Select a material first');
     return;
   }
   if (Context.designMode === 'picker') {
