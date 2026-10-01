@@ -1,0 +1,49 @@
+@import 'tailwindcss';
+
+/* ArchCanvas design tokens. Source: docs/design/ui-guidelines.md.
+   Light theme only for now. */
+@theme {
+  --color-navy: #13202c;
+  --color-brick: #b2441c;
+  --color-brick-hover: #993a17;
+  --color-blueprint: #1e5aa8;
+  --color-blueprint-hover: #123d75;
+  --color-blueprint-tint: #e6eef8;
+  --color-violet: #6b4fd8;
+  --color-violet-tint: #efeafd;
+  --color-amber: #a85f00;
+  --color-amber-tint: #fff5e6;
+  --color-green: #2f7a5b;
+  --color-green-tint: #e3f1ea;
+  --color-red: #b42318;
+  --color-red-tint: #fdecea;
+  --color-paper: #f5f6f7;
+  --color-line: #dde2e7;
+  --color-line-strong: #c3ccd4;
+  --color-muted: #55626e;
+
+  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-heading: 'Sora', 'Inter', sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+
+  --radius-control: 8px;
+  --radius-card: 12px;
+  --radius-dialog: 16px;
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+  }
+  body {
+    @apply bg-white font-sans text-navy antialiased;
+  }
+  h1,
+  h2,
+  h3 {
+    @apply font-heading;
+  }
+  a {
+    @apply text-blueprint hover:text-blueprint-hover;
+  }
+}

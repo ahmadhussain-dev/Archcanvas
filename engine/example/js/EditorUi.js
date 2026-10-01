@@ -1,0 +1,2031 @@
+import { ui, selection, editor } from '../store/index.js';
+import {
+  testMap,
+  viewer3d,
+  entityManager,
+  
+  INCHES_PER_UNIT,
+  
+  updateSelectedRoom,
+  updateSelectedFloor,
+  updateSelectedStructure,
+  updateSelectedRotation,
+  updateSelectedScale,
+  updateSelectedPose,
+  updateSelectedWallLength,
+  updateSelectedWallRotation,
+  previewSelectedWallRotation,
+  commitSelectedStructureRotation,
+  previewSelectedStructureRotation,
+  deleteSelectedStructure,
+  
+  updateSelectedSize,
+  updateSelectedOpening,
+  updateSelectedFenceGate,
+  deleteSelectedFenceGate,
+  updateSelectedFenceSubtype,
+  updateSelectedFenceLength,
+  updateSelectedFenceHeight,
+  updateSelectedFenceColor,
+  updateSelectedFenceYOffset,
+  
+  applyMaterialToItemComponent,
+  updateComponentMaterial,
+  
+  isTargetLocked,
+  showToast,
+  pushHistory,
+  refreshShadows,
+  renderPlan,
+  refresh3DGrid,
+  findNearestSeat,
+  isSymmetricShape,
+  syncRotationInputs,
+  setTargetLocked,
+  clearSelection,
+  revealRightPanelIfNeeded,
+  
+  getSnapEnabled,
+  setSnapEnabled,
+  getSnapSize,
+  setSnapSize,
+  
+  showCustomConfirm,
+  showCustomAlert,
+  syncFloorControls,
+  currentRooms,
+  canPlaceOnTable,
+  findTableBelow,
+  findBookshelfNearby,
+  snapToBookshelf,
+  getShelfLayerHeights,
+  getItemsCountOnBookshelf,
+  getSelectedStructure
+} from './EditorUiContext.js';
+import { toggleFirstPerson } from './FirstPersonController.js';
+import { getActiveMaterialDisplayName, getActiveMaterialArrayDisplayName } from './MaterialManager.js';
+import { getRoomVertices, MaterialResolver, resolveMaterialAssetDescriptor } from '../../src/index.js';
+import { startFurniturePlacement } from './FurniturePlacementController.js';
+
+let lastActiveRoomId = null;
+
+export function ensure3DGridControls() {
+  if (document.getElementById('show-3d-grid')) return;
+  const snapSizeField = document.getElementById('snap-size')?.closest('.field');
+  const snapEnabledField = document.getElementById('snap-enabled')?.closest('.check-field');
+  const anchor = snapSizeField || snapEnabledField;
+  if (!anchor?.parentElement) return;
+
+  const label = document.createElement('label');
+  label.className = 'check-field';
+  const input = document.createElement('input');
+  input.id = 'show-3d-grid';
+  input.type = 'checkbox';
+  input.checked = viewer3d.show3DGrid;
+  const span = document.createElement('span');
+  span.textContent = ' Item3D Item';
+  label.append(input, span);
+  anchor.insertAdjacentElement('afterend', label);
+  input.addEventListener('change', (event) => {
+    viewer3d.show3DGrid = event.target.checked;
+    refresh3DGrid();
+  });
+}
+
+export function createStructureField(labelText, inputId, attrs = {}) {
+  const label = document.createElement('label');
+  label.className = 'field';
+  const span = document.createElement('span');
+  span.textContent = labelText;
+  const input = document.createElement('input');
+  input.id = inputId;
+  Object.entries(attrs).forEach(([key, value]) => input.setAttribute(key, value));
+  label.append(span, input);
+  return label;
+}
+
+export function ensureStructureEditor() {
+  if (document.getElementById('structure-editor')) return;
+  const content = document.querySelector('#right-panel .right-panel-content');
+  if (!content) return;
+  const editor = document.createElement('div');
+  editor.id = 'structure-editor';
+  editor.className = 'editor hidden';
+  const header = document.createElement('div');
+  header.className = 'editor-header';
+
+  const title = document.createElement('strong');
+  title.id = 'selected-structure-name';
+  title.textContent = ' Item';
+
+  const lockLabel = document.createElement('label');
+  lockLabel.className = 'switch';
+  lockLabel.innerHTML = `
+    <input id="structure-locked" type="checkbox" />
+    <span class="slider">
+      <span class="slider-button">
+        <svg class="slider-icon unlock-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+          <path d="M7 11V7a5 5 0 0 1 9.9-1"></path>
+        </svg>
+        <svg class="slider-icon lock-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+        </svg>
+      </span>
+    </span>
+  `;
+
+  header.appendChild(title);
+  header.appendChild(lockLabel);
+  editor.appendChild(header);
+  
+  const subtypeLabel = document.createElement('label');
+  subtypeLabel.className = 'field';
+  const subtypeSpan = document.createElement('span');
+  subtypeSpan.textContent = ' Item';
+  const subtypeSelect = document.createElement('select');
+  subtypeSelect.id = 'structure-subtype';
+  subtypeLabel.append(subtypeSpan, subtypeSelect);
+  editor.appendChild(subtypeLabel);
+
+  editor.appendChild(createStructureField('X (m)', 'structure-x', { type: 'number', step: '0.1' }));
+  editor.appendChild(createStructureField('Z (m)', 'structure-z', { type: 'number', step: '0.1' }));
+  const dimRow = document.createElement('div');
+  dimRow.className = 'fields-row';
+  dimRow.appendChild(createStructureField(' Item (m)', 'structure-width', { type: 'number', min: '0.6', step: '0.1' }));
+  dimRow.appendChild(createStructureField(' Item (m)', 'structure-depth', { type: 'number', min: '0.6', step: '0.1' }));
+  dimRow.appendChild(createStructureField(' Item (m)', 'structure-height', { type: 'number', min: '0.2', step: '0.1' }));
+  editor.appendChild(dimRow);
+  const topRow = document.createElement('div');
+  topRow.className = 'fields-row';
+  topRow.appendChild(createStructureField(' Item (m)', 'structure-top-width', { type: 'number', min: '0.1', step: '0.1' }));
+  topRow.appendChild(createStructureField(' Item (m)', 'structure-top-depth', { type: 'number', min: '0.1', step: '0.1' }));
+  editor.appendChild(topRow);
+  const eaveOverhangField = createStructureField(' Item (m)', 'structure-eave-overhang', { type: 'number', min: '0', max: '3', step: '0.05' });
+  eaveOverhangField.id = 'structure-eave-overhang-field';
+  editor.appendChild(eaveOverhangField);
+  const elevationField = createStructureField(' Item (m)', 'structure-elevation', { type: 'number', step: '0.1' });
+  elevationField.id = 'structure-elevation-field';
+  editor.appendChild(elevationField);
+  const rotationLabel = createStructureField('Rotate ( Item)', 'structure-rotation', { type: 'number', min: '0', max: '359', step: '15' });
+  const rotationRange = document.createElement('input');
+  rotationRange.id = 'structure-rotation-range';
+  rotationRange.type = 'range';
+  rotationRange.min = '0';
+  rotationRange.max = '360';
+  rotationRange.step = '1';
+  rotationLabel.appendChild(rotationRange);
+  editor.appendChild(rotationLabel);
+  editor.appendChild(createStructureField(' Item', 'structure-steps', { type: 'number', min: '3', max: '32', step: '1' }));
+
+  const sideHiddenLabel = document.createElement('label');
+  sideHiddenLabel.className = 'check-field';
+  sideHiddenLabel.id = 'structure-side-hidden-field';
+  const sideHiddenInput = document.createElement('input');
+  sideHiddenInput.id = 'structure-side-hidden';
+  sideHiddenInput.type = 'checkbox';
+  const sideHiddenSpan = document.createElement('span');
+  sideHiddenSpan.textContent = ' Item';
+  sideHiddenLabel.append(sideHiddenInput, sideHiddenSpan);
+  editor.appendChild(sideHiddenLabel);
+
+  const bottomHiddenLabel = document.createElement('label');
+  bottomHiddenLabel.className = 'check-field';
+  bottomHiddenLabel.id = 'structure-bottom-hidden-field';
+  const bottomHiddenInput = document.createElement('input');
+  bottomHiddenInput.id = 'structure-bottom-hidden';
+  bottomHiddenInput.type = 'checkbox';
+  const bottomHiddenSpan = document.createElement('span');
+  bottomHiddenSpan.textContent = ' Item';
+  bottomHiddenLabel.append(bottomHiddenInput, bottomHiddenSpan);
+  editor.appendChild(bottomHiddenLabel);
+
+  const hideFrameLabel = document.createElement('label');
+  hideFrameLabel.className = 'check-field';
+  hideFrameLabel.id = 'structure-hide-frame-field';
+  const hideFrameInput = document.createElement('input');
+  hideFrameInput.id = 'structure-hide-frame';
+  hideFrameInput.type = 'checkbox';
+  const hideFrameSpan = document.createElement('span');
+  hideFrameSpan.textContent = ' Item';
+  hideFrameLabel.append(hideFrameInput, hideFrameSpan);
+  editor.appendChild(hideFrameLabel);
+
+  const mirroredLabel = document.createElement('label');
+  mirroredLabel.className = 'check-field';
+  mirroredLabel.id = 'structure-mirrored-field';
+  const mirroredInput = document.createElement('input');
+  mirroredInput.id = 'structure-mirrored';
+  mirroredInput.type = 'checkbox';
+  const mirroredSpan = document.createElement('span');
+  mirroredSpan.textContent = ' ItemFlip';
+  mirroredLabel.append(mirroredInput, mirroredSpan);
+  editor.appendChild(mirroredLabel);
+
+  editor.appendChild(createStructureField('Rotate Item ( Item)', 'structure-spiral-degrees', { type: 'number', min: '45', max: '720', step: '15' }));
+  editor.appendChild(createStructureField(' Item', 'structure-corner-step', { type: 'number', min: '1', step: '1' }));
+  editor.appendChild(createStructureField(' Item (m)', 'structure-run-before-corner', { type: 'number', min: '0.2', max: '20', step: '0.1' }));
+  editor.appendChild(createStructureField(' Item (m)', 'structure-run-after-corner', { type: 'number', min: '0.2', max: '20', step: '0.1' }));
+  editor.appendChild(createStructureField(' Item (m)', 'structure-u-slot-width', { type: 'number', min: '0', max: '1.0', step: '0.05' }));
+  editor.appendChild(createStructureField(' Item (m)', 'structure-u-void-length', { type: 'number', min: '0', max: '3.0', step: '0.1' }));
+  editor.appendChild(createStructureField(' Item', 'structure-beam-count', { type: 'number', min: '0', max: '4', step: '1' }));
+
+  editor.appendChild(createStructureField(' Item (m)', 'structure-curve', { type: 'number', step: '0.05' }));
+
+
+
+  const deleteButton = document.createElement('button');
+  deleteButton.id = 'btn-delete-structure';
+  deleteButton.type = 'button';
+  deleteButton.className = 'danger';
+  deleteButton.textContent = 'Delete Item';
+  editor.appendChild(deleteButton);
+  const openingEditor = document.getElementById('opening-editor');
+  if (openingEditor) {
+    openingEditor.insertAdjacentElement('afterend', editor);
+  } else {
+    content.appendChild(editor);
+  }
+}
+
+export function updateEditor() {
+  const floorEditor = document.getElementById('floor-editor');
+  const roomEditor = document.getElementById('room-editor');
+  const wallEditor = document.getElementById('wall-editor');
+  const fenceEditor = document.getElementById('fence-editor');
+  const itemEditor = document.getElementById('item-editor');
+  const openingEditor = document.getElementById('opening-editor');
+  const structureEditor = document.getElementById('structure-editor');
+  const emptyState = document.getElementById('empty-state');
+  const room = selection.selectedRoomId ? testMap.getEntity('room', selection.selectedRoomId) : null;
+  const wall = selection.selectedWallId ? testMap.getEntity('wall', selection.selectedWallId) : null;
+  const fence = selection.selectedFenceId ? testMap.getEntity('fence', selection.selectedFenceId) : null;
+  const fenceGate = selection.selectedFenceGateId ? testMap.getEntity('fenceGate', selection.selectedFenceGateId) : null;
+  const item = selection.selectedItemId ? testMap.getEntity('item', selection.selectedItemId) : null;
+  const opening = selection.selectedOpeningId ? testMap.getEntity('opening', selection.selectedOpeningId) : null;
+  const activeSelected = testMap.getSelectedEntity?.() || null;
+  const roof = selection.selectedRoofId ? (activeSelected && activeSelected.id === selection.selectedRoofId ? activeSelected : testMap.getEntity('roof', selection.selectedRoofId)) : null;
+  const stairs = selection.selectedStairsId ? (activeSelected && activeSelected.id === selection.selectedStairsId ? activeSelected : testMap.getEntity('stairs', selection.selectedStairsId)) : null;
+  const structure = roof || stairs;
+  const structureType = roof ? 'roof' : (stairs ? 'stairs' : null);
+
+  if (room) {
+    lastActiveRoomId = room.id;
+  } else if (item && item.roomId) {
+    lastActiveRoomId = item.roomId;
+  }
+
+  const hasSelection = !!room || !!wall || !!fence || !!fenceGate || !!item || !!opening || !!structure;
+  floorEditor?.classList.toggle('hidden', hasSelection);
+  roomEditor.classList.toggle('hidden', !room);
+  wallEditor.classList.toggle('hidden', !wall);
+  if (fenceEditor) fenceEditor.classList.toggle('hidden', !fence);
+  const fenceGateEditor = document.getElementById('fence-gate-editor');
+  if (fenceGateEditor) fenceGateEditor.classList.toggle('hidden', !fenceGate);
+  itemEditor.classList.toggle('hidden', !item);
+  openingEditor.classList.toggle('hidden', !opening);
+  structureEditor?.classList.toggle('hidden', !structure);
+  emptyState.classList.add('hidden');
+
+  if (!hasSelection) {
+    const currentFloorId = testMap.getCurrentFloorId();
+    const currentFloor = testMap.getFloor(currentFloorId);
+    if (currentFloor) {
+      let totalArea = 0;
+      try {
+        const rooms = testMap.getSnapshot().floor?.rooms || testMap.getSnapshot().rooms || [];
+        const floorRooms = rooms.filter(r => r.floorId === currentFloorId);
+        floorRooms.forEach(room => {
+          const vertices = getRoomVertices(room);
+          let area = 0;
+          for (let i = 0; i < vertices.length; i++) {
+            const next = vertices[(i + 1) % vertices.length];
+            area += vertices[i].x * next.z - next.x * vertices[i].z;
+          }
+          totalArea += Math.abs(area / 2);
+        });
+      } catch (err) {
+        console.warn('Failed to calculate floor total area:', err);
+      }
+      const formattedTotalArea = Number(totalArea.toFixed(2));
+      document.getElementById('selected-floor-name').textContent = `${currentFloor.name || ' Item'} (${formattedTotalArea} ㎡)`;
+      document.getElementById('floor-name').value = currentFloor.name || '';
+      document.getElementById('floor-wall-height').value = Number((currentFloor.wallHeight ?? testMap.getSnapshot().wallHeight ?? 3.0).toFixed(2));
+      document.getElementById('floor-height').value = Number((currentFloor.floorHeight ?? testMap.getSnapshot().floorHeight ?? 0.06).toFixed(2));
+      document.getElementById('floor-hide-roof').checked = !!currentFloor.hideRoof;
+      document.getElementById('floor-hide-wall').checked = !!currentFloor.hideWall;
+      const skyboxInput = document.getElementById('floor-skybox-enabled');
+      if (skyboxInput) {
+        skyboxInput.checked = currentFloor.skyboxEnabled === true;
+      }
+      const advInput = document.getElementById('show-advanced-rendering');
+      if (advInput) {
+        advInput.checked = testMap ? testMap.advancedRenderingEnabled : false;
+      }
+      const showAllFloorsInput = document.getElementById('show-all-floors');
+      if (showAllFloorsInput) {
+        showAllFloorsInput.checked = Boolean(window.showAllFloors);
+      }
+    }
+  }
+
+  document.getElementById('floor-color').value = room?.color || testMap.getSnapshot().floor?.color || '#f4efe6';
+
+  if (room) {
+    let areaVal = '0.00';
+    try {
+      const vertices = getRoomVertices(room);
+      let area = 0;
+      for (let i = 0; i < vertices.length; i++) {
+        const next = vertices[(i + 1) % vertices.length];
+        area += vertices[i].x * next.z - next.x * vertices[i].z;
+      }
+      area = Math.abs(area / 2);
+      areaVal = Number(area.toFixed(2)).toString();
+    } catch (err) {
+      console.warn('Failed to calculate room area:', err);
+    }
+
+    document.getElementById('selected-room-name').textContent = `${room.name || 'Room'} (${areaVal} ㎡)`;
+    document.getElementById('room-name').value = room.name || '';
+    document.getElementById('room-width').value = Number(room.width.toFixed(2));
+    document.getElementById('room-depth').value = Number(room.depth.toFixed(2));
+
+    const roomFloor = testMap.getFloor(room.floorId);
+    const wallHeight = roomFloor ? (roomFloor.wallHeight ?? testMap.getSnapshot().wallHeight ?? 3.0) : (testMap.getSnapshot().wallHeight ?? 3.0);
+    const roomElevationInput = document.getElementById('room-elevation');
+    if (roomElevationInput) {
+      roomElevationInput.max = wallHeight;
+      roomElevationInput.value = Number((room.elevation || 0).toFixed(2));
+    }
+    const roomRotationDegrees = Math.round(((-room.rotation || 0) * 180 / Math.PI + 360) % 360);
+    document.getElementById('room-rotation').value = roomRotationDegrees;
+    document.getElementById('room-rotation-range').value = roomRotationDegrees;
+
+    document.getElementById('room-locked').checked = !!room.locked;
+    document.getElementById('btn-delete-room').disabled = !!room.locked;
+  }
+  if (wall) {
+    document.getElementById('selected-wall-name').textContent = ' Item';
+    document.getElementById('wall-length').value = Number(testMap.getWallLength(wall.id).toFixed(2));
+    const dx = wall.to[0] - wall.from[0];
+    const dz = wall.to[1] - wall.from[1];
+    const angleRad = Math.atan2(dz, dx);
+    const angleDeg = Math.round(((angleRad * 180 / Math.PI) + 360) % 360);
+    document.getElementById('wall-rotation').value = angleDeg;
+    document.getElementById('wall-rotation-range').value = angleDeg;
+    const baseboardEnabledInput = document.getElementById('wall-baseboard-enabled');
+    const baseboardHeightInput = document.getElementById('wall-baseboard-height');
+    const wainscotEnabledInput = document.getElementById('wall-wainscot-enabled');
+    const wainscotHeightInput = document.getElementById('wall-wainscot-height');
+    if (baseboardEnabledInput) baseboardEnabledInput.checked = !!wall.baseboardEnabled;
+    if (baseboardHeightInput) {
+      baseboardHeightInput.value = Number((wall.baseboardHeight ?? 0.1).toFixed(2));
+      baseboardHeightInput.disabled = !wall.baseboardEnabled;
+      baseboardHeightInput.parentElement.classList.toggle('hidden', !wall.baseboardEnabled);
+    }
+    if (wainscotEnabledInput) wainscotEnabledInput.checked = !!wall.wainscotEnabled;
+    if (wainscotHeightInput) {
+      wainscotHeightInput.value = Number((wall.wainscotHeight ?? 1).toFixed(2));
+      wainscotHeightInput.disabled = !wall.wainscotEnabled;
+      wainscotHeightInput.parentElement.classList.toggle('hidden', !wall.wainscotEnabled);
+    }
+  }
+  if (fence) {
+    document.getElementById('selected-fence-name').textContent = ' Item';
+    document.getElementById('fence-subtype').value = fence.subtype || 'picket_wood';
+    const dx = fence.to[0] - fence.from[0];
+    const dz = fence.to[1] - fence.from[1];
+    const length = Math.hypot(dx, dz);
+    document.getElementById('fence-length').value = Number(length.toFixed(2));
+    const angleRad = Math.atan2(dz, dx);
+    const angleDeg = Math.round(((angleRad * 180 / Math.PI) + 360) % 360);
+    document.getElementById('fence-rotation').value = angleDeg;
+    document.getElementById('fence-rotation-range').value = angleDeg;
+    document.getElementById('fence-height').value = fence.height || 1.1;
+    document.getElementById('fence-yoffset').value = fence.yOffset !== undefined ? Number(fence.yOffset.toFixed(2)) : 0;
+    const fenceColorEl = document.getElementById('fence-color');
+    if (fenceColorEl) {
+      fenceColorEl.value = fence.color || '#8d6e63';
+    }
+    document.getElementById('fence-locked').checked = !!fence.locked;
+    document.getElementById('btn-delete-fence').disabled = !!fence.locked;
+  }
+
+  if (item) {
+    document.getElementById('selected-name').textContent = item.name;
+    document.getElementById('item-width').value = Number((item.width || 0).toFixed(2));
+    document.getElementById('item-depth').value = Number((item.depth || 0).toFixed(2));
+    document.getElementById('item-height').value = Number((item.height || 0).toFixed(2));
+    const elevationVal = Number((item.elevation || 0).toFixed(2));
+    document.getElementById('item-elevation').value = elevationVal;
+    const itemFloor = testMap.getFloor(item.floorId);
+    const floorWallHeight = itemFloor ? (itemFloor.wallHeight ?? testMap.getSnapshot().wallHeight ?? 3.0) : (testMap.getSnapshot().wallHeight ?? 3.0);
+    const elevationRange = document.getElementById('item-elevation-range');
+    if (elevationRange) {
+      elevationRange.max = floorWallHeight;
+      elevationRange.value = elevationVal;
+    }
+    const rotationDegrees = Math.round(((item.rotation || 0) * 180 / Math.PI + 360) % 360);
+    document.getElementById('item-rotation').value = rotationDegrees;
+    document.getElementById('item-rotation-range').value = rotationDegrees;
+    const def = testMap.getFurnitureDefinition(item.type);
+    const isMeterDef = def && def.unit === 'm';
+    const defW = def && def.defaultSize?.width ? (isMeterDef ? def.defaultSize.width : def.defaultSize.width / 39.37) : 0;
+    const currentScale = item.width && defW ? (item.width / defW) : 1;
+    document.getElementById('item-scale').value = Number(currentScale.toFixed(2));
+    document.getElementById('item-scale-range').value = currentScale;
+    document.getElementById('item-locked').checked = !!item.locked;
+
+    const poseField = document.getElementById('item-pose-field');
+    if (item.type === 'mannequin') {
+      const seat = findNearestSeat(item);
+      if (seat) {
+        poseField.classList.remove('hidden');
+        document.getElementById('item-pose').value = item.pose || 'stand';
+      } else {
+        poseField.classList.add('hidden');
+        if (item.pose && item.pose !== 'stand') {
+          setTimeout(() => entityManager.resetItemPose(item.id), 0);
+        }
+      }
+    } else {
+      poseField.classList.add('hidden');
+    }
+
+    const controlMannequinBtn = document.getElementById('btn-control-mannequin');
+    if (controlMannequinBtn) {
+      if (item.type === 'mannequin') {
+        controlMannequinBtn.classList.remove('hidden');
+      } else {
+        controlMannequinBtn.classList.add('hidden');
+      }
+    }
+
+    const seasonField = document.getElementById('item-season-field');
+    const seasonSelect = document.getElementById('item-season');
+    const seasonOptions = def?.seasonOptions || [];
+    if (seasonField && seasonSelect) {
+      const hasSeasonOptions = seasonOptions.length > 0;
+      seasonField.classList.toggle('hidden', !hasSeasonOptions);
+      if (hasSeasonOptions) {
+        const optionMarkup = seasonOptions
+          .map((option) => `<option value="${option.value}">${option.label}</option>`)
+          .join('');
+        if (seasonSelect.innerHTML !== optionMarkup) {
+          seasonSelect.innerHTML = optionMarkup;
+        }
+        seasonSelect.value = item.season || def.defaultSeason || seasonOptions[0].value;
+      }
+    }
+
+    const lightField = document.getElementById('item-light-field');
+    if (lightField) {
+      const powerInput = document.getElementById('item-light-on');
+      const powerLabel = document.getElementById('item-power-label');
+      if (def.category === 'lighting' || def.lightSource) {
+        lightField.classList.remove('hidden');
+        powerInput.checked = item.lightOn !== false;
+        if (powerLabel) powerLabel.textContent = ' Item';
+      } else if (def.powerEffect) {
+        lightField.classList.remove('hidden');
+        powerInput.checked = item.isOn === true;
+        if (powerLabel) powerLabel.textContent = ` Item${def.powerEffect.label || ' Item'}`;
+      } else {
+        lightField.classList.add('hidden');
+      }
+    }
+
+    const waterField = document.getElementById('item-water-field');
+    if (waterField) {
+      const waterInput = document.getElementById('item-water-enabled');
+      const isWaterContainer = def?.waterControllable === true;
+      if (isWaterContainer) {
+        waterField.classList.remove('hidden');
+        waterInput.checked = item.waterEnabled !== false;
+      } else {
+        waterField.classList.add('hidden');
+      }
+    }
+  }
+
+  if (structure) {
+    document.getElementById('selected-structure-name').textContent = structureType === 'roof' ? ' Item' : ' Item';
+    
+    const xLabel = document.getElementById('structure-x')?.closest('label');
+    const zLabel = document.getElementById('structure-z')?.closest('label');
+    if (xLabel) xLabel.classList.add('hidden');
+    if (zLabel) zLabel.classList.add('hidden');
+
+    document.getElementById('structure-x').value = Number((structure.x || 0).toFixed(2));
+    document.getElementById('structure-z').value = Number((structure.z || 0).toFixed(2));
+    document.getElementById('structure-width').value = Number((structure.width || 1).toFixed(2));
+    document.getElementById('structure-depth').value = Number((structure.depth || 1).toFixed(2));
+    document.getElementById('structure-height').value = Number((structure.height || 1).toFixed(2));
+    const rotationDegrees = Math.round(((structure.rotation || 0) * 180 / Math.PI + 360) % 360);
+    document.getElementById('structure-rotation').value = rotationDegrees;
+    document.getElementById('structure-rotation-range').value = rotationDegrees;
+    const stepsField = document.getElementById('structure-steps').closest('label');
+    stepsField.classList.toggle('hidden', structureType !== 'stairs');
+    document.getElementById('structure-steps').value = structure.steps || 9;
+    document.getElementById('structure-side-hidden').checked = !!structure.sideHidden;
+    const bottomHiddenField = document.getElementById('structure-bottom-hidden-field');
+    if (bottomHiddenField) {
+      bottomHiddenField.classList.toggle('hidden', structureType !== 'roof');
+    }
+    document.getElementById('structure-bottom-hidden').checked = !!structure.bottomHidden;
+    const eaveOverhangField = document.getElementById('structure-eave-overhang-field');
+    if (eaveOverhangField) {
+      eaveOverhangField.classList.toggle('hidden', structureType !== 'roof');
+    }
+    const defaultEaveOverhang = structure.subtype === 'arch' || structure.subtype === 'dome' ? 0 : 0.2;
+    document.getElementById('structure-eave-overhang').value = Number((structure.eaveOverhang ?? defaultEaveOverhang).toFixed(2));
+
+    const hideFrameField = document.getElementById('structure-hide-frame-field');
+    if (hideFrameField) {
+      hideFrameField.classList.toggle('hidden', structureType !== 'roof');
+    }
+    document.getElementById('structure-hide-frame').checked = !!structure.hideFrame;
+
+    const curveField = document.getElementById('structure-curve')?.closest('label');
+    if (curveField) {
+      curveField.classList.toggle('hidden', structureType !== 'roof');
+    }
+    const curveInput = document.getElementById('structure-curve');
+    if (curveInput) {
+      curveInput.value = Number((structure.curve || 0).toFixed(2));
+    }
+
+    const isTrapezoid = structureType === 'roof' && (structure.subtype === 'trapezoid' || structure.type === 'trapezoid');
+    const topWidthField = document.getElementById('structure-top-width')?.closest('label');
+    if (topWidthField) {
+      topWidthField.classList.toggle('hidden', !isTrapezoid);
+    }
+    const topWidthInput = document.getElementById('structure-top-width');
+    if (topWidthInput) {
+      const defaultTw = (structure.width || 6) * 0.5;
+      topWidthInput.value = Number((structure.topWidth !== undefined ? structure.topWidth : defaultTw).toFixed(2));
+    }
+
+    const topDepthField = document.getElementById('structure-top-depth')?.closest('label');
+    if (topDepthField) {
+      topDepthField.classList.toggle('hidden', !isTrapezoid);
+    }
+    const topDepthInput = document.getElementById('structure-top-depth');
+    if (topDepthInput) {
+      const defaultTd = (structure.depth || 6) * 0.5;
+      topDepthInput.value = Number((structure.topDepth !== undefined ? structure.topDepth : defaultTd).toFixed(2));
+    }
+
+    const elevationField = document.getElementById('structure-elevation-field');
+    if (elevationField) {
+      elevationField.classList.toggle('hidden', structureType !== 'roof');
+    }
+    const elevationInput = document.getElementById('structure-elevation');
+    if (elevationInput) {
+      const roofFloor = testMap.getFloor?.(structure.floorId);
+      const roofWallHeight = roofFloor ? (roofFloor.wallHeight ?? testMap.getSnapshot().wallHeight ?? 3.0) : (testMap.getSnapshot().wallHeight ?? 3.0);
+      elevationInput.value = Number((structure.elevation ?? roofWallHeight).toFixed(2));
+    }
+
+    document.getElementById('structure-locked').checked = !!structure.locked;
+    document.getElementById('btn-delete-structure').disabled = !!structure.locked;
+
+    const mirroredField = document.getElementById('structure-mirrored-field');
+    if (mirroredField) {
+      mirroredField.classList.toggle('hidden', structureType !== 'stairs');
+    }
+    document.getElementById('structure-mirrored').checked = !!structure.mirrored;
+
+    const subtype = structure.subtype || 'straight';
+    
+    const spiralDegreesInput = document.getElementById('structure-spiral-degrees');
+    if (spiralDegreesInput) {
+      const parentLabel = spiralDegreesInput.closest('label');
+      if (parentLabel) {
+        parentLabel.classList.toggle('hidden', structureType !== 'stairs' || (subtype !== 'spiral' && subtype !== 'curved'));
+      }
+      spiralDegreesInput.value = structure.spiralDegrees ?? (subtype === 'curved' ? 90 : 360);
+    }
+
+    const beamCountInput = document.getElementById('structure-beam-count');
+    if (beamCountInput) {
+      const parentLabel = beamCountInput.closest('label');
+      if (parentLabel) {
+        parentLabel.classList.toggle('hidden', structureType !== 'stairs' || subtype !== 'floating');
+      }
+      beamCountInput.value = structure.beamCount ?? 1;
+    }
+
+    const cornerStepInput = document.getElementById('structure-corner-step');
+    if (cornerStepInput) {
+      const parentLabel = cornerStepInput.closest('label');
+      if (parentLabel) {
+        parentLabel.classList.toggle('hidden', structureType !== 'stairs' || subtype !== 'lshape');
+      }
+      cornerStepInput.max = (structure.steps || 9) - 2;
+      cornerStepInput.value = structure.cornerStep ?? Math.floor((structure.steps || 9) / 2);
+    }
+
+    ['before', 'after'].forEach((part) => {
+      const input = document.getElementById(`structure-run-${part}-corner`);
+      if (!input) return;
+      input.closest('label')?.classList.toggle('hidden', structureType !== 'stairs' || subtype !== 'lshape');
+      const fallback = Math.max(0.2, (structure.depth || 3.2) - (structure.width || 1.2));
+      input.value = part === 'before'
+        ? (structure.runBeforeCorner ?? fallback)
+        : (structure.runAfterCorner ?? fallback);
+    });
+
+    const uSlotWidthInput = document.getElementById('structure-u-slot-width');
+    if (uSlotWidthInput) {
+      const parentLabel = uSlotWidthInput.closest('label');
+      if (parentLabel) {
+        parentLabel.classList.toggle('hidden', structureType !== 'stairs' || subtype !== 'ushape');
+      }
+      uSlotWidthInput.value = structure.uSlotWidth ?? 0.1;
+    }
+
+    const uVoidLengthInput = document.getElementById('structure-u-void-length');
+    if (uVoidLengthInput) {
+      const parentLabel = uVoidLengthInput.closest('label');
+      if (parentLabel) {
+        parentLabel.classList.toggle('hidden', structureType !== 'stairs' || subtype !== 'ushape');
+      }
+      uVoidLengthInput.value = structure.uVoidLength ?? (structure.depth - 1);
+    }
+ 
+    const subtypeSelect = document.getElementById('structure-subtype');
+    if (subtypeSelect) {
+      subtypeSelect.innerHTML = '';
+      if (structureType === 'roof') {
+        const options = [
+          { value: 'gable', label: ' Item' },
+          { value: 'shed', label: ' Item' },
+          { value: 'arch', label: ' Item' },
+          { value: 'dome', label: ' Item' },
+          { value: 'trapezoid', label: ' Item' },
+          { value: 'hip', label: 'Diamond Item' },
+          { value: 'flat', label: ' Item' }
+        ];
+        options.forEach(opt => {
+          const o = document.createElement('option');
+          o.value = opt.value;
+          o.textContent = opt.label;
+          subtypeSelect.appendChild(o);
+        });
+        subtypeSelect.value = structure.subtype || structure.type || 'gable';
+      } else {
+        const options = [
+          { value: 'straight', label: ' Item' },
+          { value: 'lshape', label: 'L-Shape Item' },
+          { value: 'ushape', label: 'U Item' },
+          { value: 'spiral', label: 'Rotate Item' },
+          { value: 'curved', label: ' Item' },
+          { value: 'floating', label: ' Item' },
+          { value: 'ladder', label: ' Item' },
+          { value: 'slide', label: ' Item' }
+        ];
+        options.forEach(opt => {
+          const o = document.createElement('option');
+          o.value = opt.value;
+          o.textContent = opt.label;
+          subtypeSelect.appendChild(o);
+        });
+        subtypeSelect.value = structure.subtype || 'straight';
+      }
+    }
+  }
+
+  if (opening) {
+    document.getElementById('selected-opening-name').textContent = opening.type === 'door' ? ' Item' : ' Item';
+    document.getElementById('opening-position').value = Math.round((opening.t ?? 0.5) * 100);
+    document.getElementById('opening-width').value = opening.width || (opening.type === 'door' ? 0.9 : 1.25);
+    document.getElementById('opening-shape').value = opening.shape || 'square';
+    const heightField = document.getElementById('opening-height-field');
+    heightField.classList.remove('hidden');
+    const sillField = document.getElementById('opening-sill-field');
+    sillField.classList.remove('hidden');
+    document.getElementById('opening-height').value = opening.height ?? (opening.type === 'door' ? 2.05 : 0.85);
+    document.getElementById('opening-sill-height').value = opening.sillHeight ?? (opening.type === 'door' ? 0 : 1.05);
+    const barsFields = document.getElementById('opening-bars-fields');
+    if (barsFields) {
+      barsFields.classList.remove('hidden');
+      document.getElementById('opening-horizontal-bars').value = opening.horizontalBars ?? 0;
+      document.getElementById('opening-vertical-bars').value = opening.verticalBars ?? 0;
+    }
+    const curvedBarsFields = document.getElementById('opening-curved-bars-fields');
+    if (curvedBarsFields) {
+      curvedBarsFields.classList.remove('hidden');
+      document.getElementById('opening-concentric-bars').value = opening.concentricBars ?? 0;
+      document.getElementById('opening-radial-bars').value = opening.radialBars ?? 0;
+    }
+
+    const openField = document.getElementById('opening-open-field');
+    const flipLrField = document.getElementById('opening-flip-lr-field');
+    const flipIoField = document.getElementById('opening-flip-io-field');
+    const isDoor = opening.type === 'door';
+    document.getElementById('opening-content-hidden').checked = isDoor ? !!opening.panelHidden : !!opening.glassHidden;
+    document.getElementById('opening-content-hidden-label').textContent = isDoor ? ' Item' : ' ItemGlass';
+    const frameHiddenField = document.getElementById('opening-frame-hidden-field');
+    frameHiddenField?.classList.toggle('hidden', isDoor);
+    document.getElementById('opening-frame-hidden').checked = !isDoor && !!opening.frameHidden;
+    if (openField) {
+      openField.classList.toggle('hidden', !isDoor);
+      document.getElementById('opening-open').checked = !!opening.isOpen;
+    }
+    const doubleDoorField = document.getElementById('opening-double-door-field');
+    const isSymmetricDoor = isDoor && isSymmetricShape(opening.shape);
+    if (doubleDoorField) {
+      doubleDoorField.classList.toggle('hidden', !isSymmetricDoor);
+      document.getElementById('opening-double-door').checked = !!opening.doubleDoor;
+    }
+    if (flipLrField) {
+      flipLrField.classList.toggle('hidden', !isDoor);
+      document.getElementById('opening-flip-lr').checked = !!opening.isFlippedLR;
+    }
+    if (flipIoField) {
+      flipIoField.classList.toggle('hidden', !isDoor);
+      document.getElementById('opening-flip-io').checked = !!opening.isFlippedIO;
+    }
+    document.getElementById('opening-locked').checked = !!opening.locked;
+    document.getElementById('btn-delete-opening').disabled = !!opening.locked;
+  }
+
+  if (fenceGate) {
+    document.getElementById('fence-gate-locked').checked = !!fenceGate.locked;
+    document.getElementById('fence-gate-subtype').value = fenceGate.subtype || 'picket_wood';
+    document.getElementById('fence-gate-width').value = fenceGate.width || 1.0;
+    document.getElementById('fence-gate-height').value = fenceGate.height || 1.1;
+    document.getElementById('fence-gate-thickness').value = fenceGate.thickness || 0.08;
+    document.getElementById('fence-gate-yoffset').value = fenceGate.yOffset || 0.0;
+    document.getElementById('fence-gate-open').checked = !!fenceGate.isOpen;
+    document.getElementById('fence-gate-double-door').checked = !!fenceGate.doubleDoor;
+    document.getElementById('fence-gate-flip-lr').checked = !!fenceGate.isFlippedLR;
+    document.getElementById('fence-gate-flip-io').checked = !!fenceGate.isFlippedIO;
+    document.getElementById('fence-gate-content-hidden').checked = !!fenceGate.panelHidden;
+    document.getElementById('btn-delete-fence-gate').disabled = !!fenceGate.locked;
+
+    const posField = document.getElementById('fence-gate-position-field');
+    if (posField) {
+      if (fenceGate.fenceId) {
+        posField.classList.remove('hidden');
+        document.getElementById('fence-gate-position').value = Math.round(fenceGate.t * 100);
+      } else {
+        posField.classList.add('hidden');
+      }
+    }
+  }
+
+  renderDesignPanel(room, wall, item, structure, structureType, fence, opening, fenceGate);
+  revealRightPanelIfNeeded(room || wall || item || opening || structure || fence || fenceGate);
+  renderCurrentMaterial();
+}
+
+export function renderDesignPanel(room, wall, item, structure = null, structureType = null, fence = null, opening = null, fenceGate = null) {
+  const designSelectionPanel = document.getElementById('design-selection-panel');
+  if (!designSelectionPanel) return;
+  const activeMaterialDescriptor = editor.activeMaterialDescriptor;
+
+  //  ，  innerHTML = ''  
+  const floorColorField = document.getElementById('floor-color-field');
+  const hiddenContainer = document.getElementById('hidden-floor-color-container');
+  if (floorColorField && hiddenContainer) {
+    hiddenContainer.appendChild(floorColorField);
+  }
+
+  designSelectionPanel.innerHTML = '';
+  const btnResetMaterial = document.getElementById('btn-reset-material');
+  if (btnResetMaterial) {
+    btnResetMaterial.disabled = false;
+  }
+  if (room) {
+    const group = document.createElement('div');
+    group.className = 'component-material-row';
+    group.appendChild(createColorField(' Item', room.color || '#f4efe6', (color) => {
+      updateComponentMaterial('room', room.id, 'floor', color);
+    }, getMaterialFriendlyName(room.material), room.material));
+    group.appendChild(createApplyMaterialButton(' Item', () => updateComponentMaterial('room', room.id, 'floor', activeMaterialDescriptor)));
+    designSelectionPanel.appendChild(group);
+    return;
+  }
+
+  if (wall) {
+    const appendWallRow = (label, colorValue, part, materialName, materialDescriptor = null) => {
+      const group = document.createElement('div');
+      group.className = 'component-material-row';
+      group.appendChild(createColorField(label, colorValue || '#f9fbff', (color) => {
+        updateComponentMaterial('wall', wall.id, part, color);
+      }, materialName, materialDescriptor));
+      group.appendChild(createApplyMaterialButton(' Item', () => updateComponentMaterial('wall', wall.id, part, activeMaterialDescriptor)));
+      designSelectionPanel.appendChild(group);
+    };
+
+    appendWallRow(' Item', wall.colorFront || wall.color || '#f9fbff', 'front', getMaterialFriendlyName(wall.materialFront), wall.materialFront);
+    appendWallRow(' Item', wall.colorBack || wall.color || '#f9fbff', 'back', getMaterialFriendlyName(wall.materialBack), wall.materialBack);
+
+    if (wall.baseboardEnabled) {
+      appendWallRow(' Item', wall.baseboardColorFront || wall.colorFront || wall.color || '#f9fbff', 'front-baseboard', getMaterialFriendlyName(wall.baseboardMaterialFront || wall.materialFront), wall.baseboardMaterialFront || wall.materialFront);
+      appendWallRow(' Item', wall.baseboardColorBack || wall.colorBack || wall.color || '#f9fbff', 'back-baseboard', getMaterialFriendlyName(wall.baseboardMaterialBack || wall.materialBack), wall.baseboardMaterialBack || wall.materialBack);
+    }
+
+    if (wall.wainscotEnabled) {
+      appendWallRow(' ItemWall Panel Moulding', wall.wainscotColorFront || wall.colorFront || wall.color || '#f9fbff', 'front-wainscot', getMaterialFriendlyName(wall.wainscotMaterialFront || wall.materialFront), wall.wainscotMaterialFront || wall.materialFront);
+      appendWallRow(' ItemWall Panel Moulding', wall.wainscotColorBack || wall.colorBack || wall.color || '#f9fbff', 'back-wainscot', getMaterialFriendlyName(wall.wainscotMaterialBack || wall.materialBack), wall.wainscotMaterialBack || wall.materialBack);
+    }
+    return;
+  }
+
+  if (structure) {
+    const title = document.createElement('p');
+    title.className = 'selection-title';
+    title.textContent = structureType === 'roof' ? ' Item' : ' Item';
+    designSelectionPanel.appendChild(title);
+
+    // 1.   ( ) /   ( )
+    const groupTop = document.createElement('div');
+    groupTop.className = 'component-material-row';
+    const labelTop = structureType === 'roof' ? ' Item' : ' Item';
+    groupTop.appendChild(createColorField(labelTop, structure.color || (structureType === 'roof' ? '#b75b54' : '#d8c0a0'), (color) => {
+      updateComponentMaterial(structureType, structure.id, 'top', color);
+    }, getMaterialFriendlyName(structure.material), structure.material));
+    groupTop.appendChild(createApplyMaterialButton(' Item', () => updateComponentMaterial(structureType, structure.id, 'top', activeMaterialDescriptor)));
+    designSelectionPanel.appendChild(groupTop);
+
+    // 2.   ( ) /   ( )
+    const groupSide = document.createElement('div');
+    groupSide.className = 'component-material-row';
+    const labelSide = structureType === 'roof' ? ' Item' : ' Item';
+    groupSide.appendChild(createColorField(labelSide, structure.sideColor || (structure.color || (structureType === 'roof' ? '#b75b54' : '#d8c0a0')), (color) => {
+      updateComponentMaterial(structureType, structure.id, 'side', color);
+    }, getMaterialFriendlyName(structure.sideMaterial || structure.material), structure.sideMaterial || structure.material));
+    groupSide.appendChild(createApplyMaterialButton(' Item', () => updateComponentMaterial(structureType, structure.id, 'side', activeMaterialDescriptor)));
+    designSelectionPanel.appendChild(groupSide);
+
+    // 3.   ( )
+    if (structureType === 'roof') {
+      const groupBottom = document.createElement('div');
+      groupBottom.className = 'component-material-row';
+      groupBottom.appendChild(createColorField(' Item', structure.bottomColor || '#ffffff', (color) => {
+        updateComponentMaterial(structureType, structure.id, 'bottom', color);
+      }, getMaterialFriendlyName(structure.bottomMaterial || structure.bottomColor || '#ffffff'), structure.bottomMaterial));
+      groupBottom.appendChild(createApplyMaterialButton(' Item', () => updateComponentMaterial(structureType, structure.id, 'bottom', activeMaterialDescriptor)));
+      designSelectionPanel.appendChild(groupBottom);
+
+      // 4.   ( )
+      const groupFrame = document.createElement('div');
+      groupFrame.className = 'component-material-row';
+      groupFrame.appendChild(createColorField(' Item', structure.frameColor || '#2c2c2c', (color) => {
+        updateComponentMaterial(structureType, structure.id, 'frame', color);
+      }, getMaterialFriendlyName(structure.frameMaterial || structure.frameColor || '#2c2c2c'), structure.frameMaterial));
+      groupFrame.appendChild(createApplyMaterialButton(' Item', () => updateComponentMaterial(structureType, structure.id, 'frame', activeMaterialDescriptor)));
+      designSelectionPanel.appendChild(groupFrame);
+    }
+    return;
+  }
+
+  if (item) {
+    const definition = testMap.getFurnitureDefinition(item.type);
+    const title = document.createElement('p');
+    title.className = 'selection-title';
+    title.textContent = `${item.name}  Item`;
+    designSelectionPanel.appendChild(title);
+    definition.components.forEach((component) => {
+      const group = document.createElement('div');
+      group.className = 'component-material-row';
+      group.appendChild(createColorField(component.label, item.colors?.[component.id] || component.defaultColor, (color) => {
+        if (isTargetLocked({ type: 'item', id: item.id })) {
+          showToast(' ItemLock');
+          return;
+        }
+        entityManager.updateItemComponentColor(item.id, component.id, color);
+      }, getMaterialFriendlyName(item.materials?.[component.id]), item.materials?.[component.id]));
+      group.appendChild(createApplyMaterialButton(' Item', () => applyMaterialToItemComponent(component.id, activeMaterialDescriptor)));
+      designSelectionPanel.appendChild(group);
+    });
+    return;
+  }
+
+  if (fence) {
+    const title = document.createElement('p');
+    title.className = 'selection-title';
+    title.textContent = ' Item';
+    designSelectionPanel.appendChild(title);
+
+    //  
+    let frameLabel = ' Item';
+    let panelLabel = ' Item';
+
+    if (fence.subtype === 'glass_rail') {
+      frameLabel = ' Item';
+      panelLabel = 'Glass Item';
+    } else if (fence.subtype === 'picket_wood') {
+      frameLabel = ' Item';
+      panelLabel = ' Item';
+    } else if (fence.subtype === 'iron_ornamental') {
+      frameLabel = ' Item';
+      panelLabel = ' Item';
+    } else if (fence.subtype === 'wire_mesh') {
+      frameLabel = ' Item';
+      panelLabel = ' Item';
+    } else if (fence.subtype === 'stone_masonry') {
+      frameLabel = ' Item';
+      panelLabel = ' Item';
+    } else if (fence.subtype === 'bamboo') {
+      frameLabel = ' Item';
+      panelLabel = ' Item';
+    } else if (fence.subtype === 'rope') {
+      frameLabel = ' Item';
+      panelLabel = ' Item';
+    } else if (fence.subtype === 'concrete') {
+      frameLabel = ' Item';
+      panelLabel = ' Item';
+    }
+
+    // 1.  / 
+    const groupFrame = document.createElement('div');
+    groupFrame.className = 'component-material-row';
+    groupFrame.appendChild(createColorField(frameLabel, fence.frameColor || fence.color || '#8d6e63', (color) => {
+      updateComponentMaterial('fence', fence.id, 'frame', color);
+    }, getMaterialFriendlyName(fence.frameMaterial), fence.frameMaterial));
+    groupFrame.appendChild(createApplyMaterialButton(` Item`, () => updateComponentMaterial('fence', fence.id, 'frame', activeMaterialDescriptor)));
+    designSelectionPanel.appendChild(groupFrame);
+
+    // 2.  /Glass 
+    const groupPanel = document.createElement('div');
+    groupPanel.className = 'component-material-row';
+    groupPanel.appendChild(createColorField(panelLabel, fence.panelColor || fence.color || '#8d6e63', (color) => {
+      updateComponentMaterial('fence', fence.id, 'panel', color);
+    }, getMaterialFriendlyName(fence.panelMaterial), fence.panelMaterial));
+    groupPanel.appendChild(createApplyMaterialButton(` Item`, () => updateComponentMaterial('fence', fence.id, 'panel', activeMaterialDescriptor)));
+    designSelectionPanel.appendChild(groupPanel);
+    return;
+  }
+
+  if (opening) {
+    const title = document.createElement('p');
+    title.className = 'selection-title';
+    title.textContent = opening.type === 'door' ? ' Item' : ' Item、 ItemGlass Item';
+    designSelectionPanel.appendChild(title);
+
+    const isDoor = opening.type === 'door';
+
+    const groupFrame = document.createElement('div');
+    groupFrame.className = 'component-material-row';
+    groupFrame.appendChild(createColorField(isDoor ? ' Item' : ' Item', opening.frameMaterial || '#ffffff', (color) => {
+      updateComponentMaterial('opening', opening.id, 'frame', color);
+    }, getMaterialFriendlyName(opening.frameMaterial), opening.frameMaterial));
+    groupFrame.appendChild(createApplyMaterialButton(' Item', () => {
+      updateComponentMaterial('opening', opening.id, 'frame', activeMaterialDescriptor);
+    }));
+    designSelectionPanel.appendChild(groupFrame);
+
+    const groupMullion = document.createElement('div');
+    groupMullion.className = 'component-material-row';
+    groupMullion.appendChild(createColorField(' Item', opening.mullionMaterial || opening.frameMaterial || '#ffffff', (color) => {
+      updateComponentMaterial('opening', opening.id, 'mullion', color);
+    }, getMaterialFriendlyName(opening.mullionMaterial || opening.frameMaterial), opening.mullionMaterial || opening.frameMaterial));
+    groupMullion.appendChild(createApplyMaterialButton(' Item', () => {
+      updateComponentMaterial('opening', opening.id, 'mullion', activeMaterialDescriptor);
+    }));
+    designSelectionPanel.appendChild(groupMullion);
+
+    const groupContent = document.createElement('div');
+    groupContent.className = 'component-material-row';
+    groupContent.appendChild(createColorField(isDoor ? ' Item' : 'Glass Item', isDoor ? (opening.panelMaterial || '#ffffff') : (opening.glassMaterial || '#e0f7fa'), (color) => {
+      updateComponentMaterial('opening', opening.id, isDoor ? 'panel' : 'glass', color);
+    }, getMaterialFriendlyName(isDoor ? opening.panelMaterial : opening.glassMaterial), isDoor ? opening.panelMaterial : opening.glassMaterial));
+    groupContent.appendChild(createApplyMaterialButton(' Item', () => {
+      updateComponentMaterial('opening', opening.id, isDoor ? 'panel' : 'glass', activeMaterialDescriptor);
+    }));
+    designSelectionPanel.appendChild(groupContent);
+  }
+
+  if (fenceGate) {
+    const title = document.createElement('p');
+    title.className = 'selection-title';
+    title.textContent = ' Item';
+    designSelectionPanel.appendChild(title);
+
+    const groupFrame = document.createElement('div');
+    groupFrame.className = 'component-material-row';
+    groupFrame.appendChild(createColorField(' Item', fenceGate.frameMaterial || '#ffffff', (color) => {
+      updateComponentMaterial('fence_gate', fenceGate.id, 'frame', color);
+    }, getMaterialFriendlyName(fenceGate.frameMaterial), fenceGate.frameMaterial));
+    groupFrame.appendChild(createApplyMaterialButton(' Item', () => {
+      updateComponentMaterial('fence_gate', fenceGate.id, 'frame', activeMaterialDescriptor);
+    }));
+    designSelectionPanel.appendChild(groupFrame);
+
+    const groupContent = document.createElement('div');
+    groupContent.className = 'component-material-row';
+    groupContent.appendChild(createColorField(' Item', fenceGate.panelMaterial || '#ffffff', (color) => {
+      updateComponentMaterial('fence_gate', fenceGate.id, 'panel', color);
+    }, getMaterialFriendlyName(fenceGate.panelMaterial), fenceGate.panelMaterial));
+    groupContent.appendChild(createApplyMaterialButton(' Item', () => {
+      updateComponentMaterial('fence_gate', fenceGate.id, 'panel', activeMaterialDescriptor);
+    }));
+    designSelectionPanel.appendChild(groupContent);
+  }
+
+  const currentFloor = testMap.getFloor(testMap.getCurrentFloorId());
+  if (!(room || wall || item || structure || fence || opening || fenceGate) && currentFloor?.skyboxEnabled === true) {
+    const environment = testMap.getSnapshot().environment || {};
+    const applyEnvironmentMaterial = (component, material) => {
+      pushHistory();
+      testMap.executeCommand('setEnvironmentMaterial', { component, material, rebuild: false });
+      const nextEnvironment = testMap.getSnapshot().environment || {};
+      viewer3d.setEnvironmentMaterials(nextEnvironment.skyMaterial, nextEnvironment.groundMaterial);
+      updateEditor();
+    };
+    const appendEnvironmentRow = (component, label, material, fallbackColor) => {
+      const group = document.createElement('div');
+      group.className = 'component-material-row';
+      group.appendChild(createColorField(label, material?.color || fallbackColor, (color) => {
+        applyEnvironmentMaterial(component, color);
+      }, getMaterialFriendlyName(material), material));
+      group.appendChild(createApplyMaterialButton(' Item', () => {
+        applyEnvironmentMaterial(component, activeMaterialDescriptor);
+      }));
+      designSelectionPanel.appendChild(group);
+    };
+
+    const title = document.createElement('p');
+    title.className = 'selection-title';
+    title.textContent = 'Sky Item';
+    designSelectionPanel.appendChild(title);
+    appendEnvironmentRow('sky', 'Sky', environment.skyMaterial, '#d9ecff');
+    appendEnvironmentRow('ground', ' Item', environment.groundMaterial, '#8ca66b');
+  }
+}
+
+export function getMaterialFriendlyName(material) {
+  if (!material) return ' Item';
+  if (typeof material === 'string') {
+    if (material.startsWith('#')) return ` Item ${material}`;
+    if (material.includes('/')) {
+      const parts = material.split('/');
+      const filename = parts[parts.length - 1];
+      return filename.replace(/\.[^.]+$/, '');
+    }
+    return material;
+  }
+  if (material.name) return material.name;
+  if (material.kind === 'color') return ` Item ${material.color || '#ffffff'}`;
+  if (material.kind) {
+    const kindMap = {
+      mirror: 'Mirror',
+      metal: 'Metal',
+      glass: 'Glass',
+      texture: ' Item',
+      emissive: 'Emissive'
+    };
+    return kindMap[material.kind] || material.kind;
+  }
+  return 'Custom Item';
+}
+
+export function createColorField(label, value, onChange, currentMaterialName = '', materialDescriptor = null) {
+  const container = document.createElement('div');
+  container.className = 'field';
+  
+  const span = document.createElement('span');
+  span.style.display = 'flex';
+  span.style.justifyContent = 'space-between';
+  span.style.alignItems = 'center';
+  span.style.width = '100%';
+
+  const nameSpan = document.createElement('span');
+  nameSpan.textContent = label;
+  span.appendChild(nameSpan);
+
+  if (currentMaterialName) {
+    const matSpan = document.createElement('span');
+    matSpan.textContent = currentMaterialName;
+    matSpan.className = 'component-current-material';
+    matSpan.style.cssText = 'font-size: 12px; color: #56657d; font-weight: normal; margin-left: auto;';
+    span.appendChild(matSpan);
+  }
+
+  const input = document.createElement('input');
+  input.type = 'color';
+  input.setAttribute('aria-label', `${label}：SelectCustom Item`);
+  input.style.cssText = 'position: absolute; inset: 0; width: 100%; height: 30px; opacity: 0.001; cursor: pointer; z-index: 2; padding: 0; border: 0;';
+  
+  let hexColor = '#ffffff';
+  if (typeof value === 'string') {
+    hexColor = value.startsWith('#') ? value : '#ffffff';
+  } else if (value && typeof value === 'object' && typeof value.color === 'string') {
+    hexColor = value.color.startsWith('#') ? value.color : '#ffffff';
+  }
+  
+  input.value = hexColor;
+  input.addEventListener('change', (e) => onChange(e.target.value));
+  
+  const colorBtn = document.createElement('button');
+  colorBtn.type = 'button';
+  colorBtn.setAttribute('aria-label', `${label}：SelectCustom Item`);
+  colorBtn.tabIndex = -1;
+  colorBtn.className = 'color-preview-btn';
+  colorBtn.style.cssText = 'width: 100%; height: 30px; padding: 0; appearance: none; border: 1px solid rgba(42, 65, 92, 0.2); border-radius: 6px; pointer-events: none; box-sizing: border-box;';
+  
+  const descriptor = materialDescriptor || value;
+  let normalized = null;
+  if (descriptor) {
+    try {
+      normalized = MaterialResolver.normalizeMaterialDescriptor(descriptor);
+    } catch (e) {}
+  }
+  
+  if (normalized && (normalized.kind === 'texture' || normalized.kind === 'emissive' || normalized.src)) {
+    const resolved = resolveMaterialAssetDescriptor(normalized);
+    if (resolved && resolved.src) {
+      colorBtn.style.backgroundImage = `url(${resolved.src})`;
+      colorBtn.style.backgroundSize = 'cover';
+      colorBtn.style.backgroundPosition = 'center';
+    } else {
+      colorBtn.style.backgroundColor = hexColor;
+    }
+  } else {
+    colorBtn.style.backgroundColor = hexColor;
+  }
+  
+  input.addEventListener('input', (e) => {
+    colorBtn.style.backgroundImage = '';
+    colorBtn.style.backgroundColor = e.target.value;
+  });
+  
+  const picker = document.createElement('div');
+  picker.style.cssText = 'position: relative; width: 100%; height: 30px;';
+  picker.append(colorBtn, input);
+  container.append(span, picker);
+  return container;
+}
+
+export function createApplyMaterialButton(text, onClick) {
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'apply-material-button';
+  button.textContent = text;
+  button.addEventListener('click', onClick);
+  return button;
+}
+
+export function getPlacementInitialPoint() {
+  let room = null;
+  if (selection.selectedRoomId) {
+    room = testMap.getEntity('room', selection.selectedRoomId);
+  } else if (selection.selectedItemId) {
+    const selectedItem = testMap.getEntity('item', selection.selectedItemId);
+    if (selectedItem && selectedItem.roomId) {
+      room = testMap.getEntity('room', selectedItem.roomId);
+    }
+  }
+  
+  if (!room && lastActiveRoomId) {
+    room = testMap.getEntity('room', lastActiveRoomId);
+  }
+  
+  if (!room) {
+    const rooms = currentRooms();
+    room = rooms && rooms.length > 0 ? rooms[0] : null;
+  }
+  
+  if (room) {
+    lastActiveRoomId = room.id;
+    return { x: room.x, z: room.z, roomId: room.id };
+  }
+  
+  return { x: 0, z: 0 };
+}
+
+export function placeFurnitureAt(type, x, z, placementHint = null) {
+  const definition = testMap.getFurnitureDefinition(type);
+  if (!definition) return null;
+  const room = testMap.getRoomAt(x, z);
+  const itemHeight = definition.unit === 'm'
+    ? Number(definition.defaultSize.height || 0)
+    : Number(definition.defaultSize.height || 0) / INCHES_PER_UNIT;
+  let elevation;
+  if (definition.placeType === 'ceiling') {
+    elevation = Number(testMap.getProjectMetadata().wallHeight || 2.8) - itemHeight;
+  } else if (definition.placeType === 'wall' && (type.includes('curtain') || type.includes('blind'))) {
+    elevation = 0;
+  }
+  const item = entityManager.addItem(type, x, z, {
+    elevation,
+    roomId: room?.id,
+    floorId: testMap.getCurrentFloorId()
+  });
+  if (!item) return null;
+  entityManager.moveItemTo(item.id, x, z, true, placementHint);
+  return testMap.getEntity('item', item.id);
+}
+
+export function initUiEventListeners() {
+  document.getElementById('item-grid').addEventListener('click', (event) => {
+    const button = event.target.closest('[data-add-item]');
+    if (!button) return;
+    const type = button.dataset.addItem;
+    if (startFurniturePlacement(type)) return;
+    const definition = testMap.getFurnitureDefinition(type);
+    
+    const initialPoint = getPlacementInitialPoint();
+    let x = initialPoint.x;
+    let z = initialPoint.z;
+    let elevation = undefined;
+    let rotation = undefined;
+    if (definition.placeType === 'ceiling') {
+      const ceilingHeight = testMap.getSnapshot().wallHeight || 2.8;
+      const itemHeight = definition.unit === 'm' ? (definition.defaultSize.height || 0) : (definition.defaultSize.height || 0) / INCHES_PER_UNIT;
+      elevation = ceilingHeight - itemHeight;
+    } else if (definition.placeType === 'wall' && (definition.type.includes('curtain') || definition.type.includes('blind'))) {
+      elevation = 0;
+    } else if (canPlaceOnTable({ x, z, floorId: testMap.getCurrentFloorId(), width: definition.defaultSize.width, depth: definition.defaultSize.depth }, definition)) {
+      //  
+      const selectedItem = selection.selectedItemId ? testMap.getEntity('item', selection.selectedItemId) : null;
+      const selectedDef = selectedItem ? testMap.getFurnitureDefinition(selectedItem.type) : null;
+      const supportedTypes = ['bookshelf', 'shoerack', 'corner_shelf', 'display_cabinet', 'grid_cabinet'];
+      
+      const isShelfSelected = selectedItem && selectedDef && supportedTypes.includes(selectedDef.type);
+      const isMannequinSelected = selectedItem && selectedDef && selectedDef.type.includes('clothing_mannequin');
+      const isAddingClothing = definition.type.startsWith('clothing_') && !definition.type.includes('mannequin');
+      
+      if (isShelfSelected) {
+        x = selectedItem.x;
+        z = selectedItem.z;
+        rotation = selectedItem.rotation || 0;
+        
+        //  ， 
+        const count = getItemsCountOnBookshelf(selectedItem, testMap.getEntities('item'));
+        const worldShelvesY = getShelfLayerHeights(selectedItem);
+        if (worldShelvesY && worldShelvesY.length > 0) {
+          const layerIndex = count % worldShelvesY.length;
+          const worldY = worldShelvesY[layerIndex];
+          elevation = Number(worldY.toFixed(3));
+        } else {
+          elevation = selectedItem.elevation || 0;
+        }
+      } else if (isMannequinSelected && isAddingClothing) {
+        x = selectedItem.x;
+        z = selectedItem.z;
+        rotation = selectedItem.rotation || 0;
+
+        //  
+        const defHeight = selectedDef.unit === 'm' ? selectedDef.defaultSize.height : selectedDef.defaultSize.height / INCHES_PER_UNIT;
+        const defWidth = selectedDef.unit === 'm' ? selectedDef.defaultSize.width : selectedDef.defaultSize.width / INCHES_PER_UNIT;
+        const modelHeight = (selectedItem.height || defHeight) * (selectedItem.scale || 1);
+        const modelWidth = (selectedItem.width || defWidth) * (selectedItem.scale || 1);
+        
+        let gender = 'male';
+        if (selectedDef.type.includes('female')) gender = 'female';
+        else if (selectedDef.type.includes('child')) gender = 'child';
+
+        const plateH = modelHeight * 0.03;
+        const rodH = modelHeight * 0.48;
+        const hipsY = plateH + rodH;
+        const hipsH = modelHeight * 0.12;
+        const chestY = hipsY + hipsH;
+        const chestH = modelHeight * 0.24;
+        const neckY = chestY + chestH;
+        const neckH = modelHeight * 0.05;
+        const headY = neckY + neckH;
+        const headD = gender === 'child' ? modelWidth * 0.5 : modelWidth * 0.4;
+
+        const clothType = definition.type;
+        const clothHeight = definition.unit === 'm' ? (definition.defaultSize.height || 0) : (definition.defaultSize.height || 0) / INCHES_PER_UNIT;
+
+        if (clothType.includes('cap') || clothType.includes('beanie') || clothType.includes('fedora') || clothType.includes('hat') || clothType.includes('beret')) {
+          //  
+          elevation = (selectedItem.elevation || 0) + (headY + headD * 0.25);
+        } else if (clothType.includes('shoes') || clothType.includes('sneakers') || clothType.includes('boots') || clothType.includes('heels') || clothType.includes('sandals') || clothType.includes('slippers')) {
+          //  
+          elevation = (selectedItem.elevation || 0) + plateH;
+        } else if (clothType.includes('jeans') || clothType.includes('trousers') || clothType.includes('sweatpants') || clothType.includes('shorts') || clothType.includes('pants') || clothType.includes('skirt')) {
+          //  / 
+          elevation = (selectedItem.elevation || 0) + (chestY - clothHeight);
+        } else {
+          //  / 
+          elevation = (selectedItem.elevation || 0) + (neckY - clothHeight);
+        }
+        
+        elevation = Number(elevation.toFixed(2));
+      } else {
+        const bookshelfBelow = findBookshelfNearby({ x, z, floorId: testMap.getCurrentFloorId(), id: null });
+        if (bookshelfBelow) {
+          const snappedState = snapToBookshelf({ x, z, elevation: 0, floorId: testMap.getCurrentFloorId(), id: null }, bookshelfBelow);
+          if (snappedState) {
+            elevation = snappedState.elevation;
+          }
+        } else {
+          const tableBelow = findTableBelow({ x, z, floorId: testMap.getCurrentFloorId(), id: null });
+          if (tableBelow) {
+            const tableDef = testMap.getFurnitureDefinition(tableBelow.type);
+            const tableHeight = tableBelow.height ?? (tableDef.unit === 'm' ? tableDef.defaultSize.height : tableDef.defaultSize.height / INCHES_PER_UNIT);
+            elevation = (tableBelow.elevation || 0) + tableHeight * (tableBelow.scale || 1);
+          } else {
+            elevation = 0;
+          }
+        }
+      }
+    }
+    const item = entityManager.addItem(type, x, z, {
+      elevation,
+      rotation,
+      roomId: room?.id,
+      floorId: testMap.getCurrentFloorId()
+    });
+    if (item && room) testMap.assignItemToRoom(item.id, room.id);
+  });
+
+  ['room-width', 'room-depth', 'room-name', 'room-elevation', 'room-rotation'].forEach((id) => {
+    document.getElementById(id).addEventListener('change', updateSelectedRoom);
+  });
+  document.getElementById('room-rotation-range').addEventListener('input', (event) => {
+    document.getElementById('room-rotation').value = event.target.value;
+    updateSelectedRoom();
+  });
+
+  ['floor-name', 'floor-wall-height', 'floor-height', 'floor-hide-roof', 'floor-hide-wall', 'floor-skybox-enabled'].forEach((id) => {
+    document.getElementById(id).addEventListener('change', updateSelectedFloor);
+  });
+
+  document.getElementById('show-advanced-rendering')?.addEventListener('change', (event) => {
+    if (testMap && typeof testMap.setAdvancedRendering === 'function') {
+      testMap.setAdvancedRendering(event.target.checked);
+    }
+  });
+
+  document.getElementById('show-all-floors')?.addEventListener('change', (event) => {
+    window.showAllFloors = event.target.checked;
+    if (testMap && typeof testMap.refreshRendering === 'function') {
+      testMap.refreshRendering();
+    }
+  });
+
+  ['structure-x', 'structure-z', 'structure-width', 'structure-depth', 'structure-height', 'structure-steps', 'structure-side-hidden', 'structure-bottom-hidden', 'structure-eave-overhang', 'structure-hide-frame', 'structure-subtype', 'structure-mirrored', 'structure-spiral-degrees', 'structure-corner-step', 'structure-run-before-corner', 'structure-run-after-corner', 'structure-u-slot-width', 'structure-u-void-length', 'structure-beam-count', 'structure-curve', 'structure-elevation', 'structure-top-width', 'structure-top-depth'].forEach((id) => {
+    document.getElementById(id)?.addEventListener('change', updateSelectedStructure);
+  });
+
+
+  
+  document.getElementById('structure-rotation')?.addEventListener('change', (event) => {
+    commitSelectedStructureRotation(event.target.value);
+  });
+  document.getElementById('structure-rotation-range')?.addEventListener('input', (event) => {
+    previewSelectedStructureRotation(event.target.value);
+  });
+  document.getElementById('structure-rotation-range')?.addEventListener('change', (event) => {
+    commitSelectedStructureRotation(event.target.value);
+  });
+  document.getElementById('structure-locked')?.addEventListener('change', (event) => {
+    const selected = getSelectedStructure();
+    if (!selected?.value) return;
+    pushHistory();
+    setTargetLocked({ type: selected.type, id: selected.id }, event.target.checked);
+    refreshShadows();
+    updateEditor();
+    renderPlan();
+  });
+  document.getElementById('btn-delete-structure')?.addEventListener('click', deleteSelectedStructure);
+
+  ['item-width', 'item-depth', 'item-height', 'item-elevation'].forEach((id) => {
+    document.getElementById(id).addEventListener('change', updateSelectedSize);
+  });
+  document.getElementById('item-elevation').addEventListener('change', (event) => {
+    const rangeEl = document.getElementById('item-elevation-range');
+    if (rangeEl) {
+      rangeEl.value = event.target.value;
+    }
+  });
+  document.getElementById('item-elevation-range').addEventListener('input', (event) => {
+    document.getElementById('item-elevation').value = Number(event.target.value).toFixed(2);
+    updateSelectedSize();
+  });
+
+  document.getElementById('item-rotation').addEventListener('change', updateSelectedRotation);
+  document.getElementById('item-rotation-range').addEventListener('input', (event) => {
+    document.getElementById('item-rotation').value = event.target.value;
+    updateSelectedRotation();
+  });
+  document.getElementById('item-scale').addEventListener('change', (event) => updateSelectedScale(event.target.value));
+  document.getElementById('item-scale-range').addEventListener('input', (event) => {
+    document.getElementById('item-scale').value = Number(event.target.value).toFixed(2);
+    updateSelectedScale(event.target.value);
+  });
+  document.getElementById('item-pose').addEventListener('change', (event) => {
+    if (selection.selectedItemId) entityManager.updateItemPose(selection.selectedItemId, event.target.value);
+  });
+  document.getElementById('item-season').addEventListener('change', (event) => {
+    if (selection.selectedItemId) entityManager.setItemSeason(selection.selectedItemId, event.target.value);
+  });
+
+  document.getElementById('wall-length').addEventListener('change', (event) => {
+    if (selection.selectedWallId) {
+      pushHistory();
+      testMap.setWallLength(selection.selectedWallId, Number(event.target.value));
+      refreshShadows();
+      updateEditor();
+      renderPlan();
+    }
+  });
+
+  document.getElementById('wall-rotation').addEventListener('change', (event) => {
+    updateSelectedWallRotation(event.target.value);
+  });
+
+  document.getElementById('wall-rotation-range').addEventListener('input', (event) => {
+    previewSelectedWallRotation(event.target.value);
+  });
+
+  document.getElementById('wall-rotation-range').addEventListener('change', (event) => {
+    updateSelectedWallRotation(event.target.value);
+  });
+
+  const updateSelectedWallDecor = (patch) => {
+    if (!selection.selectedWallId) return;
+    pushHistory();
+    testMap.updateWall(selection.selectedWallId, patch);
+    refreshShadows();
+    updateEditor();
+    renderPlan();
+  };
+
+  document.getElementById('wall-baseboard-enabled')?.addEventListener('change', (event) => {
+    updateSelectedWallDecor({ baseboardEnabled: event.target.checked });
+  });
+
+  document.getElementById('wall-baseboard-height')?.addEventListener('change', (event) => {
+    updateSelectedWallDecor({ baseboardHeight: Number(event.target.value) || 0.1 });
+  });
+
+  document.getElementById('wall-wainscot-enabled')?.addEventListener('change', (event) => {
+    updateSelectedWallDecor({ wainscotEnabled: event.target.checked });
+  });
+
+  document.getElementById('wall-wainscot-height')?.addEventListener('change', (event) => {
+    updateSelectedWallDecor({ wainscotHeight: Number(event.target.value) || 1 });
+  });
+
+  document.getElementById('btn-delete-wall').addEventListener('click', () => {
+    if (!selection.selectedWallId) return;
+    pushHistory();
+    testMap.deleteWall(selection.selectedWallId);
+    clearSelection();
+    refreshShadows();
+  });
+
+  document.getElementById('item-locked').addEventListener('change', (event) => {
+    if (!selection.selectedItemId) return;
+    entityManager.setItemLocked(selection.selectedItemId, event.target.checked);
+  });
+
+  document.getElementById('room-locked').addEventListener('change', (event) => {
+    if (!selection.selectedRoomId) return;
+    pushHistory();
+    setTargetLocked({ type: 'room', id: selection.selectedRoomId }, event.target.checked);
+    refreshShadows();
+    updateEditor();
+    renderPlan();
+  });
+
+  document.getElementById('item-light-on').addEventListener('change', (event) => {
+    if (!selection.selectedItemId) return;
+    const item = testMap.getEntity('item', selection.selectedItemId);
+    if (!item) return;
+    const def = testMap.getFurnitureDefinition(item.type);
+    if (def.category === 'lighting' || def.lightSource) {
+      entityManager.updateItemLight(selection.selectedItemId, event.target.checked);
+    } else if (def.powerEffect) {
+      entityManager.setItemPower(selection.selectedItemId, event.target.checked);
+    }
+  });
+
+  document.getElementById('item-water-enabled').addEventListener('change', (event) => {
+    if (!selection.selectedItemId) return;
+    entityManager.toggleItemWater(selection.selectedItemId);
+  });
+
+  document.getElementById('opening-position').addEventListener('change', (event) => {
+    updateSelectedOpening({ t: Number(event.target.value) / 100 });
+  });
+
+  document.getElementById('opening-width').addEventListener('change', (event) => {
+    updateSelectedOpening({ width: Number(event.target.value) });
+  });
+
+  document.getElementById('opening-shape').addEventListener('change', (event) => {
+    updateSelectedOpening({ shape: event.target.value });
+  });
+
+  document.getElementById('opening-height').addEventListener('change', (event) => {
+    updateSelectedOpening({ height: Number(event.target.value) });
+  });
+
+  document.getElementById('opening-sill-height').addEventListener('change', (event) => {
+    updateSelectedOpening({ sillHeight: Number(event.target.value) });
+  });
+
+  document.getElementById('opening-horizontal-bars')?.addEventListener('input', (event) => {
+    updateSelectedOpening({ horizontalBars: Math.max(0, parseInt(event.target.value, 10) || 0) });
+  });
+
+  document.getElementById('opening-vertical-bars')?.addEventListener('input', (event) => {
+    updateSelectedOpening({ verticalBars: Math.max(0, parseInt(event.target.value, 10) || 0) });
+  });
+
+  document.getElementById('opening-concentric-bars')?.addEventListener('input', (event) => {
+    updateSelectedOpening({ concentricBars: Math.max(0, parseInt(event.target.value, 10) || 0) });
+  });
+
+  document.getElementById('opening-radial-bars')?.addEventListener('input', (event) => {
+    updateSelectedOpening({ radialBars: Math.max(0, parseInt(event.target.value, 10) || 0) });
+  });
+
+  document.getElementById('opening-open').addEventListener('change', (event) => {
+    updateSelectedOpening({ isOpen: event.target.checked });
+  });
+
+  document.getElementById('opening-double-door').addEventListener('change', (event) => {
+    updateSelectedOpening({ doubleDoor: event.target.checked });
+  });
+
+  document.getElementById('opening-flip-lr').addEventListener('change', (event) => {
+    updateSelectedOpening({ isFlippedLR: event.target.checked });
+  });
+
+  document.getElementById('opening-flip-io').addEventListener('change', (event) => {
+    updateSelectedOpening({ isFlippedIO: event.target.checked });
+  });
+
+  document.getElementById('opening-content-hidden').addEventListener('change', (event) => {
+    const opening = selection.selectedOpeningId ? testMap.getEntity('opening', selection.selectedOpeningId) : null;
+    if (!opening) return;
+    updateSelectedOpening(opening.type === 'door'
+      ? { panelHidden: event.target.checked }
+      : { glassHidden: event.target.checked });
+  });
+
+  document.getElementById('opening-frame-hidden').addEventListener('change', (event) => {
+    updateSelectedOpening({ frameHidden: event.target.checked });
+  });
+
+  document.getElementById('opening-locked').addEventListener('change', (event) => {
+    if (!selection.selectedOpeningId) return;
+    pushHistory();
+    setTargetLocked({ type: 'opening', id: selection.selectedOpeningId }, event.target.checked);
+    refreshShadows();
+    updateEditor();
+    renderPlan();
+  });
+
+  document.getElementById('fence-gate-locked').addEventListener('change', (event) => {
+    if (!selection.selectedFenceGateId) return;
+    pushHistory();
+    setTargetLocked({ type: 'fence_gate', id: selection.selectedFenceGateId }, event.target.checked);
+    refreshShadows();
+    updateEditor();
+    renderPlan();
+  });
+
+  document.getElementById('fence-gate-position').addEventListener('input', (event) => {
+    updateSelectedFenceGatePreview({ t: Number(event.target.value) / 100 });
+  });
+
+  document.getElementById('fence-gate-position').addEventListener('change', (event) => {
+    updateSelectedFenceGate({ t: Number(event.target.value) / 100 });
+  });
+
+  document.getElementById('fence-gate-subtype').addEventListener('change', (event) => {
+    updateSelectedFenceGate({ subtype: event.target.value });
+  });
+
+  document.getElementById('fence-gate-width').addEventListener('change', (event) => {
+    updateSelectedFenceGate({ width: Number(event.target.value) });
+  });
+
+  document.getElementById('fence-gate-height').addEventListener('change', (event) => {
+    updateSelectedFenceGate({ height: Number(event.target.value) });
+  });
+
+  document.getElementById('fence-gate-thickness').addEventListener('change', (event) => {
+    updateSelectedFenceGate({ thickness: Number(event.target.value) });
+  });
+
+  document.getElementById('fence-gate-yoffset').addEventListener('change', (event) => {
+    updateSelectedFenceGate({ yOffset: Number(event.target.value) });
+  });
+
+  document.getElementById('fence-gate-open').addEventListener('change', (event) => {
+    updateSelectedFenceGate({ isOpen: event.target.checked });
+  });
+
+  document.getElementById('fence-gate-double-door').addEventListener('change', (event) => {
+    updateSelectedFenceGate({ doubleDoor: event.target.checked });
+  });
+
+  document.getElementById('fence-gate-flip-lr').addEventListener('change', (event) => {
+    updateSelectedFenceGate({ isFlippedLR: event.target.checked });
+  });
+
+  document.getElementById('fence-gate-flip-io').addEventListener('change', (event) => {
+    updateSelectedFenceGate({ isFlippedIO: event.target.checked });
+  });
+
+  document.getElementById('fence-gate-content-hidden').addEventListener('change', (event) => {
+    updateSelectedFenceGate({ panelHidden: event.target.checked });
+  });
+
+  document.getElementById('btn-delete-fence-gate').addEventListener('click', () => {
+    deleteSelectedFenceGate();
+  });
+
+  document.getElementById('snap-enabled').addEventListener('change', (event) => {
+    setSnapEnabled(event.target.checked);
+    const btn = document.getElementById('btn-snap-toggle');
+    if (btn) {
+      btn.classList.toggle('deactivated', !getSnapEnabled());
+    }
+    renderPlan();
+    refresh3DGrid();
+  });
+
+  document.getElementById('btn-snap-toggle')?.addEventListener('click', () => {
+    setSnapEnabled(!getSnapEnabled());
+    const btn = document.getElementById('btn-snap-toggle');
+    if (btn) {
+      btn.classList.toggle('deactivated', !getSnapEnabled());
+    }
+    const snapCheck = document.getElementById('snap-enabled');
+    if (snapCheck) {
+      snapCheck.checked = getSnapEnabled();
+    }
+    renderPlan();
+    refresh3DGrid();
+  });
+
+  document.getElementById('snap-size').addEventListener('change', (event) => {
+    setSnapSize(1);
+    event.target.value = '1';
+    renderPlan();
+    refresh3DGrid();
+  });
+
+  document.getElementById('fence-subtype').addEventListener('change', updateSelectedFenceSubtype);
+  document.getElementById('fence-length').addEventListener('change', updateSelectedFenceLength);
+
+  document.getElementById('fence-rotation').addEventListener('change', (event) => {
+    updateSelectedFenceRotation(event.target.value);
+  });
+
+  document.getElementById('fence-rotation-range').addEventListener('input', (event) => {
+    if (selection.selectedFenceId) {
+      const fence = testMap.getEntity('fence', selection.selectedFenceId);
+      if (fence && !fence.locked) {
+        const normalized = syncRotationInputs('fence-rotation', 'fence-rotation-range', event.target.value);
+        const preview = getRotatedWallEndpoints(fence, normalized);
+        testMap.beginEntityPreview('fence', selection.selectedFenceId);
+        testMap.updateEntityPreview('fence', selection.selectedFenceId, { from: preview.from, to: preview.to });
+      }
+    }
+  });
+
+  document.getElementById('fence-rotation-range').addEventListener('change', (event) => {
+    updateSelectedFenceRotation(event.target.value);
+  });
+
+  document.getElementById('fence-height').addEventListener('change', updateSelectedFenceHeight);
+  document.getElementById('fence-yoffset').addEventListener('change', updateSelectedFenceYOffset);
+  const fenceColorEl = document.getElementById('fence-color');
+  if (fenceColorEl) {
+    fenceColorEl.addEventListener('change', updateSelectedFenceColor);
+  }
+  document.getElementById('fence-locked').addEventListener('change', (event) => {
+    if (!selection.selectedFenceId) return;
+    pushHistory();
+    setTargetLocked({ type: 'fence', id: selection.selectedFenceId }, event.target.checked);
+    refreshShadows();
+    updateEditor();
+    renderPlan();
+  });
+  document.getElementById('btn-delete-fence').addEventListener('click', deleteSelectedFence);
+
+  document.getElementById('btn-delete-item').addEventListener('click', () => {
+    if (!selection.selectedItemId) return;
+    entityManager.deleteItem(selection.selectedItemId);
+  });
+
+  document.getElementById('btn-delete-opening').addEventListener('click', () => {
+    if (!selection.selectedOpeningId) return;
+    if (testMap.getEntity('opening', selection.selectedOpeningId)?.locked) return;
+    pushHistory();
+    testMap.deleteOpening(selection.selectedOpeningId);
+    clearSelection();
+    refreshShadows();
+  });
+
+  document.getElementById('btn-delete-room').addEventListener('click', () => {
+    if (!selection.selectedRoomId) return;
+    if (testMap.getEntity('room', selection.selectedRoomId)?.locked) return;
+    showCustomConfirm(' Item', ' ItemDelete ItemRoom Item？Room ItemFurniture Item').then((confirmed) => {
+      if (confirmed) {
+        pushHistory();
+        testMap.deleteRoom(selection.selectedRoomId);
+        clearSelection();
+        refreshShadows();
+      }
+    });
+  });
+
+  document.getElementById('btn-delete-floor')?.addEventListener('click', () => {
+    const currentFloorId = testMap.getCurrentFloorId();
+    if (testMap.getFloors().length <= 1) {
+      showCustomAlert(' Item', ' Item！');
+      return;
+    }
+    showCustomConfirm(' Item', ' ItemDelete Item？Delete ItemRoom、 ItemFurniture Item。').then((confirmed) => {
+      if (confirmed) {
+        pushHistory();
+        const success = testMap.deleteFloor(currentFloorId);
+        if (success) {
+          clearSelection();
+          syncFloorControls();
+          refreshShadows();
+          updateEditor();
+          renderPlan();
+        }
+      }
+    });
+  });
+
+  document.getElementById('floor-color').addEventListener('change', (event) => {
+    pushHistory();
+    if (selection.selectedRoomId) {
+      testMap.setRoomFloorMaterial(selection.selectedRoomId, event.target.value);
+    } else {
+      testMap.setFloorColor(event.target.value);
+    }
+    updateEditor();
+    renderPlan();
+  });
+
+  document.getElementById('btn-control-mannequin')?.addEventListener('click', () => {
+    if (selection.selectedItemId) {
+      const item = testMap.getEntity('item', selection.selectedItemId);
+      if (item && item.type === 'mannequin') {
+        clearSelection();
+        updateEditor();
+        renderPlan();
+        toggleFirstPerson(appState, item.id);
+      }
+    }
+  });
+}
+
+function updateSelectedFenceRotation(degrees) {
+  if (!selection.selectedFenceId) return;
+  const fence = testMap.getEntity('fence', selection.selectedFenceId);
+  if (!fence || fence.locked) return;
+  pushHistory();
+  const normalized = syncRotationInputs('fence-rotation', 'fence-rotation-range', degrees);
+  const preview = getRotatedWallEndpoints(fence, normalized);
+  testMap.updateFence(selection.selectedFenceId, { from: preview.from, to: preview.to });
+  refreshShadows();
+  updateEditor();
+  renderPlan();
+}
+
+function deleteSelectedFence() {
+  if (!selection.selectedFenceId) return;
+  pushHistory();
+  testMap.deleteFence(selection.selectedFenceId);
+  clearSelection();
+  refreshShadows();
+}
+
+function getRotatedWallEndpoints(wall, angleDeg) {
+  const dx = wall.to[0] - wall.from[0];
+  const dz = wall.to[1] - wall.from[1];
+  const length = Math.hypot(dx, dz);
+  const cx = (wall.from[0] + wall.to[0]) / 2;
+  const cz = (wall.from[1] + wall.to[1]) / 2;
+  const angleRad = angleDeg * Math.PI / 180;
+  const newDx = Math.cos(angleRad) * length;
+  const newDz = Math.sin(angleRad) * length;
+  return {
+    from: [cx - newDx / 2, cz - newDz / 2],
+    to: [cx + newDx / 2, cz + newDz / 2],
+    angleRad
+  };
+}
+
+export function updateDesignCursor(customColor) {
+  const designMode = ui.designMode;
+  const activeMaterialDescriptor = editor.activeMaterialDescriptor;
+  if (!['picker', 'brush', 'bucket', 'eraser'].includes(designMode)) {
+    document.body.style.cursor = '';
+    return;
+  }
+
+  const formatSvgColor = (col) => (col.startsWith('#') ? '%23' + col.slice(1) : col);
+
+  let color = '#2a415c'; //  
+  if (activeMaterialDescriptor) {
+    color = MaterialResolver.getRepresentativeColor(activeMaterialDescriptor, '#2a415c');
+  }
+
+  //   HEX   SVG   CSS URL  （  #   %23）
+  const strokeColor = formatSvgColor(color);
+
+  if (designMode === 'picker') {
+    // 2px  ，  2 29
+    //   customColor， （ ）； ， （ ）； ， 。
+    let pickerStrokeColor = '%2364748b'; //   Slate  
+    let pickerOpacity = '0.5'; //  
+    if (customColor) {
+      pickerStrokeColor = formatSvgColor(customColor);
+      pickerOpacity = '1.0';
+    } else if (activeMaterialDescriptor) {
+      const repColor = MaterialResolver.getRepresentativeColor(activeMaterialDescriptor, '#64748b');
+      pickerStrokeColor = formatSvgColor(repColor);
+      pickerOpacity = '1.0';
+    }
+    const cursorSvg = `<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 24 24' fill='none' stroke='${pickerStrokeColor}' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' opacity='${pickerOpacity}'%3E%3Cpath d='m12 9-8.414 8.414A2 2 0 0 0 3 18.828v1.344a2 2 0 0 1-.586 1.414A2 2 0 0 1 3.828 21h1.344a2 2 0 0 0 1.414-.586L15 12'/%3E%3Cpath d='m18 9 .4.4a1 1 0 1 1-3 3l-3.8-3.8a1 1 0 1 1 3-3l.4.4 3.4-3.4a1 1 0 1 1 3 3z'/%3E%3Cpath d='m2 22 .414-.414'/%3E%3C/svg%3E`;
+    document.body.style.setProperty('cursor', `url("data:image/svg+xml;utf-8,${cursorSvg}") 2 29, auto`, 'important');
+  } else if (designMode === 'brush') {
+    // 2px  ，  4 28
+    //  
+    let colorsList = [];
+    if (editor.activeMaterialArray && editor.activeMaterialArray.length > 0) {
+      colorsList = editor.activeMaterialArray
+        .map(entry => MaterialResolver.getRepresentativeColor(entry.material || entry.color || entry))
+        .filter(c => typeof c === 'string' && c.trim() !== '');
+    } else if (activeMaterialDescriptor) {
+      colorsList = [MaterialResolver.getRepresentativeColor(activeMaterialDescriptor)];
+    }
+    const uniqueColors = Array.from(new Set(colorsList.map(c => c.trim().toLowerCase())));
+
+    let cursorSvg;
+    if (uniqueColors.length > 1) {
+      //  
+      let gradientStops = '';
+      uniqueColors.forEach((col, index) => {
+        const offset = Math.round((index / (uniqueColors.length - 1)) * 100);
+        gradientStops += `%3Cstop offset='${offset}%25' stop-color='${formatSvgColor(col)}'/%3E`;
+      });
+      const gradientDef = `%3Cdefs%3E%3ClinearGradient id='gradient' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E${gradientStops}%3C/linearGradient%3E%3C/defs%3E`;
+      cursorSvg = `<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 24 24' fill='none' stroke='url(%23gradient)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E${gradientDef}%3Cpath d='m14.622 17.897-10.68-2.913'/%3E%3Cpath d='M18.376 2.622a1 1 0 1 1 3.002 3.002L17.36 9.643a.5.5 0 0 0 0 .707l.944.944a2.41 2.41 0 0 1 0 3.408l-.944.944a.5.5 0 0 1-.707 0L8.354 7.348a.5.5 0 0 1 0-.707l.944-.944a2.41 2.41 0 0 1 3.408 0l.944.944a.5.5 0 0 0 .707 0z'/%3E%3Cpath d='M9 8c-1.804 2.71-3.97 3.46-6.583 3.948a.507.507 0 0 0-.302.819l7.32 8.883a1 1 0 0 0 1.185.204C12.735 20.405 16 16.792 16 15'/%3E%3C/svg%3E`;
+    } else {
+      //  
+      let singleColor = color;
+      if (uniqueColors.length === 1) {
+        singleColor = uniqueColors[0];
+      }
+      const brushStrokeColor = formatSvgColor(singleColor);
+      cursorSvg = `<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 24 24' fill='none' stroke='${brushStrokeColor}' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m14.622 17.897-10.68-2.913'/%3E%3Cpath d='M18.376 2.622a1 1 0 1 1 3.002 3.002L17.36 9.643a.5.5 0 0 0 0 .707l.944.944a2.41 2.41 0 0 1 0 3.408l-.944.944a.5.5 0 0 1-.707 0L8.354 7.348a.5.5 0 0 1 0-.707l.944-.944a2.41 2.41 0 0 1 3.408 0l.944.944a.5.5 0 0 0 .707 0z'/%3E%3Cpath d='M9 8c-1.804 2.71-3.97 3.46-6.583 3.948a.507.507 0 0 0-.302.819l7.32 8.883a1 1 0 0 0 1.185.204C12.735 20.405 16 16.792 16 15'/%3E%3C/svg%3E`;
+    }
+    document.body.style.setProperty('cursor', `url("data:image/svg+xml;utf-8,${cursorSvg}") 4 28, auto`, 'important');
+  } else if (designMode === 'bucket') {
+    // 2px  ，  5 26，  transform  Flip  HTML  
+    let bucketColor = color;
+    if (activeMaterialDescriptor) {
+      bucketColor = MaterialResolver.getRepresentativeColor(activeMaterialDescriptor, color);
+    }
+    const strokeColor = formatSvgColor(bucketColor);
+    const cursorSvg = `<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 24 24' fill='none' stroke='${strokeColor}' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cg transform='translate(24, 0) scale(-1, 1)'%3E%3Cpath d='M11 7 6 2'/%3E%3Cpath d='M18.992 12H2.041'/%3E%3Cpath d='M21.145 18.38A3.34 3.34 0 0 1 20 16.5a3.3 3.3 0 0 1-1.145 1.88c-.575.46-.855 1.02-.855 1.595A2 2 0 0 0 20 22a2 2 0 0 0 2-2.025c0-.58-.285-1.13-.855-1.595'/%3E%3Cpath d='m8.5 4.5 2.148-2.148a1.205 1.205 0 0 1 1.704 0l7.296 7.296a1.205 1.205 0 0 1 0 1.704l-7.592 7.592a3.615 3.615 0 0 1-5.112 0l-3.888-3.888a3.615 3.615 0 0 1 0-5.112L5.67 7.33'/%3E%3C/g%3E%3C/svg%3E`;
+    document.body.style.setProperty('cursor', `url("data:image/svg+xml;utf-8,${cursorSvg}") 5 26, auto`, 'important');
+  } else if (designMode === 'eraser') {
+    // 2px  ，  4 28，  %2364748b
+    const cursorSvg = `<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 21H8a2 2 0 0 1-1.42-.587l-3.994-3.999a2 2 0 0 1 0-2.828l10-10a2 2 0 0 1 2.829 0l5.999 6a2 2 0 0 1 0 2.828L12.834 21'/%3E%3Cpath d='m5.082 11.09 8.828 8.828'/%3E%3C/svg%3E`;
+    document.body.style.setProperty('cursor', `url("data:image/svg+xml;utf-8,${cursorSvg}") 4 28, auto`, 'important');
+  }
+}
+
+//  
+function applyStyleToSwatch(button, mat) {
+  if (!mat) {
+    button.style.backgroundColor = '#ffffff';
+    return;
+  }
+  let material = mat;
+  if (mat && mat.material !== undefined) {
+    material = mat.material;
+  }
+  if (typeof material === 'string') {
+    button.style.backgroundColor = material;
+    return;
+  }
+  if (!material) {
+    button.style.backgroundColor = mat.color || '#ffffff';
+    return;
+  }
+
+  const kind = material.kind;
+  const src = material.src || material.url;
+  const color = material.color || mat.color || '#ffffff';
+
+  if (kind === 'texture' && src) {
+    button.style.backgroundImage = `linear-gradient(${color}cc, ${color}cc), url(${src})`;
+    button.style.backgroundBlendMode = 'multiply';
+    button.style.backgroundPosition = 'center';
+    button.style.backgroundSize = 'cover';
+    button.style.backgroundColor = color;
+  } else if (kind === 'mirror') {
+    const c = color || '#e8eef4';
+    button.style.background = `linear-gradient(135deg, ${c} 0%, #ffffff 45%, ${c} 55%, #ffffff 100%)`;
+  } else if (kind === 'stained-glass') {
+    button.style.background = 'conic-gradient(from 18deg at 42% 55%, #f27462 0 14%, #2b2023 14% 15%, #f2c95c 15% 29%, #2b2023 29% 30%, #4238de 30% 42%, #2b2023 42% 43%, #cf4b91 43% 62%, #2b2023 62% 63%, #ef9f58 63% 82%, #2b2023 82% 83%, #7557c9 83%)';
+    button.style.backgroundSize = '38px 38px';
+    button.style.boxShadow = 'inset 0 0 8px rgba(255,255,255,0.35), 0 0 7px rgba(142,76,201,0.3)';
+  } else if (kind === 'glass') {
+    const c = color || '#e8f4ff';
+    button.style.background = `linear-gradient(${c}99, ${c}99), repeating-conic-gradient(#d0d0d0 0% 25%, #f5f5f5 0% 50%) 0 0 / 8px 8px`;
+  } else if (kind === 'emissive') {
+    const c = color || '#ffffff';
+    if (src) {
+      const resolved = resolveMaterialAssetDescriptor(material);
+      const finalSrc = resolved?.src || src;
+      button.style.backgroundImage = `linear-gradient(${c}cc, ${c}cc), url(${finalSrc})`;
+      button.style.backgroundBlendMode = 'multiply';
+      button.style.backgroundPosition = 'center';
+      button.style.backgroundSize = 'cover';
+    }
+    button.style.backgroundColor = c;
+    button.style.boxShadow = `inset 0 0 4px rgba(255,255,255,0.8), 0 0 10px ${c}88`;
+    button.style.border = '1px solid rgba(255,255,255,0.4)';
+  } else if (kind === 'metal') {
+    const c = color || '#e6e6e6';
+    const isMatte = material.roughness !== undefined && material.roughness > 0.4;
+    if (isMatte) {
+      button.style.background = `radial-gradient(circle at 30% 30%, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0) 70%), linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(0,0,0,0.15) 100%), ${c}`;
+      button.style.boxShadow = 'inset 0 0 8px rgba(0,0,0,0.25)';
+    } else {
+      button.style.background = `linear-gradient(135deg, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0) 30%, rgba(255,255,255,0.8) 45%, rgba(0,0,0,0.3) 60%, rgba(255,255,255,0.3) 80%, rgba(0,0,0,0.1) 100%), ${c}`;
+      button.style.boxShadow = 'inset 0 1px 0 rgba(255,255,255,0.4), 0 1px 3px rgba(0,0,0,0.2)';
+    }
+  } else {
+    button.style.backgroundColor = color || '#ffffff';
+  }
+}
+
+//  “ ” 
+export function renderCurrentMaterial() {
+  const currentGrid = document.getElementById('current-material-grid');
+  const currentLabel = document.getElementById('current-material-label') || document.querySelector('#current-material-panel > span');
+
+  const activeMaterialDescriptor = editor.activeMaterialDescriptor;
+  const activeMaterialArray = editor.activeMaterialArray;
+
+  if (currentLabel) {
+    let nameText = '';
+    if (activeMaterialArray && activeMaterialArray.length > 0) {
+      nameText = getActiveMaterialArrayDisplayName(activeMaterialArray);
+    } else if (activeMaterialDescriptor) {
+      nameText = getActiveMaterialDisplayName(activeMaterialDescriptor);
+    }
+    currentLabel.textContent = nameText ? ` Item：${nameText}` : ' Item';
+  }
+
+  if (!currentGrid) return;
+  currentGrid.innerHTML = '';
+
+  let materialsToShow = [];
+
+  if (activeMaterialArray && activeMaterialArray.length > 0) {
+    materialsToShow = activeMaterialArray;
+  } else if (activeMaterialDescriptor) {
+    materialsToShow = [activeMaterialDescriptor];
+  }
+
+  if (materialsToShow.length === 0) {
+    const emptySwatch = document.createElement('div');
+    emptySwatch.className = 'material-swatch empty-swatch';
+    emptySwatch.title = ' ItemSelect Item';
+    currentGrid.appendChild(emptySwatch);
+    return;
+  }
+
+  materialsToShow.forEach((mat) => {
+    const swatch = document.createElement('div');
+    swatch.className = 'material-swatch';
+    
+    let material = mat;
+    if (mat && mat.material !== undefined) {
+      material = mat.material;
+    }
+
+    let titleText = 'Custom Item';
+    if (material && typeof material === 'object') {
+      titleText = material.name || titleText;
+    } else if (typeof material === 'string') {
+      titleText = material;
+    } else if (mat && mat.color) {
+      titleText = mat.color;
+    }
+    swatch.title = titleText;
+
+    applyStyleToSwatch(swatch, mat);
+    currentGrid.appendChild(swatch);
+  });
+}

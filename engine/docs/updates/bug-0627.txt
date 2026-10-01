@@ -1,0 +1,27 @@
+1. LocalStorage saving & loading bugs.
+2. Stair corner length and step rotation alignment fixes.
+3. Glass and mirror material rendering refactoring.
+4. Additional door, window, and room shape presets.
+5. Progressive modular state refactoring for app.js.
+6. Real-world physical scale corrections for furniture default dimensions.
+7. Additional smart appliances (TV, computer, range hood, coffee maker), decor, and storage units.
+8. Furniture grid snapping alignment fixes.
+9. Door and window material customization.
+10. Railing upgrade with automatic room and stair recognition.
+11. Furniture groove rotation and snap angle adjustments.
+12. Multi-surface material isolation for roof top and side faces.
+13. Ceiling skin generation and material painting.
+14. Bay window structural cutouts and mesh merging.
+15. Floor height and wall height property proxies.
+16. Bookshelf and storage rack automatic book filling.
+17. Roof curve handle controls.
+18. Interactive furniture animations (e.g. swing).
+19. Custom uploaded furniture definitions via JSON.
+20. DXF CAD and 3MF 3D printing export format optimizations.
+21. Curtain auto-alignment with windows.
+22. Context menu shortcut paint brush tool.
+23. Mannequin model support.
+24. One-click roof hiding toggle.
+25. Floor naming and level hierarchy.
+26. Expanded 2D/3D zoom boundaries.
+27. 3D WASD first-person walk-through mode.

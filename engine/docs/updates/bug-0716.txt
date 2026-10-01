@@ -1,0 +1,16 @@
+1. Add wall-mounted and floor-standing AC unit furniture models.
+2. Cross-wall placement support for doors and windows.
+3. Fix gravity-snapping for small decor on tables and shelves.
+4. Fix wall-mounted furniture disappearing when attached.
+5. Exterior floor wall trim and floor slab margin boundary fixes.
+6. Add oval dining table and oval coffee table models.
+7. Add sink cabinet furniture item.
+8. Reorganize kitchen furniture and appliance categories.
+9. Constrain minimum room size to 1.0m (down from 1.2m).
+10. Half-grid snapping alignment for door and window movement.
+11. Scale controls linked to width, depth, and height properties.
+12. Fix furniture thumbnail loading path errors.
+13. Verify multi-level mirror and reflection probe strategy execution.
+14. Fix 3MF export missing door materials and floor-to-ceiling window cutout bugs.
+15. L-shaped room inner corner handle drag controls.
+16. Fix touch screen gesture conflicts between 2D drawing and 3D camera pan/rotate.

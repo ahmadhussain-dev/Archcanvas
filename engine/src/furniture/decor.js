@@ -1,0 +1,1768 @@
+import { boxComponent, cylinderComponent, sphereComponent, getComponentMaterial, markComponent } from './_helpers.js';
+import { MeshBuilder, TransformNode } from '../core/babylon.js';
+
+const BABYLON = { MeshBuilder, TransformNode };
+
+function applyPosterCrop(mesh, column, row, columns = 2, rows = 2) {
+  const sourceMaterial = mesh?.material;
+  if (!sourceMaterial?.diffuseTexture) return;
+  const material = sourceMaterial.clone(`${mesh.name}_crop_material`);
+  const texture = sourceMaterial.diffuseTexture.clone();
+  texture.uScale = 1 / columns;
+  texture.vScale = 1 / rows;
+  texture.uOffset = column / columns;
+  texture.vOffset = row / rows;
+  material.diffuseTexture = texture;
+  mesh.material = material;
+}
+
+function posterMaterial(id, name) {
+  return { id, name, category: 'wallpaper', kind: 'texture', scale: 1, color: '#ffffff' };
+}
+
+export const paintingFurniture = {
+  type: 'painting',
+  name: 'Painting',
+  unit: 'm',
+  defaultSize: { width: 0.8, depth: 0.04, height: 0.6 },
+  placeType: 'wall',
+  components: [
+    { id: 'frame', label: 'Component', defaultColor: '#59412e' },
+    {
+      id: 'canvas',
+      label: 'Component',
+      defaultColor: '#ffffff',
+      defaultMaterial: posterMaterial('poster-bauhaus-primary', ' Item')
+    }
+  ],
+  build(registry, item, node, size) {
+    // 1.   (Frame)
+    boxComponent(registry, item, paintingFurniture, 'frame', {
+      width: size.width, height: size.height, depth: size.depth
+    }, { position: { x: 0, y: size.height / 2, z: 0 } }, { parent: node });
+
+    // 2.   (Canvas)
+    boxComponent(registry, item, paintingFurniture, 'canvas', {
+      width: size.width - 0.06, height: size.height - 0.06, depth: size.depth + 0.006
+    }, { position: { x: 0, y: size.height / 2, z: 0.003 } }, { parent: node });
+  }
+};
+
+export const posterFurniture = {
+  type: 'poster',
+  name: 'Poster',
+  unit: 'm',
+  defaultSize: { width: 0.45, depth: 0.08, height: 0.6 },
+  placeType: 'wall',
+  components: [
+    {
+      id: 'poster',
+      label: 'Component',
+      defaultColor: '#ffffff',
+      defaultMaterial: posterMaterial('poster-celestial-moons', ' ItemStarry Sky')
+    }
+  ],
+  build(registry, item, node, size) {
+    boxComponent(registry, item, posterFurniture, 'poster', {
+      width: size.width,
+      height: size.height,
+      depth: Math.min(0.003, size.depth)
+    }, { position: { x: 0, y: size.height / 2, z: 0 } }, { parent: node });
+  }
+};
+
+export const triptychPosterFurniture = {
+  type: 'triptych_poster',
+  name: 'Triptych Poster',
+  unit: 'm',
+  defaultSize: { width: 1.35, depth: 0.03, height: 0.75 },
+  placeType: 'wall',
+  components: [
+    { id: 'frame', label: 'Component', defaultColor: '#2f2b28' },
+    {
+      id: 'poster',
+      label: 'Component',
+      defaultColor: '#ffffff',
+      defaultMaterial: posterMaterial('poster-botanical-sage', ' Item')
+    }
+  ],
+  build(registry, item, node, size) {
+    const gap = Math.min(0.045, Math.min(size.width, size.height) * 0.035);
+    const panelWidth = (size.width - gap * 2) / 3;
+    const frameBorder = Math.min(0.035, Math.min(panelWidth, size.height) * 0.08);
+
+    for (let column = 0; column < 3; column++) {
+      const x = (column - 1) * (panelWidth + gap);
+      boxComponent(registry, item, triptychPosterFurniture, 'frame', {
+        width: panelWidth, height: size.height, depth: size.depth
+      }, { position: { x, y: size.height / 2, z: 0 } }, { parent: node });
+      const poster = boxComponent(registry, item, triptychPosterFurniture, 'poster', {
+        width: Math.max(0.02, panelWidth - frameBorder * 2),
+        height: Math.max(0.02, size.height - frameBorder * 2),
+        depth: 0.006
+      }, { position: { x, y: size.height / 2, z: size.depth / 2 + 0.003 } }, { parent: node });
+      applyPosterCrop(poster, column, 0, 3, 1);
+    }
+  }
+};
+
+export const quadPosterFurniture = {
+  type: 'quad_poster',
+  name: 'Quad Poster',
+  unit: 'm',
+  defaultSize: { width: 1, depth: 0.03, height: 1 },
+  placeType: 'wall',
+  components: [
+    { id: 'frame', label: 'Component', defaultColor: '#2f2b28' },
+    {
+      id: 'poster',
+      label: 'Component',
+      defaultColor: '#ffffff',
+      defaultMaterial: posterMaterial('poster-abstract-arches', ' Item')
+    }
+  ],
+  build(registry, item, node, size) {
+    const gap = Math.min(0.045, Math.min(size.width, size.height) * 0.035);
+    const panelWidth = (size.width - gap) / 2;
+    const panelHeight = (size.height - gap) / 2;
+    const frameBorder = Math.min(0.035, Math.min(panelWidth, panelHeight) * 0.08);
+    const xOffset = panelWidth / 2 + gap / 2;
+    const yOffsets = [panelHeight / 2, panelHeight + gap + panelHeight / 2];
+
+    for (let row = 0; row < 2; row++) {
+      for (let column = 0; column < 2; column++) {
+        const x = column === 0 ? -xOffset : xOffset;
+        const y = yOffsets[1 - row];
+        boxComponent(registry, item, quadPosterFurniture, 'frame', {
+          width: panelWidth, height: panelHeight, depth: size.depth
+        }, { position: { x, y, z: 0 } }, { parent: node });
+        const poster = boxComponent(registry, item, quadPosterFurniture, 'poster', {
+          width: Math.max(0.02, panelWidth - frameBorder * 2),
+          height: Math.max(0.02, panelHeight - frameBorder * 2),
+          depth: 0.006
+        }, { position: { x, y, z: size.depth / 2 + 0.003 } }, { parent: node });
+        applyPosterCrop(poster, column, row);
+      }
+    }
+  }
+};
+
+export const circularPaintingFurniture = {
+  type: 'circular_painting',
+  name: 'Circle',
+  placeType: 'wall',
+  unit: 'm',
+  defaultSize: { width: 0.6, depth: 0.03, height: 0.6 },
+  components: [
+    { id: 'frame', label: 'Component', defaultColor: '#3e2723' },
+    { id: 'canvas', label: 'Component', defaultColor: '#f7f4eb' }
+  ],
+  build(registry, item, node, size) {
+    // 1.  （ ）
+    const frame = cylinderComponent(registry, item, circularPaintingFurniture, 'frame', {
+      diameterTop: size.width,
+      diameterBottom: size.width,
+      height: size.depth,
+      tessellation: 32
+    }, { position: { x: 0, y: size.height / 2, z: 0 } }, { parent: node });
+    if (frame) {
+      frame.rotation.x = Math.PI / 2;
+    }
+
+    // 2.  （Circle ，  0.005）
+    const canvas = cylinderComponent(registry, item, circularPaintingFurniture, 'canvas', {
+      diameterTop: size.width * 0.92,
+      diameterBottom: size.width * 0.92,
+      height: size.depth * 0.95,
+      tessellation: 32
+    }, { position: { x: 0, y: size.height / 2, z: 0.005 } }, { parent: node });
+    if (canvas) {
+      canvas.rotation.x = Math.PI / 2;
+    }
+  }
+};
+
+export const vaseFurniture = {
+  type: 'vase',
+  name: 'Vase',
+  unit: 'm',
+  defaultSize: { width: 0.2, depth: 0.2, height: 0.45 },
+  components: [
+    { id: 'glass', label: ' ItemGlass Item', defaultColor: '#bfe3d6' },
+    { id: 'flower', label: 'Component', defaultColor: '#f09ab5' }
+  ],
+  build(registry, item, node, size) {
+    const glassH = size.height * 0.62;
+    cylinderComponent(registry, item, vaseFurniture, 'glass', {
+      diameterTop: size.width * 0.44, diameterBottom: size.width * 0.72, height: glassH, tessellation: 16
+    }, { position: { x: 0, y: glassH / 2, z: 0 } }, { parent: node });
+
+    sphereComponent(registry, item, vaseFurniture, 'flower', {
+      diameter: size.width * 1.05, segments: 16
+    }, { position: { x: 0, y: glassH + size.height * 0.2, z: 0 } }, { parent: node });
+  }
+};
+
+export const mirrorWallFurniture = {
+  type: 'mirror_wall',
+  name: 'Mirror Wall',
+  unit: 'm',
+  defaultSize: { width: 0.45, depth: 0.3, height: 1.65 },
+  isMirror: true,
+  isSwitchable: true,
+  components: [
+    { id: 'mirror', label: ' ItemMirror', defaultColor: '#edf7f6' },
+    { id: 'border', label: 'Component', defaultColor: '#222222' },
+    { id: 'frame', label: 'Component', defaultColor: '#aa845d' }
+  ],
+  build(registry, item, node, size) {
+    const mirrorT = 0.03;
+    const legD = size.depth * 0.88;
+    const hasBorder = item.isOn !== false;
+
+    // 1.   (Mirror Board)
+    const board = boxComponent(registry, item, mirrorWallFurniture, 'mirror', {
+      width: size.width, height: size.height * 0.94, depth: mirrorT
+    }, { position: { x: 0, y: size.height * 0.48, z: -legD * 0.12 } }, { parent: node });
+    board.rotation.x = -Math.PI * 0.04; //  
+
+    // 1.1   (Fine Border) -  ，  board   parent， 
+    if (hasBorder) {
+      const boardH = size.height * 0.94;
+      const borderW = 0.012; // 1.2  
+      const borderD = mirrorT + 0.002; //  Mirror ，  Z-fighting  
+
+      //  
+      boxComponent(registry, item, mirrorWallFurniture, 'border', {
+        width: borderW, height: boardH, depth: borderD
+      }, { position: { x: -size.width / 2 + borderW / 2, y: 0, z: 0 } }, { parent: board });
+
+      //  
+      boxComponent(registry, item, mirrorWallFurniture, 'border', {
+        width: borderW, height: boardH, depth: borderD
+      }, { position: { x: size.width / 2 - borderW / 2, y: 0, z: 0 } }, { parent: board });
+
+      //  
+      boxComponent(registry, item, mirrorWallFurniture, 'border', {
+        width: size.width - 2 * borderW, height: borderW, depth: borderD
+      }, { position: { x: 0, y: boardH / 2 - borderW / 2, z: 0 } }, { parent: board });
+
+      //  
+      boxComponent(registry, item, mirrorWallFurniture, 'border', {
+        width: size.width - 2 * borderW, height: borderW, depth: borderD
+      }, { position: { x: 0, y: -boardH / 2 + borderW / 2, z: 0 } }, { parent: board });
+    }
+
+    // 2.   (Support Frame)
+    const stand = boxComponent(registry, item, mirrorWallFurniture, 'frame', {
+      width: size.width * 0.82, height: size.height * 0.52, depth: 0.03
+    }, { position: { x: 0, y: size.height * 0.20, z: -legD * 0.68 } }, { parent: node });
+    stand.rotation.x = Math.PI * 0.12; //  
+  }
+};
+
+export const mirrorFramedWallFurniture = {
+  type: 'mirror_framed_wall',
+  name: 'Mirror Framed Wall',
+  unit: 'm',
+  defaultSize: { width: 0.6, depth: 0.03, height: 0.8 },
+  placeType: 'wall',
+  isMirror: true,
+  isSwitchable: true,
+  components: [
+    { id: 'mirror', label: ' ItemMirror', defaultColor: '#edf7f6' },
+    { id: 'border', label: 'Component', defaultColor: '#222222' }
+  ],
+  build(registry, item, node, size) {
+    const hasBorder = item.isOn !== false;
+    const mirrorT = size.depth;
+
+    // 1.   (Mirror Board)
+    const board = boxComponent(registry, item, mirrorFramedWallFurniture, 'mirror', {
+      width: size.width, height: size.height, depth: mirrorT
+    }, { position: { x: 0, y: size.height / 2, z: 0 } }, { parent: node });
+
+    if (hasBorder) {
+      const borderW = 0.012; // 1.2  
+      const borderD = mirrorT + 0.002; //  Mirror ，  Z-fighting  
+
+      //  
+      boxComponent(registry, item, mirrorFramedWallFurniture, 'border', {
+        width: borderW, height: size.height, depth: borderD
+      }, { position: { x: -size.width / 2 + borderW / 2, y: 0, z: 0 } }, { parent: board });
+
+      //  
+      boxComponent(registry, item, mirrorFramedWallFurniture, 'border', {
+        width: borderW, height: size.height, depth: borderD
+      }, { position: { x: size.width / 2 - borderW / 2, y: 0, z: 0 } }, { parent: board });
+
+      //  
+      boxComponent(registry, item, mirrorFramedWallFurniture, 'border', {
+        width: size.width - 2 * borderW, height: borderW, depth: borderD
+      }, { position: { x: 0, y: size.height / 2 - borderW / 2, z: 0 } }, { parent: board });
+
+      //  
+      boxComponent(registry, item, mirrorFramedWallFurniture, 'border', {
+        width: size.width - 2 * borderW, height: borderW, depth: borderD
+      }, { position: { x: 0, y: -size.height / 2 + borderW / 2, z: 0 } }, { parent: board });
+    }
+  }
+};
+
+export const mirrorRoundWallFurniture = {
+  type: 'mirror_round_wall',
+  name: 'Circle',
+  unit: 'm',
+  defaultSize: { width: 0.6, depth: 0.03, height: 0.6 },
+  placeType: 'wall',
+  isMirror: true,
+  isSwitchable: true,
+  components: [
+    { id: 'mirror', label: ' ItemMirror', defaultColor: '#edf7f6' },
+    { id: 'border', label: 'Component', defaultColor: '#222222' }
+  ],
+  build(registry, item, node, size) {
+    const hasBorder = item.isOn !== false;
+    const mirrorT = size.depth;
+
+    if (hasBorder) {
+      const borderW = 0.012; // 1.2  
+      const borderD = mirrorT + 0.002;
+
+      // 1.   (Border Base)
+      cylinderComponent(registry, item, mirrorRoundWallFurniture, 'border', {
+        diameterTop: size.width, diameterBottom: size.width, height: borderD, tessellation: 36
+      }, { position: { x: 0, y: size.height / 2, z: -0.001 }, rotation: { x: Math.PI * 0.5, y: 0, z: 0 } }, { parent: node });
+
+      // 2. Mirror  (Mirror Board) -  ，  2 * borderW， 
+      cylinderComponent(registry, item, mirrorRoundWallFurniture, 'mirror', {
+        diameterTop: size.width - 2 * borderW, diameterBottom: size.width - 2 * borderW, height: mirrorT, tessellation: 36
+      }, { position: { x: 0, y: size.height / 2, z: 0.001 }, rotation: { x: Math.PI * 0.5, y: 0, z: 0 } }, { parent: node });
+    } else {
+      //  ， Mirror
+      cylinderComponent(registry, item, mirrorRoundWallFurniture, 'mirror', {
+        diameterTop: size.width, diameterBottom: size.width, height: mirrorT, tessellation: 36
+      }, { position: { x: 0, y: size.height / 2, z: 0 }, rotation: { x: Math.PI * 0.5, y: 0, z: 0 } }, { parent: node });
+    }
+  }
+};
+
+export const mirrorRoundedWallFurniture = {
+  type: 'mirror_rounded_wall',
+  name: 'Mirror Rounded Wall',
+  unit: 'm',
+  defaultSize: { width: 0.6, depth: 0.03, height: 0.8 },
+  placeType: 'wall',
+  isMirror: true,
+  isSwitchable: true,
+  components: [
+    { id: 'mirror', label: ' ItemMirror', defaultColor: '#edf7f6' },
+    { id: 'border', label: 'Component', defaultColor: '#222222' }
+  ],
+  build(registry, item, node, size) {
+    const hasBorder = item.isOn !== false;
+    const mirrorT = size.depth;
+
+    if (hasBorder) {
+      const borderW = 0.012; // 1.2  
+      const borderD = mirrorT + 0.002;
+      const R = Math.min(0.04, size.width * 0.2, size.height * 0.2); //   4cm
+
+      // --- Mirror  ---
+      //  Mirror Box
+      boxComponent(registry, item, mirrorRoundedWallFurniture, 'mirror', {
+        width: size.width - 2 * R, height: size.height, depth: mirrorT
+      }, { position: { x: 0, y: size.height / 2, z: 0 } }, { parent: node });
+
+      //  Mirror Box
+      boxComponent(registry, item, mirrorRoundedWallFurniture, 'mirror', {
+        width: R - borderW, height: size.height - 2 * R, depth: mirrorT
+      }, { position: { x: -(size.width / 2 - R + (R - borderW) / 2), y: size.height / 2, z: 0 } }, { parent: node });
+
+      boxComponent(registry, item, mirrorRoundedWallFurniture, 'mirror', {
+        width: R - borderW, height: size.height - 2 * R, depth: mirrorT
+      }, { position: { x: size.width / 2 - R + (R - borderW) / 2, y: size.height / 2, z: 0 } }, { parent: node });
+
+      // 4 Mirror Cylinder
+      const cornerR = R - borderW;
+      const cornerAngles = [
+        { x: -(size.width / 2 - R), y: size.height - R }, //  
+        { x: size.width / 2 - R, y: size.height - R },    //  
+        { x: -(size.width / 2 - R), y: R },               //  
+        { x: size.width / 2 - R, y: R }                   //  
+      ];
+      cornerAngles.forEach(pos => {
+        cylinderComponent(registry, item, mirrorRoundedWallFurniture, 'mirror', {
+          diameterTop: 2 * cornerR, diameterBottom: 2 * cornerR, height: mirrorT, tessellation: 24
+        }, { position: { x: pos.x, y: pos.y, z: 0.0005 }, rotation: { x: Math.PI * 0.5, y: 0, z: 0 } }, { parent: node });
+      });
+
+      // ---   ---
+      // 4  Cylinder
+      cornerAngles.forEach(pos => {
+        cylinderComponent(registry, item, mirrorRoundedWallFurniture, 'border', {
+          diameterTop: 2 * R, diameterBottom: 2 * R, height: borderD, tessellation: 24
+        }, { position: { x: pos.x, y: pos.y, z: -0.0005 }, rotation: { x: Math.PI * 0.5, y: 0, z: 0 } }, { parent: node });
+      });
+
+      // 4  Box
+      //  
+      boxComponent(registry, item, mirrorRoundedWallFurniture, 'border', {
+        width: borderW, height: size.height - 2 * R, depth: borderD
+      }, { position: { x: -size.width / 2 + borderW / 2, y: size.height / 2, z: 0 } }, { parent: node });
+
+      //  
+      boxComponent(registry, item, mirrorRoundedWallFurniture, 'border', {
+        width: borderW, height: size.height - 2 * R, depth: borderD
+      }, { position: { x: size.width / 2 - borderW / 2, y: size.height / 2, z: 0 } }, { parent: node });
+
+      //  
+      boxComponent(registry, item, mirrorRoundedWallFurniture, 'border', {
+        width: size.width - 2 * R, height: borderW, depth: borderD
+      }, { position: { x: 0, y: size.height - borderW / 2, z: 0 } }, { parent: node });
+
+      //  
+      boxComponent(registry, item, mirrorRoundedWallFurniture, 'border', {
+        width: size.width - 2 * R, height: borderW, depth: borderD
+      }, { position: { x: 0, y: borderW / 2, z: 0 } }, { parent: node });
+
+    } else {
+      //  ： Mirror
+      const R = Math.min(0.04, size.width * 0.2, size.height * 0.2);
+
+      //   Box
+      boxComponent(registry, item, mirrorRoundedWallFurniture, 'mirror', {
+        width: size.width - 2 * R, height: size.height, depth: mirrorT
+      }, { position: { x: 0, y: size.height / 2, z: 0 } }, { parent: node });
+
+      //   Box
+      boxComponent(registry, item, mirrorRoundedWallFurniture, 'mirror', {
+        width: R, height: size.height - 2 * R, depth: mirrorT
+      }, { position: { x: -(size.width / 2 - R / 2), y: size.height / 2, z: 0 } }, { parent: node });
+
+      boxComponent(registry, item, mirrorRoundedWallFurniture, 'mirror', {
+        width: R, height: size.height - 2 * R, depth: mirrorT
+      }, { position: { x: size.width / 2 - R / 2, y: size.height / 2, z: 0 } }, { parent: node });
+
+      // 4  Cylinder
+      const cornerAngles = [
+        { x: -(size.width / 2 - R), y: size.height - R },
+        { x: size.width / 2 - R, y: size.height - R },
+        { x: -(size.width / 2 - R), y: R },
+        { x: size.width / 2 - R, y: R }
+      ];
+      cornerAngles.forEach(pos => {
+        cylinderComponent(registry, item, mirrorRoundedWallFurniture, 'mirror', {
+          diameterTop: 2 * R, diameterBottom: 2 * R, height: mirrorT, tessellation: 24
+        }, { position: { x: pos.x, y: pos.y, z: 0 }, rotation: { x: Math.PI * 0.5, y: 0, z: 0 } }, { parent: node });
+      });
+    }
+  }
+};
+
+export const clockFurniture = {
+  type: 'clock',
+  name: 'Clock',
+  unit: 'm',
+  defaultSize: { width: 0.35, depth: 0.12, height: 0.75 },
+  placeType: 'wall',
+  components: [
+    { id: 'case', label: 'Component', defaultColor: '#4e2e1e' },
+    { id: 'face', label: 'Component', defaultColor: '#fffde7' },
+    { id: 'hands', label: 'Component', defaultColor: '#1a1a1a' },
+    { id: 'pendulum', label: 'Component', defaultColor: '#d4af37' }
+  ],
+  build(registry, item, node, size) {
+    const w = size.width;
+    const h = size.height;
+    const d = size.depth;
+
+    // 1.   (Main Wooden Case - Box)
+    boxComponent(registry, item, clockFurniture, 'case', {
+      width: w * 0.85, height: h * 0.78, depth: d * 0.85
+    }, { position: { x: 0, y: h * 0.44, z: d * 0.425 } }, { parent: node });
+
+    // 2.   (Crown Top Cylinder -  )
+    const crown = cylinderComponent(registry, item, clockFurniture, 'case', {
+      diameterTop: w * 0.85, diameterBottom: w * 0.85, height: d * 0.9, tessellation: 24
+    }, { position: { x: 0, y: h * 0.83, z: d * 0.45 } }, { parent: node });
+    crown.rotation.x = Math.PI * 0.5;
+
+    // 3.  Decor  (Bottom Base Molding - Box)
+    boxComponent(registry, item, clockFurniture, 'case', {
+      width: w, height: h * 0.06, depth: d
+    }, { position: { x: 0, y: h * 0.03, z: d * 0.5 } }, { parent: node });
+
+    // 4.   (Upper Clock Dial & Ring)
+    const dialY = h * 0.65;
+    const dialR = w * 0.32;
+    const dialZ = d * 0.85 + 0.005;
+
+    //  
+    const ring = cylinderComponent(registry, item, clockFurniture, 'hands', {
+      diameterTop: dialR * 2, diameterBottom: dialR * 2, height: 0.01, tessellation: 32
+    }, { position: { x: 0, y: dialY, z: dialZ } }, { parent: node });
+    ring.rotation.x = Math.PI * 0.5;
+
+    //  
+    const face = cylinderComponent(registry, item, clockFurniture, 'face', {
+      diameterTop: dialR * 1.8, diameterBottom: dialR * 1.8, height: 0.012, tessellation: 32
+    }, { position: { x: 0, y: dialY, z: dialZ + 0.002 } }, { parent: node });
+    face.rotation.x = Math.PI * 0.5;
+
+    //   (  &  )
+    boxComponent(registry, item, clockFurniture, 'hands', {
+      width: 0.012, height: dialR * 0.55, depth: 0.004
+    }, { position: { x: 0, y: dialY + dialR * 0.22, z: dialZ + 0.01 } }, { parent: node });
+
+    const minHand = boxComponent(registry, item, clockFurniture, 'hands', {
+      width: 0.008, height: dialR * 0.75, depth: 0.004
+    }, { position: { x: dialR * 0.25, y: dialY, z: dialZ + 0.01 } }, { parent: node });
+    minHand.rotation.z = -Math.PI * 0.4;
+
+    // 5.   -   (Pendulum Rod & Bob)
+    const pendulumCenterY = h * 0.32;
+    const frontZ = d * 0.85 + 0.005;
+
+    //   (Pendulum Rod -   Box)
+    boxComponent(registry, item, clockFurniture, 'pendulum', {
+      width: 0.008, height: h * 0.34, depth: 0.006
+    }, { position: { x: 0, y: pendulumCenterY, z: frontZ } }, { parent: node });
+
+    //  Circle  (Pendulum Bob -  )
+    const bob = cylinderComponent(registry, item, clockFurniture, 'pendulum', {
+      diameterTop: w * 0.3, diameterBottom: w * 0.3, height: 0.012, tessellation: 24
+    }, { position: { x: 0, y: h * 0.17, z: frontZ + 0.005 } }, { parent: node });
+    bob.rotation.x = Math.PI * 0.5;
+
+    //  Metal  (Striker Chime Rods -  )
+    [-0.06, 0.06].forEach(offset => {
+      boxComponent(registry, item, clockFurniture, 'pendulum', {
+        width: 0.01, height: h * 0.28, depth: 0.01
+      }, { position: { x: offset, y: pendulumCenterY, z: frontZ - 0.005 } }, { parent: node });
+    });
+  }
+};
+
+export const mannequinFurniture = {
+  type: 'mannequin',
+  name: 'Mannequin',
+  unit: 'm',
+  defaultSize: { width: 0.35, depth: 0.35, height: 1.75 }, //   1.70  
+  components: [
+    { id: 'wood', label: 'Component', defaultColor: '#f2f2f2' }
+  ],
+  build(registry, item, node, size) {
+    const type = item.pose || 'stand';
+
+    //  
+    const puppetMat = getComponentMaterial(registry, item, mannequinFurniture, 'wood');
+
+    //  ， 
+    node.getChildMeshes().forEach((m) => m.dispose());
+    node.getChildTransformNodes().forEach((n) => n.dispose());
+
+    const headD = 0.22;
+    const bodyH = 0.60;
+    const bodyD = 0.26;
+    const legL = 0.42;
+    const legD = 0.09;
+    const armL = 0.42;
+    const armD = 0.07;
+
+    // 1.   ( ) 、 
+    const headY = type === 'sit' ? 0.71 : (type === 'lie' ? 0.10 : 1.55);
+    const headZ = type === 'sit' ? 0 : (type === 'lie' ? 0.11 : 0);
+    const head = BABYLON.MeshBuilder.CreateSphere(`puppet_head_${item.id}`, { diameter: headD, segments: 12 }, registry.scene);
+    head.position.set(0, headY, headZ);
+    head.material = puppetMat;
+    head.parent = node;
+
+    // 2.   ( )
+    const bodyY = type === 'sit' ? 0.30 : (type === 'lie' ? 0.10 : 1.14);
+    const bodyZ = type === 'sit' ? 0 : (type === 'lie' ? -0.30 : 0);
+    const bodyRotX = type === 'sit' ? 0 : (type === 'lie' ? Math.PI / 2 : 0);
+    const body = BABYLON.MeshBuilder.CreateCylinder(`puppet_body_${item.id}`, { diameterTop: bodyD, diameterBottom: bodyD, height: bodyH, tessellation: 12 }, registry.scene);
+    body.position.set(0, bodyY, bodyZ);
+    body.rotation.x = bodyRotX;
+    body.material = puppetMat;
+    body.parent = node;
+
+    // 3.  
+    if (type === 'sit') {
+      [-1, 1].forEach((side) => {
+        //  
+        const thigh = BABYLON.MeshBuilder.CreateCylinder(`puppet_thigh_${side}_${item.id}`, { diameterTop: legD, diameterBottom: legD, height: legL, tessellation: 8 }, registry.scene);
+        thigh.position.set(side * 0.08, 0.05, legL / 2);
+        thigh.rotation.x = Math.PI / 2;
+        thigh.material = puppetMat;
+        thigh.parent = node;
+
+        //  
+        const calf = BABYLON.MeshBuilder.CreateCylinder(`puppet_calf_${side}_${item.id}`, { diameterTop: legD, diameterBottom: legD, height: legL, tessellation: 8 }, registry.scene);
+        calf.position.set(side * 0.08, -legL / 2, legL);
+        calf.material = puppetMat;
+        calf.parent = node;
+
+        //  
+        const shoe = BABYLON.MeshBuilder.CreateSphere(`puppet_shoe_${side}_${item.id}`, { diameter: legD * 1.3, segments: 8 }, registry.scene);
+        shoe.position.set(side * 0.08, -legL, legL + 0.02);
+        shoe.material = puppetMat;
+        shoe.parent = node;
+
+        //   ( )
+        const arm = BABYLON.MeshBuilder.CreateCylinder(`puppet_arm_${side}_${item.id}`, { diameterTop: armD, diameterBottom: armD, height: armL, tessellation: 8 }, registry.scene);
+        arm.position.set(side * 0.18, 0.40, armL / 2 * 0.3);
+        arm.rotation.x = - Math.PI / 6;
+        arm.material = puppetMat;
+        arm.parent = node;
+
+        //  
+        const hand = BABYLON.MeshBuilder.CreateSphere(`puppet_hand_${side}_${item.id}`, { diameter: armD * 1.2, segments: 8 }, registry.scene);
+        hand.position.set(side * 0.18, 0.40 - (armL / 2) * Math.cos(Math.PI / 6), (armL / 2) * 0.3 + (armL / 2) * Math.sin(Math.PI / 6));
+        hand.material = puppetMat;
+        hand.parent = node;
+      });
+    } else if (type === 'lie') {
+      [-1, 1].forEach((side) => {
+        //   ( )
+        const leg = BABYLON.MeshBuilder.CreateCylinder(`puppet_leg_${side}_${item.id}`, { diameterTop: legD, diameterBottom: legD, height: legL * 2, tessellation: 8 }, registry.scene);
+        leg.position.set(side * 0.08, 0.10, -0.10 - bodyH / 2 - legL);
+        leg.rotation.x = Math.PI / 2;
+        leg.material = puppetMat;
+        leg.parent = node;
+
+        //  
+        const shoe = BABYLON.MeshBuilder.CreateSphere(`puppet_shoe_${side}_${item.id}`, { diameter: legD * 1.3, segments: 8 }, registry.scene);
+        shoe.position.set(side * 0.08, 0.10, -0.10 - bodyH / 2 - legL * 2 - 0.02);
+        shoe.material = puppetMat;
+        shoe.parent = node;
+
+        //   ( )
+        const arm = BABYLON.MeshBuilder.CreateCylinder(`puppet_arm_${side}_${item.id}`, { diameterTop: armD, diameterBottom: armD, height: armL, tessellation: 8 }, registry.scene);
+        arm.position.set(side * 0.18, 0.10, -0.10 - armL / 2);
+        arm.rotation.x = Math.PI / 2;
+        arm.material = puppetMat;
+        arm.parent = node;
+
+        //  
+        const hand = BABYLON.MeshBuilder.CreateSphere(`puppet_hand_${side}_${item.id}`, { diameter: armD * 1.2, segments: 8 }, registry.scene);
+        hand.position.set(side * 0.18, 0.10, -0.10 - armL);
+        hand.material = puppetMat;
+        hand.parent = node;
+      });
+    } else {
+      // stand  
+      [-1, 1].forEach((side) => {
+        //  
+        const leg = BABYLON.MeshBuilder.CreateCylinder(`puppet_leg_${side}_${item.id}`, { diameterTop: legD, diameterBottom: legD, height: legL * 2, tessellation: 8 }, registry.scene);
+        leg.position.set(side * 0.08, legL, 0);
+        leg.material = puppetMat;
+        leg.parent = node;
+
+        //  
+        const shoe = BABYLON.MeshBuilder.CreateSphere(`puppet_shoe_${side}_${item.id}`, { diameter: legD * 1.3, segments: 8 }, registry.scene);
+        shoe.position.set(side * 0.08, 0.02, 0.02);
+        shoe.material = puppetMat;
+        shoe.parent = node;
+
+        //  
+        const arm = BABYLON.MeshBuilder.CreateCylinder(`puppet_arm_${side}_${item.id}`, { diameterTop: armD, diameterBottom: armD, height: armL, tessellation: 8 }, registry.scene);
+        arm.position.set(side * 0.18, 1.13, 0);
+        arm.material = puppetMat;
+        arm.parent = node;
+
+        //  
+        const hand = BABYLON.MeshBuilder.CreateSphere(`puppet_hand_${side}_${item.id}`, { diameter: armD * 1.2, segments: 8 }, registry.scene);
+        hand.position.set(side * 0.18, 1.13 - armL / 2, 0);
+        hand.material = puppetMat;
+        hand.parent = node;
+      });
+    }
+
+    //  ， 
+    node.getChildMeshes().forEach((mesh) => {
+      mesh.material = puppetMat;
+      markComponent(mesh, item, 'wood');
+    });
+  }
+};
+
+export const booksStackFurniture = {
+  type: 'books_stack',
+  name: 'Books Stack',
+  unit: 'm',
+  defaultSize: { width: 0.55, depth: 0.45, height: 0.25 },
+  components: [
+    { id: 'book-bottom', label: 'Component', defaultColor: '#c62828' },
+    { id: 'book-mid', label: 'Component', defaultColor: '#1565c0' },
+    { id: 'book-top', label: 'Component', defaultColor: '#ef6c00' }
+  ],
+  build(registry, item, node, size) {
+    const bottomH = size.height * 0.35;
+    const midH = size.height * 0.30;
+    const topH = size.height * 0.25;
+
+    boxComponent(registry, item, booksStackFurniture, 'book-bottom', {
+      width: size.width * 0.94, height: bottomH, depth: size.depth * 0.94
+    }, { position: { x: 0, y: bottomH / 2, z: 0 } }, { parent: node });
+
+    const mid = boxComponent(registry, item, booksStackFurniture, 'book-mid', {
+      width: size.width * 0.86, height: midH, depth: size.depth * 0.86
+    }, { position: { x: size.width * 0.02, y: bottomH + midH / 2, z: -size.depth * 0.02 } }, { parent: node });
+    mid.rotation.y = 0.26;
+
+    const top = boxComponent(registry, item, booksStackFurniture, 'book-top', {
+      width: size.width * 0.78, height: topH, depth: size.depth * 0.78
+    }, { position: { x: -size.width * 0.02, y: bottomH + midH + topH / 2, z: size.depth * 0.01 } }, { parent: node });
+    top.rotation.y = -0.35;
+  }
+};
+
+export const sculptureFurniture = {
+  type: 'sculpture',
+  name: 'Sculpture',
+  unit: 'm',
+  defaultSize: { width: 0.4, depth: 0.4, height: 0.8 },
+  components: [
+    { id: 'sculpture-base', label: 'Component', defaultColor: '#212121' },
+    { id: 'sculpture-body', label: 'Component', defaultColor: '#ffb300' }
+  ],
+  build(registry, item, node, size) {
+    const baseH = size.height * 0.22;
+    const bodyH = size.height * 0.78;
+
+    boxComponent(registry, item, sculptureFurniture, 'sculpture-base', {
+      width: size.width * 0.78, height: baseH, depth: size.depth * 0.78
+    }, { position: { x: 0, y: baseH / 2, z: 0 } }, { parent: node });
+
+    const bodyNode = cylinderComponent(registry, item, sculptureFurniture, 'sculpture-body', {
+      diameterTop: size.width * 0.62, diameterBottom: size.width * 0.62, height: 0.03, tessellation: 24
+    }, { position: { x: 0, y: baseH + bodyH * 0.46, z: 0 } }, { parent: node });
+    bodyNode.rotation.x = Math.PI * 0.25;
+    bodyNode.rotation.y = Math.PI * 0.12;
+
+    sphereComponent(registry, item, sculptureFurniture, 'sculpture-body', {
+      diameter: size.width * 0.32, segments: 12
+    }, { position: { x: 0, y: baseH + bodyH * 0.46, z: 0 } }, { parent: node });
+  }
+};
+
+export const triptychPaintingFurniture = {
+  type: 'triptych_painting',
+  name: 'Triptych Painting',
+  unit: 'm',
+  defaultSize: { width: 1.5, depth: 0.04, height: 0.75 },
+  placeType: 'wall',
+  components: [
+    { id: 'frame', label: 'Component', defaultColor: '#000000' },
+    { id: 'canvas1', label: ' Item1', defaultColor: '#ffcc00' },
+    { id: 'canvas2', label: ' Item2', defaultColor: '#0066cc' },
+    { id: 'canvas3', label: ' Item3', defaultColor: '#cc3333' }
+  ],
+  build(registry, item, node, size) {
+    const singleW = (size.width - 0.1) / 3;
+    const gap = 0.05;
+
+    boxComponent(registry, item, triptychPaintingFurniture, 'frame', {
+      width: singleW, height: size.height, depth: size.depth
+    }, { position: { x: -singleW - gap, y: size.height / 2, z: 0 } }, { parent: node });
+    boxComponent(registry, item, triptychPaintingFurniture, 'canvas1', {
+      width: singleW - 0.04, height: size.height - 0.04, depth: size.depth + 0.005
+    }, { position: { x: -singleW - gap, y: size.height / 2, z: 0.003 } }, { parent: node });
+
+    boxComponent(registry, item, triptychPaintingFurniture, 'frame', {
+      width: singleW, height: size.height, depth: size.depth
+    }, { position: { x: 0, y: size.height / 2, z: 0 } }, { parent: node });
+    boxComponent(registry, item, triptychPaintingFurniture, 'canvas2', {
+      width: singleW - 0.04, height: size.height - 0.04, depth: size.depth + 0.005
+    }, { position: { x: 0, y: size.height / 2, z: 0.003 } }, { parent: node });
+
+    boxComponent(registry, item, triptychPaintingFurniture, 'frame', {
+      width: singleW, height: size.height, depth: size.depth
+    }, { position: { x: singleW + gap, y: size.height / 2, z: 0 } }, { parent: node });
+    boxComponent(registry, item, triptychPaintingFurniture, 'canvas3', {
+      width: singleW - 0.04, height: size.height - 0.04, depth: size.depth + 0.005
+    }, { position: { x: singleW + gap, y: size.height / 2, z: 0.003 } }, { parent: node });
+  }
+};
+
+export const landscapePaintingFurniture = {
+  type: 'landscape_painting',
+  name: 'Landscape Painting',
+  unit: 'm',
+  defaultSize: { width: 1.85, depth: 0.04, height: 0.6 },
+  placeType: 'wall',
+  components: [
+    { id: 'frame', label: 'Component', defaultColor: '#3d2314' },
+    {
+      id: 'canvas',
+      label: 'Component',
+      defaultColor: '#ffffff',
+      defaultMaterial: posterMaterial('wallpaper-ink-bamboo-mist', ' Item')
+    }
+  ],
+  build(registry, item, node, size) {
+    boxComponent(registry, item, landscapePaintingFurniture, 'frame', {
+      width: size.width, height: size.height, depth: size.depth
+    }, { position: { x: 0, y: size.height / 2, z: 0 } }, { parent: node });
+
+    boxComponent(registry, item, landscapePaintingFurniture, 'canvas', {
+      width: size.width - 0.08, height: size.height - 0.08, depth: size.depth + 0.005
+    }, { position: { x: 0, y: size.height / 2, z: 0.003 } }, { parent: node });
+  }
+};
+
+export const tissueBoxFurniture = {
+  type: 'tissue_box',
+  name: 'Tissue Box',
+  unit: 'm',
+  defaultSize: { width: 0.2, depth: 0.13, height: 0.1 },
+  components: [
+    { id: 'box', label: 'Component', defaultColor: '#ffffff' },
+    { id: 'lid', label: 'Component', defaultColor: '#d7ccc8' },
+    { id: 'paper', label: 'Component', defaultColor: '#fbfbfb' }
+  ],
+  build(registry, item, node, size) {
+    boxComponent(registry, item, tissueBoxFurniture, 'box', {
+      width: size.width, height: size.height * 0.88, depth: size.depth
+    }, { position: { x: 0, y: size.height * 0.44, z: 0 } }, { parent: node });
+
+    boxComponent(registry, item, tissueBoxFurniture, 'lid', {
+      width: size.width - 0.01, height: size.height * 0.12, depth: size.depth - 0.01
+    }, { position: { x: 0, y: size.height * 0.94, z: 0 } }, { parent: node });
+
+    boxComponent(registry, item, tissueBoxFurniture, 'paper', {
+      width: size.width * 0.35, height: 0.02, depth: size.depth * 0.15
+    }, { position: { x: 0, y: size.height * 1.01, z: 0 } }, { parent: node });
+  }
+};
+
+export const wallClockFurniture = {
+  type: 'wall_clock',
+  name: 'Wall Clock',
+  unit: 'm',
+  defaultSize: { width: 0.35, depth: 0.04, height: 0.35 },
+  placeType: 'wall',
+  components: [
+    { id: 'frame', label: 'Component', defaultColor: '#1a1a1a' },
+    { id: 'dial', label: 'Component', defaultColor: '#ffffff' },
+    { id: 'hands', label: 'Component', defaultColor: '#1a1a1a' },
+    { id: 'secondHand', label: 'Component', defaultColor: '#e53935' }
+  ],
+  build(registry, item, node, size) {
+    const r = size.width / 2;
+    const centerY = size.height / 2;
+    const d = size.depth;
+
+    // 1.   (Outer Frame)
+    const frame = cylinderComponent(registry, item, wallClockFurniture, 'frame', {
+      diameterTop: size.width, diameterBottom: size.width, height: d, tessellation: 36
+    }, { position: { x: 0, y: centerY, z: d / 2 } }, { parent: node });
+    frame.rotation.x = Math.PI * 0.5;
+
+    // 2.   (White Dial Face)
+    const dial = cylinderComponent(registry, item, wallClockFurniture, 'dial', {
+      diameterTop: size.width * 0.92, diameterBottom: size.width * 0.92, height: d + 0.004, tessellation: 36
+    }, { position: { x: 0, y: centerY, z: d / 2 + 0.002 } }, { parent: node });
+    dial.rotation.x = Math.PI * 0.5;
+
+    const frontZ = d + 0.005;
+
+    // 3.   12/3/6/9   (Hour Markers)
+    const markerDist = r * 0.72;
+    const markers = [
+      { x: 0, y: centerY + markerDist, w: 0.008, h: 0.024 },  // 12  
+      { x: markerDist, y: centerY, w: 0.024, h: 0.008 },      // 3  
+      { x: 0, y: centerY - markerDist, w: 0.008, h: 0.024 },  // 6  
+      { x: -markerDist, y: centerY, w: 0.024, h: 0.008 }      // 9  
+    ];
+    markers.forEach(m => {
+      boxComponent(registry, item, wallClockFurniture, 'hands', {
+        width: m.w, height: m.h, depth: 0.003
+      }, { position: { x: m.x, y: m.y, z: frontZ } }, { parent: node });
+    });
+
+    // 4.   (Center Cap)
+    const cap = cylinderComponent(registry, item, wallClockFurniture, 'hands', {
+      diameterTop: 0.02, diameterBottom: 0.02, height: 0.012, tessellation: 16
+    }, { position: { x: 0, y: centerY, z: frontZ + 0.004 } }, { parent: node });
+    cap.rotation.x = Math.PI * 0.5;
+
+    // 5.   (Hour Hand -   10  )
+    const hourHand = boxComponent(registry, item, wallClockFurniture, 'hands', {
+      width: 0.012, height: r * 0.5, depth: 0.003
+    }, { position: { x: -r * 0.16, y: centerY + r * 0.16, z: frontZ + 0.003 } }, { parent: node });
+    hourHand.rotation.z = Math.PI * 0.22;
+
+    // 6.   (Minute Hand -   2  )
+    const minHand = boxComponent(registry, item, wallClockFurniture, 'hands', {
+      width: 0.008, height: r * 0.75, depth: 0.003
+    }, { position: { x: r * 0.28, y: centerY + r * 0.18, z: frontZ + 0.005 } }, { parent: node });
+    minHand.rotation.z = -Math.PI * 0.32;
+
+    // 7.   (Second Hand -   7  )
+    const secHand = boxComponent(registry, item, wallClockFurniture, 'secondHand', {
+      width: 0.004, height: r * 0.82, depth: 0.003
+    }, { position: { x: -r * 0.22, y: centerY - r * 0.22, z: frontZ + 0.007 } }, { parent: node });
+    secHand.rotation.z = Math.PI * 0.75;
+  }
+};
+
+export const booksFullRowFurniture = {
+  type: 'books_full_row',
+  name: 'Books Full Row',
+  category: 'decor',
+  unit: 'm',
+  defaultSize: { width: 0.75, depth: 0.25, height: 0.25 },
+  components: [
+    { id: 'book-straight-1', label: 'Component', defaultColor: '#b71c1c' },
+    { id: 'book-straight-2', label: 'Component', defaultColor: '#0d47a1' },
+    { id: 'book-straight-3', label: 'Component', defaultColor: '#1b5e20' },
+    { id: 'book-straight-4', label: 'Component', defaultColor: '#f57f17' },
+    { id: 'book-lean-1', label: ' ItemA', defaultColor: '#4a148c' },
+    { id: 'book-lean-2', label: ' ItemB', defaultColor: '#e65100' }
+  ],
+  build(registry, item, node, size) {
+    const bookW = size.width / 8;
+    const bookD = size.depth * 0.9;
+    const bookH = size.height * 0.95;
+    
+    // 5  
+    for (let i = 0; i < 5; i++) {
+      boxComponent(registry, item, booksFullRowFurniture, `book-straight-${(i % 4) + 1}`, {
+        width: bookW * 0.9, height: bookH, depth: bookD
+      }, { position: { x: -size.width / 2 + bookW * (i + 0.5), y: bookH / 2, z: 0 } }, { parent: node });
+    }
+    
+    // 2  
+    const startX = -size.width / 2 + bookW * 5.2;
+    const b1 = boxComponent(registry, item, booksFullRowFurniture, 'book-lean-1', {
+      width: bookW * 0.9, height: bookH, depth: bookD
+    }, { position: { x: startX, y: bookH / 2 - 0.01, z: 0 } }, { parent: node });
+    b1.rotation.z = -Math.PI * 0.12;
+    
+    const b2 = boxComponent(registry, item, booksFullRowFurniture, 'book-lean-2', {
+      width: bookW * 0.9, height: bookH, depth: bookD
+    }, { position: { x: startX + bookW * 0.8, y: bookH / 2 - 0.03, z: 0 } }, { parent: node });
+    b2.rotation.z = -Math.PI * 0.18;
+  }
+};
+
+export const miniCactusFurniture = {
+  type: 'mini_cactus',
+  name: 'Mini Cactus',
+  category: 'decor',
+  unit: 'm',
+  defaultSize: { width: 0.15, depth: 0.15, height: 0.2 },
+  components: [
+    { id: 'pot', label: 'Component', defaultColor: '#e0e0e0' },
+    { id: 'cactus', label: 'Component', defaultColor: '#2e7d32' },
+    { id: 'flower', label: 'Component', defaultColor: '#ff4081' }
+  ],
+  build(registry, item, node, size) {
+    const potH = size.height * 0.4;
+    const potD = size.width * 0.9;
+    cylinderComponent(registry, item, miniCactusFurniture, 'pot', {
+      diameterTop: potD, diameterBottom: potD * 0.7, height: potH
+    }, { position: { x: 0, y: potH / 2, z: 0 } }, { parent: node });
+    
+    const cacD = size.width * 0.8;
+    sphereComponent(registry, item, miniCactusFurniture, 'cactus', {
+      diameterX: cacD, diameterY: cacD * 1.1, diameterZ: cacD
+    }, { position: { x: 0, y: potH + cacD / 2 - 0.01, z: 0 } }, { parent: node });
+    
+    sphereComponent(registry, item, miniCactusFurniture, 'flower', {
+      diameter: size.width * 0.25
+    }, { position: { x: 0, y: potH + cacD * 1.05, z: 0 } }, { parent: node });
+  }
+};
+
+export const photoFrameFurniture = {
+  type: 'photo_frame',
+  name: 'Photo Frame',
+  category: 'decor',
+  unit: 'm',
+  defaultSize: { width: 0.2, depth: 0.08, height: 0.25 },
+  components: [
+    { id: 'frame', label: 'Component', defaultColor: '#8d6e63' },
+    { id: 'photo', label: 'Component', defaultColor: '#eceff1' }
+  ],
+  build(registry, item, node, size) {
+    boxComponent(registry, item, photoFrameFurniture, 'frame', {
+      width: size.width, height: size.height, depth: 0.02
+    }, { position: { x: 0, y: size.height / 2, z: 0 } }, { parent: node });
+    
+    boxComponent(registry, item, photoFrameFurniture, 'photo', {
+      width: size.width * 0.8, height: size.height * 0.8, depth: 0.005
+    }, { position: { x: 0, y: size.height / 2, z: 0.01 } }, { parent: node });
+    
+    node.rotation.x = -Math.PI * 0.08;
+  }
+};
+
+export const hourglassFurniture = {
+  type: 'hourglass',
+  name: 'Hourglass',
+  category: 'decor',
+  unit: 'm',
+  defaultSize: { width: 0.15, depth: 0.15, height: 0.25 },
+  components: [
+    { id: 'frame', label: 'Component', defaultColor: '#b5a642' },
+    { id: 'glass', label: ' ItemGlass Item', defaultColor: '#d4efff' },
+    { id: 'sand', label: ' ItemFine Sand', defaultColor: '#ab47bc' }
+  ],
+  build(registry, item, node, size) {
+    const topH = 0.015;
+    const mainH = size.height - topH * 2;
+    const width = size.width;
+    
+    boxComponent(registry, item, hourglassFurniture, 'frame', {
+      width: width, height: topH, depth: width
+    }, { position: { x: 0, y: topH / 2, z: 0 } }, { parent: node });
+    
+    boxComponent(registry, item, hourglassFurniture, 'frame', {
+      width: width, height: topH, depth: width
+    }, { position: { x: 0, y: size.height - topH / 2, z: 0 } }, { parent: node });
+    
+    for (let i = 0; i < 3; i++) {
+      const angle = (i * Math.PI * 2) / 3;
+      const r = width * 0.4;
+      cylinderComponent(registry, item, hourglassFurniture, 'frame', {
+        diameterTop: 0.01, diameterBottom: 0.01, height: mainH
+      }, { position: { x: Math.cos(angle) * r, y: size.height / 2, z: Math.sin(angle) * r } }, { parent: node });
+    }
+    
+    cylinderComponent(registry, item, hourglassFurniture, 'glass', {
+      diameterTop: width * 0.7, diameterBottom: 0.01, height: mainH * 0.48
+    }, { position: { x: 0, y: topH + mainH * 0.76, z: 0 } }, { parent: node });
+    
+    cylinderComponent(registry, item, hourglassFurniture, 'glass', {
+      diameterTop: 0.01, diameterBottom: width * 0.7, height: mainH * 0.48
+    }, { position: { x: 0, y: topH + mainH * 0.24, z: 0 } }, { parent: node });
+  }
+};
+
+export const storageBasketFurniture = {
+  type: 'storage_basket',
+  name: 'Storage Basket',
+  category: 'decor',
+  unit: 'm',
+  defaultSize: { width: 0.3, depth: 0.25, height: 0.2 },
+  components: [
+    { id: 'basket', label: 'Component', defaultColor: '#c7a75c' }
+  ],
+  build(registry, item, node, size) {
+    //  ，  5%，  0.5
+    const thickness = Math.min(0.5, size.width * 0.05, size.depth * 0.05, size.height * 0.05);
+
+    // 1.  
+    boxComponent(registry, item, storageBasketFurniture, 'basket', {
+      width: size.width, height: thickness, depth: size.depth
+    }, { position: { x: 0, y: thickness / 2, z: 0 } }, { parent: node });
+
+    //  
+    const sideH = size.height - thickness;
+    //  Y 
+    const sideY = thickness + sideH / 2;
+
+    // 2.  
+    boxComponent(registry, item, storageBasketFurniture, 'basket', {
+      width: size.width, height: sideH, depth: thickness
+    }, { position: { x: 0, y: sideY, z: -size.depth / 2 + thickness / 2 } }, { parent: node });
+
+    // 3.  
+    boxComponent(registry, item, storageBasketFurniture, 'basket', {
+      width: size.width, height: sideH, depth: thickness
+    }, { position: { x: 0, y: sideY, z: size.depth / 2 - thickness / 2 } }, { parent: node });
+
+    // 4.   ( )
+    boxComponent(registry, item, storageBasketFurniture, 'basket', {
+      width: thickness, height: sideH, depth: size.depth - 2 * thickness
+    }, { position: { x: -size.width / 2 + thickness / 2, y: sideY, z: 0 } }, { parent: node });
+
+    // 5.   ( )
+    boxComponent(registry, item, storageBasketFurniture, 'basket', {
+      width: thickness, height: sideH, depth: size.depth - 2 * thickness
+    }, { position: { x: size.width / 2 - thickness / 2, y: sideY, z: 0 } }, { parent: node });
+  }
+};
+
+export const scentedCandleFurniture = {
+  type: 'scented_candle',
+  name: 'Scented Candle',
+  category: 'decor',
+  unit: 'm',
+  defaultSize: { width: 0.13, depth: 0.13, height: 0.15 },
+  components: [
+    { id: 'jar', label: ' ItemGlass Item', defaultColor: '#cfd8dc' },
+    { id: 'wax', label: 'Component', defaultColor: '#fff9c4' },
+    { id: 'wick', label: 'Component', defaultColor: '#3e2723' }
+  ],
+  build(registry, item, node, size) {
+    const jarH = size.height * 0.85;
+    cylinderComponent(registry, item, scentedCandleFurniture, 'jar', {
+      diameterTop: size.width, diameterBottom: size.width, height: jarH
+    }, { position: { x: 0, y: jarH / 2, z: 0 } }, { parent: node });
+    
+    cylinderComponent(registry, item, scentedCandleFurniture, 'wax', {
+      diameterTop: size.width * 0.9, diameterBottom: size.width * 0.9, height: jarH * 0.85
+    }, { position: { x: 0, y: jarH * 0.85 / 2, z: 0 } }, { parent: node });
+    
+    cylinderComponent(registry, item, scentedCandleFurniture, 'wick', {
+      diameterTop: 0.005, diameterBottom: 0.005, height: size.height * 0.25
+    }, { position: { x: 0, y: jarH * 0.85 + size.height * 0.125, z: 0 } }, { parent: node });
+  }
+};
+
+export const crystalBallFurniture = {
+  type: 'crystal_ball',
+  name: 'Crystal Ball',
+  category: 'decor',
+  unit: 'm',
+  defaultSize: { width: 0.15, depth: 0.15, height: 0.2 },
+  components: [
+    { id: 'base', label: 'Component', defaultColor: '#4e342e' },
+    { id: 'sphere', label: 'Component', defaultColor: '#e0f7fa' }
+  ],
+  build(registry, item, node, size) {
+    const baseH = size.height * 0.3;
+    cylinderComponent(registry, item, crystalBallFurniture, 'base', {
+      diameterTop: size.width * 0.9, diameterBottom: size.width, height: baseH
+    }, { position: { x: 0, y: baseH / 2, z: 0 } }, { parent: node });
+    
+    const sphereR = size.width * 0.8;
+    sphereComponent(registry, item, crystalBallFurniture, 'sphere', {
+      diameter: sphereR
+    }, { position: { x: 0, y: baseH + sphereR / 2 - 0.01, z: 0 } }, { parent: node });
+  }
+};
+
+export const goldTrophyFurniture = {
+  type: 'gold_trophy',
+  name: 'Gold Trophy',
+  category: 'decor',
+  unit: 'm',
+  defaultSize: { width: 0.2, depth: 0.15, height: 0.3 },
+  components: [
+    { id: 'base', label: 'Component', defaultColor: '#212121' },
+    { id: 'gold', label: 'Component', defaultColor: '#ffd700' }
+  ],
+  build(registry, item, node, size) {
+    const baseH = size.height * 0.25;
+    boxComponent(registry, item, goldTrophyFurniture, 'base', {
+      width: size.width * 0.7, height: baseH, depth: size.depth * 0.7
+    }, { position: { x: 0, y: baseH / 2, z: 0 } }, { parent: node });
+    
+    const stemH = size.height * 0.3;
+    cylinderComponent(registry, item, goldTrophyFurniture, 'gold', {
+      diameterTop: size.width * 0.15, diameterBottom: size.width * 0.3, height: stemH
+    }, { position: { x: 0, y: baseH + stemH / 2, z: 0 } }, { parent: node });
+    
+    const cupH = size.height * 0.45;
+    cylinderComponent(registry, item, goldTrophyFurniture, 'gold', {
+      diameterTop: size.width * 0.8, diameterBottom: size.width * 0.2, height: cupH
+    }, { position: { x: 0, y: baseH + stemH + cupH / 2, z: 0 } }, { parent: node });
+  }
+};
+
+export const globeFurniture = {
+  type: 'globe',
+  name: 'Globe',
+  category: 'decor',
+  unit: 'm',
+  defaultSize: { width: 0.25, depth: 0.25, height: 0.35 },
+  components: [
+    { id: 'base', label: 'Component', defaultColor: '#5d4037' },
+    { id: 'ring', label: 'Component', defaultColor: '#b5a642' },
+    { id: 'sphere', label: 'Component', defaultColor: '#cfd8dc' }
+  ],
+  build(registry, item, node, size) {
+    const baseH = size.height * 0.12;
+    cylinderComponent(registry, item, globeFurniture, 'base', {
+      diameterTop: size.width * 0.6, diameterBottom: size.width * 0.7, height: baseH
+    }, { position: { x: 0, y: baseH / 2, z: 0 } }, { parent: node });
+    
+    const stemH = size.height * 0.2;
+    cylinderComponent(registry, item, globeFurniture, 'ring', {
+      diameterTop: 0.015, diameterBottom: 0.015, height: stemH
+    }, { position: { x: 0, y: baseH + stemH / 2, z: 0 } }, { parent: node });
+    
+    const sphereD = size.width * 0.75;
+    sphereComponent(registry, item, globeFurniture, 'sphere', {
+      diameter: sphereD
+    }, { position: { x: 0, y: baseH + stemH + sphereD / 2, z: 0 } }, { parent: node });
+    
+    cylinderComponent(registry, item, globeFurniture, 'ring', {
+      diameterTop: sphereD * 1.15, diameterBottom: sphereD * 1.15, height: 0.012
+    }, { position: { x: 0, y: baseH + stemH + sphereD / 2, z: 0 } }, { parent: node });
+  }
+};
+
+export const gypsumBustFurniture = {
+  type: 'gypsum_bust',
+  name: 'Gypsum Bust',
+  category: 'decor',
+  unit: 'm',
+  defaultSize: { width: 0.2, depth: 0.2, height: 0.3 },
+  components: [
+    { id: 'bust', label: 'Component', defaultColor: '#f5f5f5' }
+  ],
+  build(registry, item, node, size) {
+    const baseH = size.height * 0.2;
+    cylinderComponent(registry, item, gypsumBustFurniture, 'bust', {
+      diameterTop: size.width * 0.6, diameterBottom: size.width * 0.7, height: baseH
+    }, { position: { x: 0, y: baseH / 2, z: 0 } }, { parent: node });
+    
+    const headH = size.height * 0.8;
+    cylinderComponent(registry, item, gypsumBustFurniture, 'bust', {
+      diameterTop: size.width * 0.5, diameterBottom: size.width * 0.7, height: headH
+    }, { position: { x: 0, y: baseH + headH / 2, z: 0 } }, { parent: node });
+  }
+};
+
+export const piggyBankFurniture = {
+  type: 'piggy_bank',
+  name: 'Piggy Bank',
+  category: 'decor',
+  unit: 'm',
+  defaultSize: { width: 0.2, depth: 0.2, height: 0.2 },
+  components: [
+    { id: 'body', label: 'Component', defaultColor: '#ff80ab' },
+    { id: 'ears', label: 'Component', defaultColor: '#ff4081' }
+  ],
+  build(registry, item, node, size) {
+    sphereComponent(registry, item, piggyBankFurniture, 'body', {
+      diameterX: size.width, diameterY: size.height * 0.9, diameterZ: size.depth
+    }, { position: { x: 0, y: size.height / 2, z: 0 } }, { parent: node });
+    
+    sphereComponent(registry, item, piggyBankFurniture, 'ears', {
+      diameter: size.width * 0.25
+    }, { position: { x: -size.width * 0.3, y: size.height * 0.85, z: size.depth * 0.15 } }, { parent: node });
+    
+    sphereComponent(registry, item, piggyBankFurniture, 'ears', {
+      diameter: size.width * 0.25
+    }, { position: { x: size.width * 0.3, y: size.height * 0.85, z: size.depth * 0.15 } }, { parent: node });
+  }
+};
+
+export const windChimeFurniture = {
+  type: 'wind_chime',
+  name: 'Wind Chime',
+  category: 'decor',
+  unit: 'm',
+  defaultSize: { width: 0.2, depth: 0.2, height: 0.75 },
+  placeType: 'ceiling',
+  components: [
+    { id: 'cap', label: 'Component', defaultColor: '#8d6e63' },
+    { id: 'tubes', label: 'Metal Item', defaultColor: '#cfd8dc' },
+    { id: 'pendant', label: 'Component', defaultColor: '#8d6e63' },
+    { id: 'string', label: 'Component', defaultColor: '#3e2723' }
+  ],
+  build(registry, item, node, size) {
+    //  
+    const stringH = size.height * 0.28;
+    cylinderComponent(registry, item, windChimeFurniture, 'string', {
+      diameterTop: 0.005, diameterBottom: 0.005, height: stringH, tessellation: 6
+    }, { position: { x: 0, y: size.height - stringH / 2, z: 0 } }, { parent: node });
+
+    //  
+    const capH = 0.015;
+    cylinderComponent(registry, item, windChimeFurniture, 'cap', {
+      diameterTop: size.width * 0.72, diameterBottom: size.width * 0.72, height: capH, tessellation: 12
+    }, { position: { x: 0, y: size.height - stringH - capH / 2, z: 0 } }, { parent: node });
+
+    // 4 Metal  ( ， )
+    const tubesTopY = size.height - stringH - capH;
+    const r = size.width * 0.22;
+    const pipeHeights = [size.height * 0.38, size.height * 0.44, size.height * 0.50, size.height * 0.56];
+    pipeHeights.forEach((h, index) => {
+      const angle = (index * Math.PI * 2) / 4;
+      const tx = Math.cos(angle) * r;
+      const tz = Math.sin(angle) * r;
+      const ty = tubesTopY - h / 2;
+      cylinderComponent(registry, item, windChimeFurniture, 'tubes', {
+        diameterTop: size.width * 0.08, diameterBottom: size.width * 0.08, height: h, tessellation: 8
+      }, { position: { x: tx, y: ty, z: tz } }, { parent: node });
+    });
+
+    //  
+  }
+};
+export const landscapeRockeryAquarium = {
+  type: 'landscape_rockery_aquarium',
+  waterControllable: true,
+  name: ' Item',
+  unit: 'm',
+  defaultSize: { width: 1, depth: 0.6, height: 1.2 },
+  components: [
+    { id: 'aquarium-stand', label: 'Component', defaultColor: '#2d1d16' },
+    { id: 'aquarium-glass', label: ' ItemGlass Item', defaultColor: '#e0f2f1' },
+    { id: 'aquarium-rock', label: 'Component', defaultColor: '#455a64' },
+    { id: 'aquarium-water', label: 'Component', defaultColor: { kind: 'glass', color: '#00b0ff', alpha: 0.45 } },
+    { id: 'aquarium-plant', label: 'Component', defaultColor: '#2e7d32' },
+    { id: 'aquarium-fish', label: 'Component', defaultColor: '#ff5722' }
+  ],
+  build(registry, item, node, size) {
+    const standH = size.height * 0.42;
+    // 1.  
+    boxComponent(registry, item, landscapeRockeryAquarium, 'aquarium-stand', {
+      width: size.width, height: standH, depth: size.depth
+    }, { position: { x: 0, y: standH / 2, z: 0 } }, { parent: node });
+
+    const glassH = size.height * 0.58;
+    // 2.  Glass 
+    boxComponent(registry, item, landscapeRockeryAquarium, 'aquarium-glass', {
+      width: size.width, height: glassH, depth: size.depth
+    }, { position: { x: 0, y: standH + glassH / 2, z: 0 } }, { parent: node });
+
+    // 3.  
+    if (item.waterEnabled !== false) {
+      boxComponent(registry, item, landscapeRockeryAquarium, 'aquarium-water', {
+        width: size.width * 0.94, height: glassH * 0.9, depth: size.depth * 0.94
+      }, { position: { x: 0, y: standH + glassH * 0.45, z: 0 } }, { parent: node });
+    }
+
+    // 4. 3  ( 、 、 )， 
+    //  
+    sphereComponent(registry, item, landscapeRockeryAquarium, 'aquarium-rock', {
+      diameterX: size.width * 0.35,
+      diameterY: size.height * 0.4,
+      diameterZ: size.depth * 0.45,
+      segments: 8
+    }, { position: { x: -size.width * 0.12, y: standH + size.height * 0.08, z: -size.depth * 0.05 } }, { parent: node });
+
+    //  
+    sphereComponent(registry, item, landscapeRockeryAquarium, 'aquarium-rock', {
+      diameterX: size.width * 0.28,
+      diameterY: size.height * 0.3,
+      diameterZ: size.depth * 0.35,
+      segments: 8
+    }, { position: { x: size.width * 0.16, y: standH + size.height * 0.05, z: size.depth * 0.1 } }, { parent: node });
+
+    //  
+    sphereComponent(registry, item, landscapeRockeryAquarium, 'aquarium-rock', {
+      diameterX: size.width * 0.2,
+      diameterY: size.height * 0.2,
+      diameterZ: size.depth * 0.25,
+      segments: 8
+    }, { position: { x: -size.width * 0.02, y: standH + size.height * 0.03, z: size.depth * 0.2 } }, { parent: node });
+
+    // 5.  
+    //   1
+    cylinderComponent(registry, item, landscapeRockeryAquarium, 'aquarium-plant', {
+      diameterTop: 0.1, diameterBottom: size.width * 0.03, height: glassH * 0.55, tessellation: 6
+    }, { position: { x: -size.width * 0.22, y: standH + (glassH * 0.55) / 2, z: -size.depth * 0.18 } }, { parent: node });
+
+    //   2
+    cylinderComponent(registry, item, landscapeRockeryAquarium, 'aquarium-plant', {
+      diameterTop: 0.1, diameterBottom: size.width * 0.025, height: glassH * 0.45, tessellation: 6
+    }, { position: { x: size.width * 0.22, y: standH + (glassH * 0.45) / 2, z: -size.depth * 0.08 } }, { parent: node });
+
+    //   3
+    cylinderComponent(registry, item, landscapeRockeryAquarium, 'aquarium-plant', {
+      diameterTop: 0.1, diameterBottom: size.width * 0.02, height: glassH * 0.3, tessellation: 6
+    }, { position: { x: size.width * 0.05, y: standH + (glassH * 0.3) / 2, z: size.depth * 0.15 } }, { parent: node });
+
+    // 6.  
+    //   1
+    const fish1 = sphereComponent(registry, item, landscapeRockeryAquarium, 'aquarium-fish', {
+      diameterX: size.width * 0.12, diameterY: size.height * 0.06, diameterZ: size.depth * 0.06, segments: 8
+    }, { position: { x: -size.width * 0.15, y: standH + glassH * 0.6, z: size.depth * 0.08 } }, { parent: node });
+    if (fish1) fish1.rotation.y = 0.5;
+
+    //   2
+    const fish2 = sphereComponent(registry, item, landscapeRockeryAquarium, 'aquarium-fish', {
+      diameterX: size.width * 0.1, diameterY: size.height * 0.05, diameterZ: size.depth * 0.05, segments: 8
+    }, { position: { x: size.width * 0.15, y: standH + glassH * 0.4, z: -size.depth * 0.1 } }, { parent: node });
+    if (fish2) fish2.rotation.y = -1.2;
+
+    //   3
+    const fish3 = sphereComponent(registry, item, landscapeRockeryAquarium, 'aquarium-fish', {
+      diameterX: size.width * 0.08, diameterY: size.height * 0.04, diameterZ: size.depth * 0.04, segments: 8
+    }, { position: { x: size.width * 0.02, y: standH + glassH * 0.25, z: size.depth * 0.05 } }, { parent: node });
+    if (fish3) fish3.rotation.y = 2.0;
+  }
+};
+
+export const traditionalChineseScreenFurniture = {
+  type: 'traditional_chinese_screen',
+  name: 'Traditional Chinese Screen',
+  unit: 'm',
+  defaultSize: { width: 1.85, depth: 0.2, height: 1.75 },
+  components: [
+    { id: 'frame', label: 'Component', defaultColor: '#3e2723' },
+    { id: 'panel', label: 'Component', defaultColor: '#fcf8f2' }
+  ],
+  build(registry, item, node, size) {
+    const wMid = size.width * 0.44;
+    const wSide = size.width * 0.28;
+    const theta = Math.PI / 12; // 15 
+    const borderW = 0.045; // 4.5  
+    const frameD = 0.03;   // 3  
+    const panelD = 0.01;   // 1  
+
+    // 1.   ( )
+    boxComponent(registry, item, traditionalChineseScreenFurniture, 'frame', {
+      width: borderW, height: size.height, depth: frameD
+    }, { position: { x: -wMid / 2 + borderW / 2, y: size.height / 2, z: 0 } }, { parent: node });
+    boxComponent(registry, item, traditionalChineseScreenFurniture, 'frame', {
+      width: borderW, height: size.height, depth: frameD
+    }, { position: { x: wMid / 2 - borderW / 2, y: size.height / 2, z: 0 } }, { parent: node });
+    boxComponent(registry, item, traditionalChineseScreenFurniture, 'frame', {
+      width: wMid - 2 * borderW, height: borderW, depth: frameD
+    }, { position: { x: 0, y: size.height - borderW / 2, z: 0 } }, { parent: node });
+    boxComponent(registry, item, traditionalChineseScreenFurniture, 'frame', {
+      width: wMid - 2 * borderW, height: borderW, depth: frameD
+    }, { position: { x: 0, y: borderW / 2, z: 0 } }, { parent: node });
+    boxComponent(registry, item, traditionalChineseScreenFurniture, 'panel', {
+      width: wMid - 2 * borderW, height: size.height - 2 * borderW, depth: panelD
+    }, { position: { x: 0, y: size.height / 2, z: 0 } }, { parent: node });
+
+    // 2.  
+    const leftParent = new BABYLON.TransformNode(`left_panel_${item.id}`, registry.scene);
+    leftParent.parent = node;
+    leftParent.position.set(-wMid / 2, 0, 0);
+    leftParent.rotation.y = theta;
+
+    const lx = -wSide / 2;
+    boxComponent(registry, item, traditionalChineseScreenFurniture, 'frame', {
+      width: borderW, height: size.height, depth: frameD
+    }, { position: { x: lx - wSide / 2 + borderW / 2, y: size.height / 2, z: 0 } }, { parent: leftParent });
+    boxComponent(registry, item, traditionalChineseScreenFurniture, 'frame', {
+      width: borderW, height: size.height, depth: frameD
+    }, { position: { x: lx + wSide / 2 - borderW / 2, y: size.height / 2, z: 0 } }, { parent: leftParent });
+    boxComponent(registry, item, traditionalChineseScreenFurniture, 'frame', {
+      width: wSide - 2 * borderW, height: borderW, depth: frameD
+    }, { position: { x: lx, y: size.height - borderW / 2, z: 0 } }, { parent: leftParent });
+    boxComponent(registry, item, traditionalChineseScreenFurniture, 'frame', {
+      width: wSide - 2 * borderW, height: borderW, depth: frameD
+    }, { position: { x: lx, y: borderW / 2, z: 0 } }, { parent: leftParent });
+    boxComponent(registry, item, traditionalChineseScreenFurniture, 'panel', {
+      width: wSide - 2 * borderW, height: size.height - 2 * borderW, depth: panelD
+    }, { position: { x: lx, y: size.height / 2, z: 0 } }, { parent: leftParent });
+
+    // 3.  
+    const rightParent = new BABYLON.TransformNode(`right_panel_${item.id}`, registry.scene);
+    rightParent.parent = node;
+    rightParent.position.set(wMid / 2, 0, 0);
+    rightParent.rotation.y = -theta;
+
+    const rx = wSide / 2;
+    boxComponent(registry, item, traditionalChineseScreenFurniture, 'frame', {
+      width: borderW, height: size.height, depth: frameD
+    }, { position: { x: rx - wSide / 2 + borderW / 2, y: size.height / 2, z: 0 } }, { parent: rightParent });
+    boxComponent(registry, item, traditionalChineseScreenFurniture, 'frame', {
+      width: borderW, height: size.height, depth: frameD
+    }, { position: { x: rx + wSide / 2 - borderW / 2, y: size.height / 2, z: 0 } }, { parent: rightParent });
+    boxComponent(registry, item, traditionalChineseScreenFurniture, 'frame', {
+      width: wSide - 2 * borderW, height: borderW, depth: frameD
+    }, { position: { x: rx, y: size.height - borderW / 2, z: 0 } }, { parent: rightParent });
+    boxComponent(registry, item, traditionalChineseScreenFurniture, 'frame', {
+      width: wSide - 2 * borderW, height: borderW, depth: frameD
+    }, { position: { x: rx, y: borderW / 2, z: 0 } }, { parent: rightParent });
+    boxComponent(registry, item, traditionalChineseScreenFurniture, 'panel', {
+      width: wSide - 2 * borderW, height: size.height - 2 * borderW, depth: panelD
+    }, { position: { x: rx, y: size.height / 2, z: 0 } }, { parent: rightParent });
+  }
+};
+
+export const modernSlatScreenFurniture = {
+  type: 'modern_slat_screen',
+  name: 'Modern Slat Screen',
+  unit: 'm',
+  defaultSize: { width: 1.2, depth: 0.08, height: 1.85 },
+  components: [
+    { id: 'base', label: 'Component', defaultColor: '#b58a5f' },
+    { id: 'slats', label: 'Component', defaultColor: '#d8b486' }
+  ],
+  build(registry, item, node, size) {
+    const beamH = Math.min(0.045, size.height * 0.04);
+    const slatH = Math.max(0.02, size.height - beamH * 2);
+    const N = Math.max(4, Math.round(size.width / 0.14));
+    const slatW = Math.min(0.055, size.width / N * 0.52);
+    const slatD = Math.max(0.025, size.depth * 0.72);
+
+    //  ， ， 。
+    [beamH / 2, size.height - beamH / 2].forEach((y) => {
+      boxComponent(registry, item, modernSlatScreenFurniture, 'base', {
+        width: size.width, height: beamH, depth: slatD
+      }, { position: { x: 0, y, z: 0 } }, { parent: node });
+    });
+
+    //  。
+    const startX = -size.width / 2 + slatW / 2;
+    const endX = size.width / 2 - slatW / 2;
+    const stepX = (endX - startX) / (N - 1);
+
+    for (let i = 0; i < N; i++) {
+      const sx = startX + i * stepX;
+      boxComponent(registry, item, modernSlatScreenFurniture, 'slats', {
+        width: slatW, height: slatH, depth: slatD
+      }, { position: { x: sx, y: beamH + slatH / 2, z: 0 } }, { parent: node });
+    }
+  }
+};
+
+export const rattanWaveScreenFurniture = {
+  type: 'rattan_wave_screen',
+  name: 'Rattan Wave Screen',
+  unit: 'm',
+  defaultSize: { width: 1.35, depth: 0.25, height: 1.5 },
+  components: [
+    { id: 'frame', label: 'Component', defaultColor: '#d7ccc8' },
+    { id: 'weave', label: 'Octagon Item', defaultColor: '#e0c097' }
+  ],
+  build(registry, item, node, size) {
+    const wPart = size.width / 3;
+    const theta = Math.PI / 9; // 20 
+    const borderW = 0.035; // 3.5  
+    const frameD = 0.025; // 2.5  
+    const weaveD = 0.008; // 0.8  
+
+    // 1.   ( )
+    boxComponent(registry, item, rattanWaveScreenFurniture, 'frame', {
+      width: borderW, height: size.height, depth: frameD
+    }, { position: { x: -wPart / 2 + borderW / 2, y: size.height / 2, z: 0 } }, { parent: node });
+    boxComponent(registry, item, rattanWaveScreenFurniture, 'frame', {
+      width: borderW, height: size.height, depth: frameD
+    }, { position: { x: wPart / 2 - borderW / 2, y: size.height / 2, z: 0 } }, { parent: node });
+    boxComponent(registry, item, rattanWaveScreenFurniture, 'frame', {
+      width: wPart - 2 * borderW, height: borderW, depth: frameD
+    }, { position: { x: 0, y: size.height - borderW / 2, z: 0 } }, { parent: node });
+    boxComponent(registry, item, rattanWaveScreenFurniture, 'frame', {
+      width: wPart - 2 * borderW, height: borderW, depth: frameD
+    }, { position: { x: 0, y: borderW / 2, z: 0 } }, { parent: node });
+    boxComponent(registry, item, rattanWaveScreenFurniture, 'weave', {
+      width: wPart - 2 * borderW, height: size.height - 2 * borderW, depth: weaveD
+    }, { position: { x: 0, y: size.height / 2, z: 0 } }, { parent: node });
+
+    // 2.  
+    const leftParent = new BABYLON.TransformNode(`rattan_left_${item.id}`, registry.scene);
+    leftParent.parent = node;
+    leftParent.position.set(-wPart / 2, 0, 0);
+    leftParent.rotation.y = theta;
+
+    const lx = -wPart / 2;
+    boxComponent(registry, item, rattanWaveScreenFurniture, 'frame', {
+      width: borderW, height: size.height, depth: frameD
+    }, { position: { x: lx - wPart / 2 + borderW / 2, y: size.height / 2, z: 0 } }, { parent: leftParent });
+    boxComponent(registry, item, rattanWaveScreenFurniture, 'frame', {
+      width: borderW, height: size.height, depth: frameD
+    }, { position: { x: lx + wPart / 2 - borderW / 2, y: size.height / 2, z: 0 } }, { parent: leftParent });
+    boxComponent(registry, item, rattanWaveScreenFurniture, 'frame', {
+      width: wPart - 2 * borderW, height: borderW, depth: frameD
+    }, { position: { x: lx, y: size.height - borderW / 2, z: 0 } }, { parent: leftParent });
+    boxComponent(registry, item, rattanWaveScreenFurniture, 'frame', {
+      width: wPart - 2 * borderW, height: borderW, depth: frameD
+    }, { position: { x: lx, y: borderW / 2, z: 0 } }, { parent: leftParent });
+    boxComponent(registry, item, rattanWaveScreenFurniture, 'weave', {
+      width: wPart - 2 * borderW, height: size.height - 2 * borderW, depth: weaveD
+    }, { position: { x: lx, y: size.height / 2, z: 0 } }, { parent: leftParent });
+
+    // 3.  
+    const rightParent = new BABYLON.TransformNode(`rattan_right_${item.id}`, registry.scene);
+    rightParent.parent = node;
+    rightParent.position.set(wPart / 2, 0, 0);
+    rightParent.rotation.y = -theta;
+
+    const rx = wPart / 2;
+    boxComponent(registry, item, rattanWaveScreenFurniture, 'frame', {
+      width: borderW, height: size.height, depth: frameD
+    }, { position: { x: rx - wPart / 2 + borderW / 2, y: size.height / 2, z: 0 } }, { parent: rightParent });
+    boxComponent(registry, item, rattanWaveScreenFurniture, 'frame', {
+      width: borderW, height: size.height, depth: frameD
+    }, { position: { x: rx + wPart / 2 - borderW / 2, y: size.height / 2, z: 0 } }, { parent: rightParent });
+    boxComponent(registry, item, rattanWaveScreenFurniture, 'frame', {
+      width: wPart - 2 * borderW, height: borderW, depth: frameD
+    }, { position: { x: rx, y: size.height - borderW / 2, z: 0 } }, { parent: rightParent });
+    boxComponent(registry, item, rattanWaveScreenFurniture, 'frame', {
+      width: wPart - 2 * borderW, height: borderW, depth: frameD
+    }, { position: { x: rx, y: borderW / 2, z: 0 } }, { parent: rightParent });
+    boxComponent(registry, item, rattanWaveScreenFurniture, 'weave', {
+      width: wPart - 2 * borderW, height: size.height - 2 * borderW, depth: weaveD
+    }, { position: { x: rx, y: size.height / 2, z: 0 } }, { parent: rightParent });
+  }
+};
+
+export const luxuryMetalGlassScreenFurniture = {
+  type: 'luxury_metal_glass_screen',
+  name: 'Glass',
+  unit: 'm',
+  defaultSize: { width: 1.1, depth: 0.2, height: 1.8 },
+  components: [
+    { id: 'frame', label: 'Component', defaultColor: '#cfb53b' },
+    { id: 'glass', label: ' ItemGlass', defaultColor: '#e0f7fa' }
+  ],
+  build(registry, item, node, size) {
+    const baseH = size.height * 0.06;
+    const frameD = 0.02; // 2  
+    const glassD = 0.008; // 8  
+
+    // 1.  
+    boxComponent(registry, item, luxuryMetalGlassScreenFurniture, 'frame', {
+      width: size.width * 0.9, height: baseH, depth: size.depth
+    }, { position: { x: 0, y: baseH / 2, z: 0 } }, { parent: node });
+
+    // 2.  
+    boxComponent(registry, item, luxuryMetalGlassScreenFurniture, 'frame', {
+      width: 0.02, height: size.height - baseH, depth: frameD
+    }, { position: { x: -size.width * 0.45, y: baseH + (size.height - baseH) / 2, z: 0 } }, { parent: node });
+
+    boxComponent(registry, item, luxuryMetalGlassScreenFurniture, 'frame', {
+      width: 0.02, height: size.height - baseH, depth: frameD
+    }, { position: { x: size.width * 0.45, y: baseH + (size.height - baseH) / 2, z: 0 } }, { parent: node });
+
+    // 3.  
+    boxComponent(registry, item, luxuryMetalGlassScreenFurniture, 'frame', {
+      width: size.width * 0.9, height: 0.02, depth: frameD
+    }, { position: { x: 0, y: size.height - 0.01, z: 0 } }, { parent: node });
+
+    // 4.  Glass 
+    const availW = size.width * 0.9 - 0.04;
+    const sepW = 0.01; //   1  
+    const glassW = (availW - 2 * sepW) / 3;
+    const glassH = size.height - baseH - 0.02;
+    const glassY = baseH + glassH / 2;
+
+    const startX = -availW / 2 + glassW / 2;
+    const stepX = glassW + sepW;
+
+    for (let i = 0; i < 3; i++) {
+      const gx = startX + i * stepX;
+      boxComponent(registry, item, luxuryMetalGlassScreenFurniture, 'glass', {
+        width: glassW, height: glassH, depth: glassD
+      }, { position: { x: gx, y: glassY, z: 0 } }, { parent: node });
+
+      if (i < 2) {
+        boxComponent(registry, item, luxuryMetalGlassScreenFurniture, 'frame', {
+          width: sepW, height: glassH, depth: frameD + 0.005
+        }, { position: { x: gx + stepX / 2, y: glassY, z: 0 } }, { parent: node });
+      }
+    }
+  }
+};
+
+export const japaneseShojiScreenFurniture = {
+  type: 'japanese_shoji_screen',
+  name: 'Japanese Shoji Screen',
+  unit: 'm',
+  defaultSize: { width: 1.65, depth: 0.15, height: 1.65 },
+  components: [
+    { id: 'frame', label: 'Component', defaultColor: '#2b221a' },
+    { id: 'paper', label: 'Component', defaultColor: '#f7f6f2' },
+    { id: 'grille', label: 'Component', defaultColor: '#2b221a' }
+  ],
+  build(registry, item, node, size) {
+    const wPart = size.width / 4;
+    const theta = Math.PI * 12 / 180; // 12 
+    const borderW = 0.03; // 3  
+    const frameD = 0.02; // 2  
+    const paperD = 0.005; // 5  
+    const grilleD = 0.003; // 3  
+    const grilleW = 0.008; // 8  
+
+    const wProj = wPart * Math.cos(theta);
+    const zProj = wPart * Math.sin(theta);
+
+    const folds = [
+      { cx: -1.5 * wProj, cz: 0.5 * zProj, rot: theta },
+      { cx: -0.5 * wProj, cz: -0.5 * zProj, rot: -theta },
+      { cx: 0.5 * wProj, cz: 0.5 * zProj, rot: theta },
+      { cx: 1.5 * wProj, cz: -0.5 * zProj, rot: -theta }
+    ];
+
+    folds.forEach((fold, index) => {
+      const foldNode = new BABYLON.TransformNode(`shoji_fold_${index}_${item.id}`, registry.scene);
+      foldNode.parent = node;
+      foldNode.position.set(fold.cx, 0, fold.cz);
+      foldNode.rotation.y = fold.rot;
+
+      // 1.   (Frame)
+      //  
+      boxComponent(registry, item, japaneseShojiScreenFurniture, 'frame', {
+        width: borderW, height: size.height, depth: frameD
+      }, { position: { x: -wPart / 2 + borderW / 2, y: size.height / 2, z: 0 } }, { parent: foldNode });
+      //  
+      boxComponent(registry, item, japaneseShojiScreenFurniture, 'frame', {
+        width: borderW, height: size.height, depth: frameD
+      }, { position: { x: wPart / 2 - borderW / 2, y: size.height / 2, z: 0 } }, { parent: foldNode });
+      //  
+      boxComponent(registry, item, japaneseShojiScreenFurniture, 'frame', {
+        width: wPart - 2 * borderW, height: borderW, depth: frameD
+      }, { position: { x: 0, y: size.height - borderW / 2, z: 0 } }, { parent: foldNode });
+      //  
+      boxComponent(registry, item, japaneseShojiScreenFurniture, 'frame', {
+        width: wPart - 2 * borderW, height: borderW, depth: frameD
+      }, { position: { x: 0, y: borderW / 2, z: 0 } }, { parent: foldNode });
+
+      // 2.   (Paper)
+      const pW = wPart - 2 * borderW;
+      const pH = size.height - 2 * borderW;
+      const pY = size.height / 2;
+      boxComponent(registry, item, japaneseShojiScreenFurniture, 'paper', {
+        width: pW, height: pH, depth: paperD
+      }, { position: { x: 0, y: pY, z: 0 } }, { parent: foldNode });
+
+      // 3.   (Grille)
+      const gZ = paperD / 2 + grilleD / 2;
+
+      // 2 
+      const gX1 = -pW / 6;
+      const gX2 = pW / 6;
+      boxComponent(registry, item, japaneseShojiScreenFurniture, 'grille', {
+        width: grilleW, height: pH, depth: grilleD
+      }, { position: { x: gX1, y: pY, z: gZ } }, { parent: foldNode });
+      boxComponent(registry, item, japaneseShojiScreenFurniture, 'grille', {
+        width: grilleW, height: pH, depth: grilleD
+      }, { position: { x: gX2, y: pY, z: gZ } }, { parent: foldNode });
+
+      // 4 
+      for (let i = 1; i <= 4; i++) {
+        const gy = borderW + (pH / 5) * i;
+        boxComponent(registry, item, japaneseShojiScreenFurniture, 'grille', {
+          width: pW, height: grilleW, depth: grilleD
+        }, { position: { x: 0, y: gy, z: gZ } }, { parent: foldNode });
+      }
+    });
+  }
+};
+
+export const DECOR_FURNITURE_LIST = [
+  paintingFurniture,
+  triptychPaintingFurniture,
+  landscapePaintingFurniture,
+  circularPaintingFurniture,
+  posterFurniture,
+  triptychPosterFurniture,
+  quadPosterFurniture,
+  clockFurniture,
+  wallClockFurniture,
+  mirrorWallFurniture,
+  mirrorFramedWallFurniture,
+  mirrorRoundWallFurniture,
+  mirrorRoundedWallFurniture,
+  traditionalChineseScreenFurniture,
+  japaneseShojiScreenFurniture,
+  rattanWaveScreenFurniture,
+  modernSlatScreenFurniture,
+  luxuryMetalGlassScreenFurniture,
+  photoFrameFurniture,
+  vaseFurniture,
+  miniCactusFurniture,
+  booksStackFurniture,
+  booksFullRowFurniture,
+  sculptureFurniture,
+  gypsumBustFurniture,
+  hourglassFurniture,
+  globeFurniture,
+  crystalBallFurniture,
+  goldTrophyFurniture,
+  piggyBankFurniture,
+  scentedCandleFurniture,
+  tissueBoxFurniture,
+  storageBasketFurniture,
+  mannequinFurniture,
+  windChimeFurniture,
+  landscapeRockeryAquarium
+];
