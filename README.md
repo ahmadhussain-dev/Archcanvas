@@ -28,10 +28,32 @@ npm run dev:engine               # engine demo on http://localhost:3000
 
 Check the API is up: open http://localhost:4000/api/health.
 
+First-time setup of the database:
+
+```bash
+npm run seed -w @archcanvas/api                            # adds the default material prices
+npm run make-admin -w @archcanvas/api -- you@example.com   # after signing up, makes you an admin
+```
+
+## API
+
+| Route | Who | What |
+| --- | --- | --- |
+| `POST /api/auth/register`, `/login` | anyone | Start a session. Returns an access token (15 minutes) and sets a refresh cookie (7 days). 5 wrong passwords lock the account for 15 minutes. |
+| `POST /api/auth/refresh`, `/logout` | anyone | New access token from the cookie; logout ends the session on every device. |
+| `GET /api/auth/me` | logged in | The current user. |
+| `GET/POST /api/projects`, `GET/PATCH/DELETE /api/projects/:id` | owner | Projects with plot size, floors, roof height and requirements. |
+| `GET/POST /api/projects/:id/versions`, `GET .../versions/:n`, `POST .../versions/:n/restore` | owner | Saved plans (engine building JSON). Restoring copies an old version forward. |
+| `GET /api/projects/:id/estimate` | owner | Grey structure cost for the project. |
+| `GET /api/plots/presets`, `GET /api/rates`, `POST /api/estimate` | anyone | Marla presets, current prices and a quick estimate. |
+| `GET /api/admin/rates`, `PATCH /api/admin/rates/:id` | admin | Edit and verify material prices. |
+
+Send the access token as `Authorization: Bearer <token>`. The estimate rules of thumb are in `api/src/lib/estimate.js`.
+
 ## Tests and build
 
 ```bash
-npm test          # API tests and engine tests
+npm test          # API tests and engine tests (database tests need MongoDB on localhost, else they are skipped)
 npm run build     # production build of the website
 ```
 
@@ -39,7 +61,7 @@ GitHub Actions runs the same checks on every pull request.
 
 ## Build plan
 
-1. Repo setup (this)
+1. Repo setup
 2. Database models: users, projects, project versions, material rates
 3. Backend: auth, projects, estimate
 4. Frontend: landing and auth pages, plot setup, editor, estimate, admin

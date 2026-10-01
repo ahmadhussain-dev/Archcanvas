@@ -7,15 +7,20 @@
   "scripts": {
     "dev": "node --watch --env-file-if-exists=.env src/server.js",
     "start": "node src/server.js",
-    "test": "node --test \"tests/**/*.test.js\"",
-    "seed": "node --env-file-if-exists=.env src/seed/run.js"
+    "test": "node --test --test-concurrency=1 \"tests/**/*.test.js\"",
+    "seed": "node --env-file-if-exists=.env src/seed/run.js",
+    "make-admin": "node --env-file-if-exists=.env src/scripts/makeAdmin.js"
   },
   "dependencies": {
+    "bcryptjs": "^3.0.3",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "express": "^5.1.0",
+    "express-rate-limit": "^8.7.0",
     "helmet": "^8.1.0",
-    "mongoose": "^8.15.0"
+    "jsonwebtoken": "^9.0.3",
+    "mongoose": "^8.15.0",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "supertest": "^7.1.0"
