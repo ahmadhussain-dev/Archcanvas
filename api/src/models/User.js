@@ -20,6 +20,8 @@ const userSchema = new mongoose.Schema(
     // Lockout after repeated failed logins (5 tries, 15 minutes).
     failedLoginCount: { type: Number, default: 0, min: 0, select: false },
     lockUntil: { type: Date, select: false },
+    // Bumped on logout so every refresh token issued before it stops working.
+    tokenVersion: { type: Number, default: 0, min: 0, select: false },
     lastLoginAt: { type: Date }
   },
   { timestamps: true }
@@ -37,6 +39,7 @@ userSchema.set('toJSON', {
     delete ret.passwordHash
     delete ret.failedLoginCount
     delete ret.lockUntil
+    delete ret.tokenVersion
     return ret
   }
 })

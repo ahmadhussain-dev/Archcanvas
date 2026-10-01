@@ -8,8 +8,14 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
+    services:
+      mongo:
+        image: mongo:7
+        ports:
+          - 27017:27017
     env:
       PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
+      MONGODB_TEST_URI: mongodb://127.0.0.1:27017
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
