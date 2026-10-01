@@ -30,19 +30,22 @@ export function RequireAdmin() {
   return <Outlet />
 }
 
-// Logged-in people skip the login and sign-up pages.
+// Logged-in people skip the login and sign-up pages. This is also how those pages
+// move on after a successful login: ?next= if given, else projects (or plot setup
+// for a brand new account).
 export function GuestOnly() {
   const { status } = useAuth()
   const location = useLocation()
   if (status === 'loading') return <FullPageSpinner />
   if (status === 'in') {
     const next = new URLSearchParams(location.search).get('next')
-    return <Navigate to={safeNext(next)} replace />
+    const fallback = location.pathname === '/register' ? '/projects/new' : '/dashboard'
+    return <Navigate to={safeNext(next, fallback)} replace />
   }
   return <Outlet />
 }
 
 // Only same-site paths, so ?next= can't send people to another website.
-export function safeNext(next) {
-  return next && next.startsWith('/') && !next.startsWith('//') ? next : '/dashboard'
+export function safeNext(next, fallback = '/dashboard') {
+  return next && next.startsWith('/') && !next.startsWith('//') ? next : fallback
 }

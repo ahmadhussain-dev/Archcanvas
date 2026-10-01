@@ -1,13 +1,11 @@
 import { useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router'
+import { Link, useSearchParams } from 'react-router'
 import Button from '../../components/Button.jsx'
 import AuthLayout, { Field, FormError } from './AuthLayout.jsx'
 import { useAuth } from '../../auth/AuthContext.jsx'
-import { safeNext } from '../../auth/guards.jsx'
 
 export default function Login() {
   const { login } = useAuth()
-  const navigate = useNavigate()
   const [params] = useSearchParams()
   const next = params.get('next')
   const [email, setEmail] = useState('')
@@ -23,7 +21,7 @@ export default function Login() {
     setFormError('')
     try {
       await login(email, password)
-      navigate(safeNext(next), { replace: true })
+      // GuestOnly sends the now logged-in person on to ?next= or their projects.
     } catch (err) {
       setErrors(err.fieldErrors ?? {})
       if (!err.details?.length) setFormError(err.message)
