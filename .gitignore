@@ -11,3 +11,4 @@ dist/
 # Engine demo leftovers
 engine/example/dist-temp/
 engine/example/dummy-non-existing-folder/
+__pycache__/

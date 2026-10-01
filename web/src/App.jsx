@@ -1,26 +1,39 @@
+import { lazy, Suspense } from 'react'
 import { Route, Routes } from 'react-router'
+import FullPageSpinner from './components/FullPageSpinner.jsx'
 import Placeholder from './pages/Placeholder.jsx'
-import NotFound from './pages/NotFound.jsx'
+import AppLayout from './layouts/AppLayout.jsx'
+import { GuestOnly, RequireAdmin, RequireAuth } from './auth/guards.jsx'
 
-// Routes from the approved sitemap. Each page is a placeholder until it is built.
-const pages = [
-  { path: '/', title: 'Landing page' },
-  { path: '/login', title: 'Log in' },
-  { path: '/register', title: 'Create account' },
-  { path: '/dashboard', title: 'My projects', app: true },
-  { path: '/projects/new', title: 'Plot setup', app: true },
-  { path: '/projects/:id/editor', title: 'Editor', app: true },
-  { path: '/projects/:id/estimate', title: 'Grey structure estimate', app: true },
-  { path: '/admin/prices', title: 'Material prices', app: true }
-]
+// Each page loads its own illustrations, so pages are split into separate files.
+const Landing = lazy(() => import('./pages/landing/Landing.jsx'))
+const Login = lazy(() => import('./pages/auth/Login.jsx'))
+const Register = lazy(() => import('./pages/auth/Register.jsx'))
+const NotFound = lazy(() => import('./pages/NotFound.jsx'))
 
+// Routes from the approved sitemap.
 export default function App() {
   return (
-    <Routes>
-      {pages.map((p) => (
-        <Route key={p.path} path={p.path} element={<Placeholder title={p.title} app={p.app} />} />
-      ))}
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+    <Suspense fallback={<FullPageSpinner />}>
+      <Routes>
+        <Route path="/" element={<Landing />} />
+        <Route element={<GuestOnly />}>
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+        </Route>
+        <Route element={<RequireAuth />}>
+          <Route element={<AppLayout />}>
+            <Route path="/dashboard" element={<Placeholder title="My projects" />} />
+            <Route path="/projects/new" element={<Placeholder title="Plot setup" />} />
+            <Route path="/projects/:id/estimate" element={<Placeholder title="Grey structure estimate" />} />
+            <Route element={<RequireAdmin />}>
+              <Route path="/admin/prices" element={<Placeholder title="Material prices" />} />
+            </Route>
+          </Route>
+          <Route path="/projects/:id/editor" element={<Placeholder title="Editor" />} />
+        </Route>
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </Suspense>
   )
 }
