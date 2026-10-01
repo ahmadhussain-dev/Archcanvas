@@ -1,0 +1,26 @@
+/* Gentle looping motion for the illustrations (from docs/design/generators/illus.py). */
+.ac-bob{animation:ac-bob 2.6s ease-in-out infinite}
+@keyframes ac-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
+.ac-float{animation:ac-float 5s ease-in-out infinite}
+@keyframes ac-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-5px)}}
+.ac-draw{stroke-dasharray:100;stroke-dashoffset:100;animation:ac-draw 5s linear infinite}
+@keyframes ac-draw{0%{stroke-dashoffset:100;opacity:1}50%{stroke-dashoffset:0}88%{stroke-dashoffset:0;opacity:1}100%{stroke-dashoffset:0;opacity:0}}
+.ac-drop{animation:ac-drop 5s ease-out infinite}
+@keyframes ac-drop{0%{transform:translateY(-26px);opacity:0}18%,86%{transform:translateY(0);opacity:1}100%{transform:translateY(0);opacity:0}}
+.ac-tw{transform-box:fill-box;transform-origin:center;animation:ac-tw 1.8s ease-in-out infinite}
+@keyframes ac-tw{0%,100%{transform:scale(.55);opacity:.35}50%{transform:scale(1);opacity:1}}
+.ac-slide{animation:ac-slide 5s ease-in-out infinite}
+@keyframes ac-slide{0%,15%{transform:translate(0,0)}45%,85%{transform:translate(var(--dx),var(--dy))}100%{transform:translate(0,0)}}
+.ac-pulse{animation:ac-pulse 2.4s ease-in-out infinite}
+@keyframes ac-pulse{0%,100%{opacity:.25}50%{opacity:1}}
+.ac-grow{transform-box:fill-box;transform-origin:bottom;animation:ac-grow 3.6s ease-in-out infinite}
+@keyframes ac-grow{0%{transform:scaleY(.15)}45%,85%{transform:scaleY(1)}100%{transform:scaleY(.15)}}
+.ac-swing{transform-box:fill-box;transform-origin:left bottom;animation:ac-swing 4s ease-in-out infinite}
+@keyframes ac-swing{0%,100%{transform:skewY(0)}50%{transform:skewY(-14deg)}}
+.ac-blink{animation:ac-blink 1.2s steps(2,start) infinite}
+@keyframes ac-blink{to{visibility:hidden}}
+.ac-scene{opacity:0;animation:ac-scene 16s linear infinite}
+@keyframes ac-scene{0%{opacity:0}3%,22%{opacity:1}25%,100%{opacity:0}}
+.ac-prog{transform-origin:left;animation:ac-prog 16s linear infinite}
+@keyframes ac-prog{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@media (prefers-reduced-motion: reduce){[class*="ac-"]{animation:none!important}.ac-draw{stroke-dashoffset:0}.ac-scene:first-child{opacity:1}}
