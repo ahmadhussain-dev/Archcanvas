@@ -1,0 +1,61 @@
+import { createBlueprintMaterial } from '../core/materials.js';
+import { buildOpeningBars, buildOpeningFrame, createOpeningPickProxy, createOpeningProfileMesh } from './geometry.js';
+
+export function buildWindowOpening(registry, opening, parent, options = {}) {
+  const width = options.width || opening.width || 1.25;
+  const height = options.height || opening.height || 0.85;
+  const frameT = options.frameT || 0.2;
+  const frameW = options.frameW || 0.04;
+  const materialOptions = { surfaceWidth: width, surfaceHeight: height };
+  //   per-opening Custom 
+  const frameMat = opening.frameMaterial
+    ? createBlueprintMaterial(registry.scene, `win_frame_${opening.id}`, opening.frameMaterial, materialOptions)
+    : registry.materials.trim;
+  const mullionMat = opening.mullionMaterial
+    ? createBlueprintMaterial(registry.scene, `win_mullion_${opening.id}`, opening.mullionMaterial, materialOptions)
+    : (opening.frameMaterial
+        ? createBlueprintMaterial(registry.scene, `win_mullion_fallback_${opening.id}`, opening.frameMaterial, materialOptions)
+        : registry.materials.trim);
+  const glassMat = opening.glassMaterial
+    ? createBlueprintMaterial(registry.scene, `win_glass_mat_${opening.id}`, opening.glassMaterial, materialOptions)
+    : registry.materials.window;
+  if (opening.glassMaterial && !(typeof opening.glassMaterial === 'object' && opening.glassMaterial.alpha !== undefined)) {
+    glassMat.alpha = 0.38;
+    glassMat.backFaceCulling = false;
+    glassMat.twoSidedLighting = true;
+  }
+
+  if (!opening.frameHidden) {
+    buildOpeningFrame(registry, opening, parent, {
+      width,
+      height,
+      frameT,
+      frameW,
+      material: frameMat
+    });
+  }
+  if (opening.glassHidden) {
+    createOpeningPickProxy(registry, opening, parent, { width, height, depth: frameT * 0.8 });
+  }
+
+  if (opening.glassHidden) return;
+
+  const glassMesh = createOpeningProfileMesh(registry, `win_glass_${opening.id}`, opening, parent, {
+    width,
+    height,
+    depth: 0.012,
+    scaleX: opening.frameHidden ? 1 : Math.max(0.1, (width - frameW * 2) / width),
+    scaleY: opening.frameHidden ? 1 : Math.max(0.1, (height - frameW * 2) / height),
+    material: glassMat,
+    shadowCaster: false
+  });
+  glassMesh.metadata = { ...glassMesh.metadata, blueprintOpeningComponentId: 'glass' };
+
+  buildOpeningBars(registry, opening, parent, {
+    width,
+    height,
+    frameW: opening.frameHidden ? 0 : frameW,
+    material: mullionMat
+  });
+}
+

@@ -1,0 +1,931 @@
+import { boxComponent, cylinderComponent, sphereComponent } from './_helpers.js';
+
+// 1.   (Sofa)
+export const sofaFurniture = {
+  type: 'sofa',
+  name: 'Sofa',
+  unit: 'm',
+  defaultSize: { width: 2.15, depth: 0.9, height: 0.8 },
+  components: [
+    { id: 'seat', label: 'Component', defaultColor: '#f7f4ed' },
+    { id: 'back', label: 'Component', defaultColor: '#ede6d8' },
+    { id: 'arms', label: 'Component', defaultColor: '#ede6d8' },
+    { id: 'legs', label: 'Component', defaultColor: '#997b66' }
+  ],
+  interaction: {
+    type: 'sit',
+    getInteractionPoints(size) {
+      const seatH = Math.max(0.12, size.height * 0.4);
+      return [
+        { x: -size.width * 0.22, y: seatH, z: 0, rot: 0 },
+        { x: size.width * 0.22, y: seatH, z: 0, rot: 0 }
+      ];
+    }
+  },
+  build(registry, item, node, size) {
+    const legH = size.height * 0.18;
+    const legTopD = size.width * 0.035;
+    const legBottomD = size.width * 0.022;
+
+    const xInset = size.width * 0.38;
+    const zInset = size.depth * 0.32;
+    [-1, 1].forEach((xSide) => {
+      [-1, 1].forEach((zSide) => {
+        const leg = cylinderComponent(registry, item, sofaFurniture, 'legs', {
+          diameterTop: legTopD,
+          diameterBottom: legBottomD,
+          height: legH,
+          tessellation: 12
+        }, {
+          position: {
+            x: xSide * xInset,
+            y: legH / 2,
+            z: zSide * zInset
+          }
+        }, { parent: node });
+        leg.rotation.z = -xSide * 0.15;
+        leg.rotation.x = zSide * 0.15;
+      });
+    });
+
+    const baseH = size.height * 0.06;
+    boxComponent(registry, item, sofaFurniture, 'seat', {
+      width: size.width * 0.92,
+      height: baseH,
+      depth: size.depth * 0.88
+    }, { position: { x: 0, y: legH + baseH / 2, z: 0 } }, { parent: node });
+
+    const seatH = size.height * 0.24;
+    const seatY = legH + baseH + seatH / 2;
+    const seatW = size.width * 0.43;
+    const seatD = size.depth * 0.84;
+    [-1, 1].forEach((side) => {
+      boxComponent(registry, item, sofaFurniture, 'seat', {
+        width: seatW,
+        height: seatH,
+        depth: seatD
+      }, {
+        position: {
+          x: side * (seatW / 2 + size.width * 0.01),
+          y: seatY,
+          z: size.depth * 0.02
+        }
+      }, { parent: node });
+    });
+
+    const backH = size.height * 0.58;
+    const backT = Math.max(0.12, size.depth * 0.22);
+    const backY = legH + baseH + backH / 2;
+    const backZ = -size.depth * 0.38;
+
+    const backMesh = boxComponent(registry, item, sofaFurniture, 'back', {
+      width: size.width * 0.96,
+      height: backH,
+      depth: backT
+    }, {
+      position: { x: 0, y: backY, z: backZ }
+    }, { parent: node });
+    backMesh.rotation.x = -0.06;
+
+    cylinderComponent(registry, item, sofaFurniture, 'back', {
+      diameterTop: backT * 1.1,
+      diameterBottom: backT * 1.1,
+      height: size.width * 0.94,
+      tessellation: 12
+    }, {
+      position: { x: 0, y: legH + baseH + backH, z: backZ - 0.02 },
+      rotation: { z: Math.PI / 2 }
+    }, { parent: node });
+
+    const armW = size.width * 0.12;
+    const armH = size.height * 0.44;
+    const armD = size.depth * 0.92;
+    const armY = legH + baseH + armH / 2;
+
+    [-1, 1].forEach((side) => {
+      boxComponent(registry, item, sofaFurniture, 'arms', {
+        width: armW,
+        height: armH,
+        depth: armD
+      }, {
+        position: {
+          x: side * (size.width / 2 - armW / 2),
+          y: armY,
+          z: 0
+        }
+      }, { parent: node });
+
+      cylinderComponent(registry, item, sofaFurniture, 'arms', {
+        diameterTop: armW * 1.1,
+        diameterBottom: armW * 1.1,
+        height: armD,
+        tessellation: 12
+      }, {
+        position: {
+          x: side * (size.width / 2 - armW / 2),
+          y: armY + armH / 2,
+          z: 0
+        },
+        rotation: { x: Math.PI / 2 }
+      }, { parent: node });
+    });
+  }
+};
+
+// 2.   (Chair)
+export const chairFurniture = {
+  type: 'chair',
+  name: 'Chair',
+  unit: 'm',
+  defaultSize: { width: 0.45, depth: 0.45, height: 0.8 },
+  components: [
+    { id: 'seat', label: 'Component', defaultColor: '#d6c5b3' },
+    { id: 'legs', label: 'Component', defaultColor: '#967b61' },
+    { id: 'back', label: 'Component', defaultColor: '#b5a18d' }
+  ],
+  interaction: {
+    type: 'sit',
+    getInteractionPoints(size) {
+      const seatY = size.height * 0.45;
+      const seatHeight = size.height * 0.08;
+      return [
+        { x: 0, y: seatY + seatHeight / 2, z: 0, rot: 0 }
+      ];
+    }
+  },
+  build(registry, item, node, size) {
+    const seatHeight = size.height * 0.08;
+    const seatY = size.height * 0.45;
+    boxComponent(registry, item, chairFurniture, 'seat', {
+      width: size.width, height: seatHeight, depth: size.depth
+    }, { position: { x: 0, y: seatY, z: 0 } }, { parent: node });
+
+    const backHeight = size.height * 0.47;
+    const backThickness = Math.max(0.04, size.depth * 0.08);
+    boxComponent(registry, item, chairFurniture, 'back', {
+      width: size.width, height: backHeight, depth: backThickness
+    }, { position: { x: 0, y: seatY + seatHeight / 2 + backHeight / 2, z: -size.depth / 2 + backThickness / 2 } }, { parent: node });
+
+    const legHeight = seatY - seatHeight / 2;
+    const legWidth = Math.max(0.02, size.width * 0.08);
+    const legDepth = Math.max(0.02, size.depth * 0.08);
+    const xOffset = size.width / 2 - legWidth / 2;
+    const zOffset = size.depth / 2 - legDepth / 2;
+
+    [-1, 1].forEach((xSide) => {
+      [-1, 1].forEach((zSide) => {
+        boxComponent(registry, item, chairFurniture, 'legs', {
+          width: legWidth, height: legHeight, depth: legDepth
+        }, { position: { x: xSide * xOffset, y: legHeight / 2, z: zSide * zOffset } }, { parent: node });
+      });
+    });
+  }
+};
+
+// 3.   (Armchair)
+export const armchairFurniture = {
+  type: 'armchair',
+  name: 'Armchair',
+  unit: 'm',
+  defaultSize: { width: 0.9, depth: 0.8, height: 0.75 },
+  components: [
+    { id: 'seat', label: 'Component', defaultColor: '#ebd9c8' },
+    { id: 'back', label: 'Component', defaultColor: '#d4c2b0' },
+    { id: 'arms', label: 'Component', defaultColor: '#d4c2b0' },
+    { id: 'legs', label: 'Component', defaultColor: '#7c6351' }
+  ],
+  interaction: {
+    type: 'sit',
+    getInteractionPoints(size) {
+      const seatH = size.height * 0.38;
+      const legH = size.height * 0.12;
+      return [
+        { x: 0, y: legH + seatH, z: size.depth * 0.04, rot: 0 }
+      ];
+    }
+  },
+  build(registry, item, node, size) {
+    const seatH = size.height * 0.38;
+    const legH = size.height * 0.12;
+
+    boxComponent(registry, item, armchairFurniture, 'seat', {
+      width: size.width * 0.78, height: seatH, depth: size.depth * 0.92
+    }, { position: { x: 0, y: legH + seatH / 2, z: size.depth * 0.04 } }, { parent: node });
+
+    boxComponent(registry, item, armchairFurniture, 'back', {
+      width: size.width, height: size.height * 0.88, depth: size.depth * 0.20
+    }, { position: { x: 0, y: size.height * 0.44, z: -size.depth * 0.40 } }, { parent: node });
+
+    [-1, 1].forEach((side) => {
+      boxComponent(registry, item, armchairFurniture, 'arms', {
+        width: size.width * 0.11, height: size.height * 0.58, depth: size.depth * 0.96
+      }, { position: { x: side * size.width * 0.445, y: size.height * 0.29, z: size.depth * 0.02 } }, { parent: node });
+    });
+
+    const legD = Math.max(0.03, size.width * 0.08);
+    [-1, 1].forEach((x) => {
+      [-1, 1].forEach((z) => {
+        cylinderComponent(registry, item, armchairFurniture, 'legs', {
+          diameterTop: legD, diameterBottom: legD * 0.8, height: legH, tessellation: 12
+        }, { position: { x: x * size.width * 0.38, y: legH / 2, z: z * size.depth * 0.38 } }, { parent: node });
+      });
+    });
+  }
+};
+
+// 4. Circle  (Stool)
+export const stoolFurniture = {
+  type: 'stool',
+  name: 'Stool',
+  unit: 'm',
+  defaultSize: { width: 0.35, depth: 0.35, height: 0.45 },
+  components: [
+    { id: 'seat', label: 'Component', defaultColor: '#d9ab7e' },
+    { id: 'legs', label: 'Component', defaultColor: '#aa8056' }
+  ],
+  interaction: {
+    type: 'sit',
+    getInteractionPoints(size) {
+      return [
+        { x: 0, y: size.height, z: 0, rot: 0 }
+      ];
+    }
+  },
+  build(registry, item, node, size) {
+    const seatH = size.height * 0.15;
+    cylinderComponent(registry, item, stoolFurniture, 'seat', {
+      diameterTop: size.width, diameterBottom: size.width, height: seatH, tessellation: 24
+    }, { position: { x: 0, y: size.height - seatH / 2, z: 0 } }, { parent: node });
+
+    const legH = size.height - seatH;
+    const legD = Math.max(0.02, size.width * 0.09);
+    [-1, 1].forEach((xSide) => {
+      [-1, 1].forEach((zSide) => {
+        cylinderComponent(registry, item, stoolFurniture, 'legs', {
+          diameterTop: legD, diameterBottom: legD * 0.8, height: legH, tessellation: 12
+        }, { position: { x: xSide * size.width * 0.30, y: legH / 2, z: zSide * size.depth * 0.30 } }, { parent: node });
+      });
+    });
+  }
+};
+
+// 5.   (Barstool)
+export const barstoolFurniture = {
+  type: 'barstool',
+  name: 'Barstool',
+  unit: 'm',
+  defaultSize: { width: 0.4, depth: 0.4, height: 0.75 },
+  components: [
+    { id: 'seat', label: 'Component', defaultColor: '#474747' },
+    { id: 'legs', label: 'Component', defaultColor: '#2b2b2b' },
+    { id: 'ring', label: 'Component', defaultColor: '#d9d9d9' }
+  ],
+  interaction: {
+    type: 'sit',
+    getInteractionPoints(size) {
+      return [
+        { x: 0, y: size.height, z: 0, rot: 0 }
+      ];
+    }
+  },
+  build(registry, item, node, size) {
+    const seatH = size.height * 0.12;
+    cylinderComponent(registry, item, barstoolFurniture, 'seat', {
+      diameterTop: size.width, diameterBottom: size.width * 0.95, height: seatH, tessellation: 24
+    }, { position: { x: 0, y: size.height - seatH / 2, z: 0 } }, { parent: node });
+
+    const legH = size.height - seatH;
+    const legD = Math.max(0.015, size.width * 0.06);
+    [-1, 1].forEach((x) => {
+      [-1, 1].forEach((z) => {
+        cylinderComponent(registry, item, barstoolFurniture, 'legs', {
+          diameterTop: legD, diameterBottom: legD * 0.8, height: legH, tessellation: 8
+        }, { position: { x: x * size.width * 0.32, y: legH / 2, z: z * size.depth * 0.32 } }, { parent: node });
+      });
+    });
+
+    const ringH = 0.02;
+    boxComponent(registry, item, barstoolFurniture, 'ring', {
+      width: size.width * 0.72, height: ringH, depth: size.depth * 0.72
+    }, { position: { x: 0, y: legH * 0.38, z: 0 } }, { parent: node });
+  }
+};
+
+// 6. Outdoor  (Bench)
+export const benchFurniture = {
+  type: 'bench',
+  name: 'Bench',
+  unit: 'm',
+  defaultSize: { width: 1.5, depth: 0.45, height: 0.8 },
+  components: [
+    { id: 'seat', label: 'Component', defaultColor: '#b57a4c' },
+    { id: 'back', label: 'Component', defaultColor: '#b57a4c' },
+    { id: 'frame', label: 'Component', defaultColor: '#3b3835' }
+  ],
+  interaction: {
+    type: 'sit',
+    getInteractionPoints(size) {
+      const seatY = size.height * 0.45;
+      const seatH = 0.03;
+      return [
+        { x: -size.width * 0.24, y: seatY + seatH, z: size.depth * 0.04, rot: 0 },
+        { x: size.width * 0.24, y: seatY + seatH, z: size.depth * 0.04, rot: 0 }
+      ];
+    }
+  },
+  build(registry, item, node, size) {
+    const seatH = 0.03;
+    const seatY = size.height * 0.45;
+    boxComponent(registry, item, benchFurniture, 'seat', {
+      width: size.width * 0.94, height: seatH, depth: size.depth * 0.88
+    }, { position: { x: 0, y: seatY, z: size.depth * 0.04 } }, { parent: node });
+
+    const backH = size.height * 0.38;
+    boxComponent(registry, item, benchFurniture, 'back', {
+      width: size.width * 0.94, height: backH, depth: 0.03
+    }, { position: { x: 0, y: seatY + backH / 2 + 0.05, z: -size.depth * 0.42 } }, { parent: node });
+
+    const legH = seatY;
+    [-1, 1].forEach((side) => {
+      boxComponent(registry, item, benchFurniture, 'frame', {
+        width: 0.04, height: legH, depth: size.depth
+      }, { position: { x: side * size.width * 0.46, y: legH / 2, z: 0 } }, { parent: node });
+
+      boxComponent(registry, item, benchFurniture, 'frame', {
+        width: 0.04, height: size.height - legH, depth: 0.04
+      }, { position: { x: side * size.width * 0.46, y: legH + (size.height - legH) / 2, z: -size.depth * 0.42 } }, { parent: node });
+    });
+  }
+};
+
+// 7.   (Loveseat)
+export const loveseatFurniture = {
+  type: 'loveseat',
+  name: 'Loveseat',
+  unit: 'm',
+  defaultSize: { width: 1.55, depth: 0.85, height: 0.8 },
+  components: [
+    { id: 'seat', label: 'Component', defaultColor: '#ffbfcd' },
+    { id: 'back', label: 'Component', defaultColor: '#f09ab0' },
+    { id: 'arms', label: 'Component', defaultColor: '#f09ab0' },
+    { id: 'legs', label: 'Component', defaultColor: '#96633e' }
+  ],
+  interaction: {
+    type: 'sit',
+    getInteractionPoints(size) {
+      const seatH = Math.max(0.12, size.height * 0.36);
+      return [
+        { x: -size.width * 0.22, y: seatH, z: 0, rot: 0 },
+        { x: size.width * 0.22, y: seatH, z: 0, rot: 0 }
+      ];
+    }
+  },
+  build(registry, item, node, size) {
+    const seatH = Math.max(0.12, size.height * 0.36);
+    boxComponent(registry, item, loveseatFurniture, 'seat', {
+      width: size.width, height: seatH, depth: size.depth
+    }, { position: { x: 0, y: seatH / 2, z: 0 } }, { parent: node });
+
+    boxComponent(registry, item, loveseatFurniture, 'back', {
+      width: size.width, height: size.height * 0.58, depth: Math.max(0.12, size.depth * 0.18)
+    }, { position: { x: 0, y: size.height * 0.58, z: -size.depth * 0.41 } }, { parent: node });
+
+    [-1, 1].forEach((side) => {
+      boxComponent(registry, item, loveseatFurniture, 'arms', {
+        width: Math.max(0.12, size.width * 0.11), height: size.height * 0.52, depth: size.depth
+      }, { position: { x: side * size.width * 0.445, y: size.height * 0.38, z: 0 } }, { parent: node });
+    });
+
+    [-1, 1].forEach((xSide) => {
+      [-1, 1].forEach((zSide) => {
+        boxComponent(registry, item, loveseatFurniture, 'legs', {
+          width: 0.08, height: 0.16, depth: 0.08
+        }, { position: { x: xSide * size.width * 0.34, y: 0.08, z: zSide * size.depth * 0.32 } }, { parent: node });
+      });
+    });
+  }
+};
+
+// 8.   (Officechair)
+export const officechairFurniture = {
+  type: 'officechair',
+  name: 'Officechair',
+  unit: 'm',
+  defaultSize: { width: 0.6, depth: 0.6, height: 1 },
+  components: [
+    { id: 'seat', label: 'Component', defaultColor: '#33373d' },
+    { id: 'back', label: 'Component', defaultColor: '#202326' },
+    { id: 'base', label: 'Component', defaultColor: '#c2c7d0' }
+  ],
+  interaction: {
+    type: 'sit',
+    getInteractionPoints(size) {
+      const baseH = size.height * 0.42;
+      const seatH = size.height * 0.08;
+      return [
+        { x: 0, y: baseH + seatH, z: -size.depth * 0.02, rot: 0 }
+      ];
+    }
+  },
+  build(registry, item, node, size) {
+    const baseH = size.height * 0.42;
+    cylinderComponent(registry, item, officechairFurniture, 'base', {
+      diameterTop: 0.04, diameterBottom: 0.06, height: baseH, tessellation: 12
+    }, { position: { x: 0, y: baseH / 2, z: 0 } }, { parent: node });
+    boxComponent(registry, item, officechairFurniture, 'base', {
+      width: size.width * 0.72, height: 0.03, depth: size.depth * 0.72
+    }, { position: { x: 0, y: 0.015, z: 0 } }, { parent: node });
+
+    const seatH = size.height * 0.08;
+    boxComponent(registry, item, officechairFurniture, 'seat', {
+      width: size.width * 0.82, height: seatH, depth: size.depth * 0.82
+    }, { position: { x: 0, y: baseH + seatH / 2, z: -size.depth * 0.02 } }, { parent: node });
+
+    const backH = size.height * 0.48;
+    boxComponent(registry, item, officechairFurniture, 'back', {
+      width: size.width * 0.74, height: backH, depth: 0.06
+    }, { position: { x: 0, y: baseH + seatH + backH / 2, z: -size.depth * 0.38 } }, { parent: node });
+  }
+};
+
+// 9.   (Beanbag)
+export const beanbagFurniture = {
+  type: 'beanbag',
+  name: 'Beanbag',
+  unit: 'm',
+  defaultSize: { width: 0.7, depth: 0.7, height: 0.5 },
+  components: [
+    { id: 'body', label: 'Component', defaultColor: '#9db5ff' }
+  ],
+  interaction: {
+    type: 'sit',
+    getInteractionPoints(size) {
+      return [
+        { x: 0, y: size.height * 0.72, z: 0, rot: 0 }
+      ];
+    }
+  },
+  build(registry, item, node, size) {
+    //  
+    const mesh = sphereComponent(registry, item, beanbagFurniture, 'body', {
+      diameter: Math.max(size.width, size.depth), segments: 16
+    }, { position: { x: 0, y: size.height / 2, z: 0 } }, { parent: node });
+    mesh.scaling.y = size.height / Math.max(size.width, size.depth);
+  }
+};
+
+// 10.   (Sunbed)
+export const deckchairFurniture = {
+  type: 'deckchair',
+  name: 'Deckchair',
+  unit: 'm',
+  defaultSize: { width: 0.6, depth: 1.8, height: 0.5 },
+  components: [
+    { id: 'fabric', label: 'Component', defaultColor: '#ff9a6c' },
+    { id: 'frame', label: 'Component', defaultColor: '#ebd5bd' },
+    { id: 'wheels', label: 'Component', defaultColor: '#e2e2e5' }
+  ],
+  interaction: {
+    type: 'lie',
+    getInteractionPoints(size) {
+      return [
+        { x: 0, y: size.height * 0.48, z: -size.depth * 0.05, rot: 0 }
+      ];
+    }
+  },
+  build(registry, item, node, size) {
+    const cushionCompId = 'fabric';
+
+    const frameThickness = 0.035;
+    const baseY = 0.20; //  
+    const railX = size.width / 2 - frameThickness / 2;
+
+    // --- 1.   (Base Metal Frame) ---
+    //  
+    [-1, 1].forEach((side) => {
+      boxComponent(registry, item, deckchairFurniture, 'frame', {
+        width: frameThickness, height: frameThickness, depth: size.depth * 0.88
+      }, {
+        position: { x: side * railX, y: baseY, z: -size.depth * 0.02 }
+      }, { parent: node });
+    });
+
+    //  
+    boxComponent(registry, item, deckchairFurniture, 'frame', {
+      width: size.width, height: frameThickness, depth: frameThickness
+    }, {
+      position: { x: 0, y: baseY, z: size.depth * 0.42 }
+    }, { parent: node });
+
+    //  
+    cylinderComponent(registry, item, deckchairFurniture, 'frame', {
+      diameterTop: 0.025, diameterBottom: 0.025, height: size.width * 1.05, tessellation: 16
+    }, {
+      position: { x: 0, y: 0.10, z: -size.depth * 0.42 },
+      rotation: { z: Math.PI / 2 }
+    }, { parent: node });
+
+    // --- 2.   (Curved Front Legs) ---
+    [-1, 1].forEach((side) => {
+      const leg = boxComponent(registry, item, deckchairFurniture, 'frame', {
+        width: frameThickness, height: baseY - frameThickness / 2, depth: frameThickness * 1.2
+      }, {
+        position: {
+          x: side * (size.width / 2 - frameThickness * 0.6),
+          y: (baseY - frameThickness / 2) / 2,
+          z: size.depth * 0.38
+        }
+      }, { parent: node });
+      leg.rotation.x = -0.10;
+    });
+
+    // --- 3.   (Rear Disc Wheels) ---
+    const wheelRadius = 0.095;
+    const wheelThick = 0.028;
+    [-1, 1].forEach((side) => {
+      cylinderComponent(registry, item, deckchairFurniture, 'wheels', {
+        diameterTop: wheelRadius * 2,
+        diameterBottom: wheelRadius * 2,
+        height: wheelThick,
+        tessellation: 32
+      }, {
+        position: {
+          x: side * (size.width / 2 + wheelThick / 2 + 0.005),
+          y: wheelRadius,
+          z: -size.depth * 0.42
+        },
+        rotation: { z: Math.PI / 2 }
+      }, { parent: node });
+    });
+
+    // --- 4.   (Channel-Tufted Cushion Mattress) ---
+    const padThickness = 0.07;
+    const padY = baseY + frameThickness / 2 + padThickness / 2;
+    const padW = size.width * 0.94;
+
+    // A.  /  (Leg/Seat Section)
+    const seatZStart = size.depth * 0.43;
+    const seatZEnd = -size.depth * 0.06;
+    const seatLen = seatZStart - seatZEnd;
+    const seatCenterZ = (seatZStart + seatZEnd) / 2;
+
+    boxComponent(registry, item, deckchairFurniture, cushionCompId, {
+      width: padW, height: padThickness, depth: seatLen
+    }, {
+      position: { x: 0, y: padY, z: seatCenterZ }
+    }, { parent: node });
+
+    //  
+    const tubeRadius = 0.042;
+    const numSeatTubes = 9;
+    for (let i = 0; i < numSeatTubes; i++) {
+      const t = i / (numSeatTubes - 1);
+      const tubeZ = seatZStart - t * (seatLen - tubeRadius * 1.2) - tubeRadius * 0.6;
+      const tube = cylinderComponent(registry, item, deckchairFurniture, cushionCompId, {
+        diameterTop: tubeRadius * 2,
+        diameterBottom: tubeRadius * 2,
+        height: padW * 0.98,
+        tessellation: 16
+      }, {
+        position: { x: 0, y: padY + padThickness * 0.28, z: tubeZ },
+        rotation: { z: Math.PI / 2 }
+      }, { parent: node });
+      tube.scaling.y = 0.65;
+    }
+
+    // B.   (Reclining Backrest Section)
+    const backZStart = seatZEnd;
+    const backZEnd = -size.depth * 0.44;
+    const backYEnd = size.height - padThickness / 2;
+
+    const backDz = backZStart - backZEnd;
+    const backDy = backYEnd - padY;
+    const backLen = Math.sqrt(backDz * backDz + backDy * backDy);
+    const backAngle = Math.atan2(backDz, backDy) / 2;
+
+    const backCenterY = backYEnd / 2 + padY;
+    const backCenterZ = (backZStart + backZEnd) / 2;
+
+    const backPadMesh = boxComponent(registry, item, deckchairFurniture, cushionCompId, {
+      width: padW, height: padThickness, depth: backLen
+    }, {
+      position: { x: 0, y: backCenterY, z: backCenterZ }
+    }, { parent: node });
+    backPadMesh.rotation.x = backAngle;
+
+    //  
+    const backFrameBar = boxComponent(registry, item, deckchairFurniture, 'frame', {
+      width: size.width * 0.88, height: frameThickness * 0.8, depth: backLen / 3
+    }, {
+      position: { x: 0, y: backYEnd / 2 + frameThickness * 2, z: backCenterZ }
+    }, { parent: node });
+    backFrameBar.rotation.x = backAngle - Math.PI / 2;
+
+    //  
+    const numBackTubes = 8;
+    for (let i = 0; i < numBackTubes; i++) {
+      const frac = i / (numBackTubes - 1);
+      const dist = (frac - 0.5) * (backLen - tubeRadius * 1.2);
+      const localY = padThickness * 0.28;
+      const worldY = backCenterY + dist * Math.sin(backAngle) + localY * Math.cos(backAngle);
+      const worldZ = backCenterZ - dist * Math.cos(backAngle) + localY * Math.sin(backAngle);
+
+      const tube = cylinderComponent(registry, item, deckchairFurniture, cushionCompId, {
+        diameterTop: tubeRadius * 2,
+        diameterBottom: tubeRadius * 2,
+        height: padW * 0.98,
+        tessellation: 16
+      }, {
+        position: { x: 0, y: worldY, z: worldZ },
+        rotation: { z: Math.PI / 2 }
+      }, { parent: node });
+      tube.rotation.x = -backAngle;
+      tube.scaling.y = 0.65;
+    }
+  }
+};
+
+// 11.   (Adirondack Chair)
+export const adirondackChairFurniture = {
+  type: 'adirondack_chair',
+  name: 'Adirondack Chair',
+  unit: 'm',
+  defaultSize: { width: 0.7, depth: 0.85, height: 0.9 },
+  components: [
+    { id: 'seat', label: 'Component', defaultColor: '#c99662' },
+    { id: 'back', label: 'Component', defaultColor: '#d6ac78' },
+    { id: 'arms', label: 'Component', defaultColor: '#bd895a' },
+    { id: 'legs', label: 'Component', defaultColor: '#7a5a40' }
+  ],
+  interaction: {
+    type: 'sit',
+    getInteractionPoints(size) {
+      return [{ x: 0, y: size.height * 0.42, z: size.depth * 0.02, rot: 0 }];
+    }
+  },
+  build(registry, item, node, size) {
+    const seat = boxComponent(registry, item, adirondackChairFurniture, 'seat', {
+      width: size.width * 0.82, height: 0.04, depth: size.depth * 0.52
+    }, { position: { x: 0, y: size.height * 0.36, z: size.depth * 0.04 } }, { parent: node });
+    seat.rotation.x = -Math.PI * 0.06;
+
+    const back = boxComponent(registry, item, adirondackChairFurniture, 'back', {
+      width: size.width * 0.82, height: size.height * 0.52, depth: 0.04
+    }, { position: { x: 0, y: size.height * 0.62, z: -size.depth * 0.3 } }, { parent: node });
+    back.rotation.x = -Math.PI * 0.16;
+
+    [-1, 1].forEach((side) => {
+      const arm = boxComponent(registry, item, adirondackChairFurniture, 'arms', {
+        width: size.width * 0.12, height: 0.04, depth: size.depth * 0.54
+      }, { position: { x: side * size.width * 0.38, y: size.height * 0.48, z: size.depth * 0.04 } }, { parent: node });
+      arm.rotation.x = -Math.PI * 0.06;
+    });
+
+    [-1, 1].forEach((xSide) => {
+      [-1, 1].forEach((zSide) => {
+        boxComponent(registry, item, adirondackChairFurniture, 'legs', {
+          width: 0.04, height: size.height * 0.36, depth: 0.04
+        }, { position: { x: xSide * size.width * 0.28, y: size.height * 0.18, z: zSide * size.depth * 0.18 } }, { parent: node });
+      });
+    });
+  }
+};
+
+// 12.   (Folding Camping Chair)
+export const foldingCampingChairFurniture = {
+  type: 'folding_camping_chair',
+  name: 'Folding Camping Chair',
+  unit: 'm',
+  defaultSize: { width: 0.55, depth: 0.6, height: 0.8 },
+  components: [
+    { id: 'fabric', label: 'Component', defaultColor: '#6ea4c8' },
+    { id: 'frame', label: 'Component', defaultColor: '#70757d' }
+  ],
+  interaction: {
+    type: 'sit',
+    getInteractionPoints(size) {
+      return [{ x: 0, y: size.height * 0.42, z: 0, rot: 0 }];
+    }
+  },
+  build(registry, item, node, size) {
+    const seatY = size.height * 0.48; //  
+    const pipeD = 0.025; //  
+    const groundY = pipeD / 2; //   Y
+
+    // 1.   X   (  Y = groundY)
+    const legDz = size.depth * 0.68;
+    const legDy = seatY - groundY;
+    const legLen = Math.sqrt(legDz * legDz + legDy * legDy);
+    const legAngle = Math.atan2(legDz, legDy);
+
+    [-1, 1].forEach((xSide) => {
+      const xPos = xSide * (size.width / 2 - pipeD * 1.5);
+
+      //  1：  ->  
+      const leg1 = cylinderComponent(registry, item, foldingCampingChairFurniture, 'frame', {
+        diameterTop: pipeD, diameterBottom: pipeD, height: legLen, tessellation: 12
+      }, {
+        position: {
+          x: xPos,
+          y: (seatY + groundY) / 2,
+          z: 0
+        }
+      }, { parent: node });
+      leg1.rotation.x = -legAngle;
+
+      //  2：  ->  
+      const leg2 = cylinderComponent(registry, item, foldingCampingChairFurniture, 'frame', {
+        diameterTop: pipeD, diameterBottom: pipeD, height: legLen, tessellation: 12
+      }, {
+        position: {
+          x: xPos,
+          y: (seatY + groundY) / 2,
+          z: 0
+        }
+      }, { parent: node });
+      leg2.rotation.x = legAngle;
+    });
+
+    //  
+    [-1, 1].forEach((zSide) => {
+      cylinderComponent(registry, item, foldingCampingChairFurniture, 'frame', {
+        diameterTop: pipeD * 1.1, diameterBottom: pipeD * 1.1, height: size.width * 0.88, tessellation: 12
+      }, {
+        position: {
+          x: 0,
+          y: groundY,
+          z: zSide * (legDz / 2)
+        },
+        rotation: { z: Math.PI / 2 }
+      }, { parent: node });
+    });
+
+    // 2.   (Back Rest Poles)
+    const backPoleH = size.height - seatY;
+    [-1, 1].forEach((xSide) => {
+      const backPole = cylinderComponent(registry, item, foldingCampingChairFurniture, 'frame', {
+        diameterTop: pipeD, diameterBottom: pipeD, height: backPoleH, tessellation: 12
+      }, {
+        position: {
+          x: xSide * (size.width / 2 - pipeD * 1.5),
+          y: seatY + backPoleH / 2,
+          z: -legDz / 2
+        }
+      }, { parent: node });
+      backPole.rotation.x = -Math.PI * 0.06;
+    });
+
+    // 3.   (Seat Fabric)
+    const seat = boxComponent(registry, item, foldingCampingChairFurniture, 'fabric', {
+      width: size.width * 0.84, height: 0.016, depth: legDz * 0.96
+    }, {
+      position: { x: 0, y: seatY, z: 0 }
+    }, { parent: node });
+    seat.rotation.x = -Math.PI * 0.03;
+
+    // 4.   (Backrest Fabric)
+    const backH = backPoleH * 0.75;
+    const back = boxComponent(registry, item, foldingCampingChairFurniture, 'fabric', {
+      width: size.width * 0.84, height: backH, depth: 0.016
+    }, {
+      position: {
+        x: 0,
+        y: seatY + backPoleH * 0.55,
+        z: -legDz / 2 - 0.01
+      }
+    }, { parent: node });
+    back.rotation.x = -Math.PI * 0.06;
+  }
+};
+
+// 13.   (Rattan Lounge Chair)
+export const rattanLoungeChairFurniture = {
+  type: 'rattan_lounge_chair',
+  name: 'Rattan Lounge Chair',
+  unit: 'm',
+  defaultSize: { width: 0.75, depth: 0.75, height: 0.8 },
+  components: [
+    { id: 'seat', label: 'Component', defaultColor: '#efe2cf' },
+    { id: 'shell', label: 'Component', defaultColor: '#a6784d' },
+    { id: 'legs', label: 'Component', defaultColor: '#6e5542' }
+  ],
+  interaction: {
+    type: 'sit',
+    getInteractionPoints(size) {
+      return [{ x: 0, y: size.height * 0.44, z: size.depth * 0.02, rot: 0 }];
+    }
+  },
+  build(registry, item, node, size) {
+    const shellW = size.width;
+    const shellH = size.height * 0.64;
+    const shellD = size.depth * 0.92;
+    const shellY = size.height * 0.44;
+    const t = 0.03;
+
+    //  
+    boxComponent(registry, item, rattanLoungeChairFurniture, 'shell', {
+      width: shellW, height: t, depth: shellD
+    }, { position: { x: 0, y: shellY - shellH / 2 + t / 2, z: 0 } }, { parent: node });
+
+    //  
+    boxComponent(registry, item, rattanLoungeChairFurniture, 'shell', {
+      width: shellW, height: shellH - t, depth: t
+    }, { position: { x: 0, y: shellY + t / 2, z: -shellD / 2 + t / 2 } }, { parent: node });
+
+    //  
+    boxComponent(registry, item, rattanLoungeChairFurniture, 'shell', {
+      width: t, height: shellH - t, depth: shellD - t
+    }, { position: { x: -shellW / 2 + t / 2, y: shellY + t / 2, z: t / 2 } }, { parent: node });
+
+    //  
+    boxComponent(registry, item, rattanLoungeChairFurniture, 'shell', {
+      width: t, height: shellH - t, depth: shellD - t
+    }, { position: { x: shellW / 2 - t / 2, y: shellY + t / 2, z: t / 2 } }, { parent: node });
+
+    const seat = boxComponent(registry, item, rattanLoungeChairFurniture, 'seat', {
+      width: size.width * 0.78, height: 0.05, depth: size.depth * 0.68
+    }, { position: { x: 0, y: size.height * 0.36, z: size.depth * 0.04 } }, { parent: node });
+    seat.rotation.x = -Math.PI * 0.08;
+
+    [-1, 1].forEach((xSide) => {
+      [-1, 1].forEach((zSide) => {
+        cylinderComponent(registry, item, rattanLoungeChairFurniture, 'legs', {
+          diameterTop: 0.04, diameterBottom: 0.03, height: size.height * 0.22, tessellation: 12
+        }, { position: { x: xSide * size.width * 0.28, y: size.height * 0.11, z: zSide * size.depth * 0.24 } }, { parent: node });
+      });
+    });
+  }
+};
+
+// 14.   (Hanging Egg Chair)
+export const hangingEggChairFurniture = {
+  type: 'hanging_egg_chair',
+  name: 'Hanging Egg Chair',
+  unit: 'm',
+  defaultSize: { width: 0.8, depth: 0.85, height: 1.8 },
+  components: [
+    { id: 'frame', label: 'Component', defaultColor: '#55585d' },
+    { id: 'shell', label: 'Component', defaultColor: '#9b6f46' },
+    { id: 'cushion', label: 'Component', defaultColor: '#f3e4c8' }
+  ],
+  interaction: {
+    type: 'sit',
+    getInteractionPoints(size) {
+      return [{ x: 0, y: size.height * 0.42, z: 0, rot: 0 }];
+    }
+  },
+  build(registry, item, node, size) {
+    cylinderComponent(registry, item, hangingEggChairFurniture, 'frame', {
+      diameterTop: size.width * 0.72,
+      diameterBottom: size.width * 0.72,
+      height: 0.03,
+      tessellation: 24
+    }, { position: { x: 0, y: 0.015, z: 0 } }, { parent: node });
+
+    const pole = boxComponent(registry, item, hangingEggChairFurniture, 'frame', {
+      width: 0.04, height: size.height * 0.92, depth: 0.04
+    }, { position: { x: 0, y: size.height * 0.46, z: -size.depth * 0.2 } }, { parent: node });
+    pole.rotation.x = -Math.PI * 0.08;
+
+    boxComponent(registry, item, hangingEggChairFurniture, 'frame', {
+      width: 0.02, height: size.height * 0.26, depth: 0.02
+    }, { position: { x: 0, y: size.height * 0.56, z: 0 } }, { parent: node });
+
+    const shellW = size.width * 0.78;
+    const shellH = size.height * 0.48;
+    const shellD = size.depth * 0.78;
+    const shellY = size.height * 0.4;
+    const shellZ = size.depth * 0.04;
+    const t = 0.03;
+
+    //  
+    boxComponent(registry, item, hangingEggChairFurniture, 'shell', {
+      width: shellW, height: t, depth: shellD
+    }, { position: { x: 0, y: shellY - shellH / 2 + t / 2, z: shellZ } }, { parent: node });
+
+    //  
+    boxComponent(registry, item, hangingEggChairFurniture, 'shell', {
+      width: shellW, height: t, depth: shellD
+    }, { position: { x: 0, y: shellY + shellH / 2 - t / 2, z: shellZ } }, { parent: node });
+
+    //  
+    boxComponent(registry, item, hangingEggChairFurniture, 'shell', {
+      width: shellW, height: shellH - t * 2, depth: t
+    }, { position: { x: 0, y: shellY, z: shellZ - shellD / 2 + t / 2 } }, { parent: node });
+
+    //  
+    boxComponent(registry, item, hangingEggChairFurniture, 'shell', {
+      width: t, height: shellH - t * 2, depth: shellD - t
+    }, { position: { x: -shellW / 2 + t / 2, y: shellY, z: shellZ + t / 2 } }, { parent: node });
+
+    //  
+    boxComponent(registry, item, hangingEggChairFurniture, 'shell', {
+      width: t, height: shellH - t * 2, depth: shellD - t
+    }, { position: { x: shellW / 2 - t / 2, y: shellY, z: shellZ + t / 2 } }, { parent: node });
+
+    const cushion = boxComponent(registry, item, hangingEggChairFurniture, 'cushion', {
+      width: size.width * 0.58, height: size.height * 0.08, depth: size.depth * 0.46
+    }, { position: { x: 0, y: size.height * 0.32, z: size.depth * 0.08 } }, { parent: node });
+    cushion.rotation.x = Math.PI * 0.08;
+  }
+};

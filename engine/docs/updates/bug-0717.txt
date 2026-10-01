@@ -1,0 +1,3 @@
+1. Add exterior wall trim and slab edge borders (Completed).
+2. Fix round table scaling to allow oval deformation (Completed).
+3. Implement half-grid snapping and cross-wall opening cuts (Completed).

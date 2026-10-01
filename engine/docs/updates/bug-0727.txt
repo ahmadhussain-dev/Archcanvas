@@ -1,0 +1,3 @@
+1. Optimize image compression: pass through TinyPNG and convert to WebP assets.
+2. Enhance skybox texture resolution and fix seam alignment.
+3. Add custom material opacity and reflectivity controls.

@@ -1,0 +1,764 @@
+import { boxComponent, cylinderComponent, sphereComponent } from './_helpers.js';
+
+// 1.  Princess Bed (Bed)
+export const bedFurniture = {
+  type: 'bed',
+  name: 'Princess Bed',
+  unit: 'm',
+  defaultSize: { width: 1.95, depth: 2.25, height: 1.05 },
+  components: [
+    { id: 'frame', label: 'Bed Frame', defaultColor: '#f3aac5' },
+    { id: 'blanket', label: 'Duvet', defaultColor: '#ffcad8' },
+    { id: 'pillow', label: 'Pillows', defaultColor: '#ffffff' },
+    { id: 'headboard', label: 'Headboard', defaultColor: '#e985b2' }
+  ],
+  interaction: {
+    type: 'lie',
+    getInteractionPoints(size) {
+      return [
+        { x: -size.width * 0.2, y: size.height * 0.44, z: 0, rot: 0 },
+        { x: size.width * 0.2, y: size.height * 0.44, z: 0, rot: 0 }
+      ];
+    }
+  },
+  build(registry, item, node, size) {
+    boxComponent(registry, item, bedFurniture, 'frame', {
+      width: size.width, height: size.height * 0.28, depth: size.depth
+    }, { position: { x: 0, y: size.height * 0.14, z: 0 } }, { parent: node });
+
+    boxComponent(registry, item, bedFurniture, 'blanket', {
+      width: size.width * 0.9, height: size.height * 0.16, depth: size.depth * 0.72
+    }, { position: { x: 0, y: size.height * 0.4, z: size.depth * 0.08 } }, { parent: node });
+
+    boxComponent(registry, item, bedFurniture, 'pillow', {
+      width: size.width * 0.72, height: size.height * 0.13, depth: size.depth * 0.16
+    }, { position: { x: 0, y: size.height * 0.48, z: -size.depth * 0.34 } }, { parent: node });
+
+    boxComponent(registry, item, bedFurniture, 'headboard', {
+      width: size.width, height: size.height * 0.7, depth: Math.max(0.12, size.depth * 0.08)
+    }, { position: { x: 0, y: size.height * 0.46, z: -size.depth * 0.48 } }, { parent: node });
+  }
+};
+
+// 2.  Double Bed (Bed Double)
+export const bedDoubleFurniture = {
+  type: 'bed_double',
+  name: 'Double Bed',
+  unit: 'm',
+  defaultSize: { width: 2.05, depth: 2.25, height: 1.15 },
+  components: [
+    { id: 'frame', label: 'Bed Base Frame', defaultColor: '#6e5948' },
+    { id: 'mattress', label: 'Mattress', defaultColor: '#fcfbfa' },
+    { id: 'blanket', label: 'Grey Sheets', defaultColor: '#86919e' },
+    { id: 'pillow', label: ' ItemPillows', defaultColor: '#ffffff' },
+    { id: 'headboard', label: 'Backrest Board', defaultColor: '#544437' }
+  ],
+  interaction: {
+    type: 'lie',
+    getInteractionPoints(size) {
+      const bottomH = size.height * 0.18;
+      const matH = size.height * 0.28;
+      return [
+        { x: -size.width * 0.22, y: bottomH + matH, z: 0, rot: 0 },
+        { x: size.width * 0.22, y: bottomH + matH, z: 0, rot: 0 }
+      ];
+    }
+  },
+  build(registry, item, node, size) {
+    const bottomH = size.height * 0.18;
+    const matH = size.height * 0.28;
+
+    boxComponent(registry, item, bedDoubleFurniture, 'frame', {
+      width: size.width, height: bottomH, depth: size.depth
+    }, { position: { x: 0, y: bottomH / 2, z: 0 } }, { parent: node });
+
+    boxComponent(registry, item, bedDoubleFurniture, 'mattress', {
+      width: size.width * 0.96, height: matH, depth: size.depth * 0.94
+    }, { position: { x: 0, y: bottomH + matH / 2, z: size.depth * 0.02 } }, { parent: node });
+
+    boxComponent(registry, item, bedDoubleFurniture, 'blanket', {
+      width: size.width * 0.96, height: matH * 0.38, depth: size.depth * 0.72
+    }, { position: { x: 0, y: bottomH + matH * 0.88, z: size.depth * 0.12 } }, { parent: node });
+
+    boxComponent(registry, item, bedDoubleFurniture, 'headboard', {
+      width: size.width * 1.02, height: size.height * 0.88, depth: size.depth * 0.06
+    }, { position: { x: 0, y: size.height * 0.44, z: -size.depth / 2 + size.depth * 0.03 } }, { parent: node });
+
+    //  Pillows
+    [-1, 1].forEach((side) => {
+      boxComponent(registry, item, bedDoubleFurniture, 'pillow', {
+        width: size.width * 0.38, height: 0.08, depth: size.depth * 0.16
+      }, { position: { x: side * size.width * 0.22, y: bottomH + matH + 0.04, z: -size.depth * 0.30 } }, { parent: node });
+    });
+  }
+};
+
+// 3.  Single Bed (Bed Single)
+export const bedSingleFurniture = {
+  type: 'bed_single',
+  name: 'Single Bed',
+  unit: 'm',
+  defaultSize: { width: 1.1, depth: 2.05, height: 0.9 },
+  components: [
+    { id: 'frame', label: 'Bed Frame', defaultColor: '#cccccc' },
+    { id: 'mattress', label: 'Component', defaultColor: '#ffffff' },
+    { id: 'blanket', label: 'Component', defaultColor: '#8cb0ff' },
+    { id: 'pillow', label: 'Pillows', defaultColor: '#ffffff' }
+  ],
+  interaction: {
+    type: 'lie',
+    getInteractionPoints(size) {
+      const bottomH = size.height * 0.22;
+      const matH = size.height * 0.28;
+      return [
+        { x: 0, y: bottomH + matH, z: 0, rot: 0 }
+      ];
+    }
+  },
+  build(registry, item, node, size) {
+    const bottomH = size.height * 0.22;
+    const matH = size.height * 0.28;
+
+    boxComponent(registry, item, bedSingleFurniture, 'frame', {
+      width: size.width, height: bottomH, depth: size.depth
+    }, { position: { x: 0, y: bottomH / 2, z: 0 } }, { parent: node });
+
+    boxComponent(registry, item, bedSingleFurniture, 'mattress', {
+      width: size.width * 0.96, height: matH, depth: size.depth * 0.94
+    }, { position: { x: 0, y: bottomH + matH / 2, z: size.depth * 0.02 } }, { parent: node });
+
+    boxComponent(registry, item, bedSingleFurniture, 'blanket', {
+      width: size.width * 0.96, height: matH * 0.24, depth: size.depth * 0.72
+    }, { position: { x: 0, y: bottomH + matH * 0.92, z: size.depth * 0.12 } }, { parent: node });
+
+    boxComponent(registry, item, bedSingleFurniture, 'pillow', {
+      width: size.width * 0.68, height: 0.06, depth: size.depth * 0.16
+    }, { position: { x: 0, y: bottomH + matH + 0.03, z: -size.depth * 0.32 } }, { parent: node });
+  }
+};
+
+// 4.   (Crib)
+export const cribFurniture = {
+  type: 'crib',
+  name: 'Crib',
+  unit: 'm',
+  defaultSize: { width: 0.75, depth: 1.2, height: 0.9 },
+  components: [
+    { id: 'frame', label: 'Component', defaultColor: '#ebdcc5' },
+    { id: 'mattress', label: 'Component', defaultColor: '#ffffff' }
+  ],
+  interaction: {
+    type: 'lie',
+    getInteractionPoints(size) {
+      return [
+        { x: 0, y: size.height * 0.28 + size.height * 0.18, z: 0, rot: 0 }
+      ];
+    }
+  },
+  build(registry, item, node, size) {
+    //  
+    boxComponent(registry, item, cribFurniture, 'mattress', {
+      width: size.width * 0.92, height: size.height * 0.18, depth: size.depth * 0.92
+    }, { position: { x: 0, y: size.height * 0.28, z: 0 } }, { parent: node });
+
+    //  
+    const railT = 0.02;
+    boxComponent(registry, item, cribFurniture, 'frame', {
+      width: size.width, height: size.height, depth: railT
+    }, { position: { x: 0, y: size.height / 2, z: -size.depth / 2 + railT / 2 } }, { parent: node });
+
+    boxComponent(registry, item, cribFurniture, 'frame', {
+      width: size.width, height: size.height, depth: railT
+    }, { position: { x: 0, y: size.height / 2, z: size.depth / 2 - railT / 2 } }, { parent: node });
+
+    boxComponent(registry, item, cribFurniture, 'frame', {
+      width: railT, height: size.height, depth: size.depth
+    }, { position: { x: -size.width / 2 + railT / 2, y: size.height / 2, z: 0 } }, { parent: node });
+
+    boxComponent(registry, item, cribFurniture, 'frame', {
+      width: railT, height: size.height, depth: size.depth
+    }, { position: { x: size.width / 2 - railT / 2, y: size.height / 2, z: 0 } }, { parent: node });
+  }
+};
+
+// 5.   (Bunk Bed)
+export const bunkBedFurniture = {
+  type: 'bunk_bed',
+  name: 'Bunk Bed',
+  unit: 'm',
+  defaultSize: { width: 1.05, depth: 2.05, height: 1.75 },
+  components: [
+    { id: 'frame', label: 'Component', defaultColor: '#aa7f55' },
+    { id: 'blankets', label: 'Component', defaultColor: '#89a5ad' },
+    { id: 'pillows', label: ' ItemPillows', defaultColor: '#ffffff' }
+  ],
+  interaction: {
+    type: 'lie',
+    getInteractionPoints(size) {
+      const bedT = 0.06;
+      const sheetH = 0.04;
+      return [
+        { x: 0, y: size.height * 0.12 + bedT + sheetH, z: 0, rot: 0 }, //  
+        { x: 0, y: size.height * 0.68 + bedT + sheetH, z: 0, rot: 0 }  //  
+      ];
+    }
+  },
+  build(registry, item, node, size) {
+    const postW = 0.06;
+    const postH = size.height;
+
+    // Diamond  (Posts)
+    [-1, 1].forEach((x) => {
+      [-1, 1].forEach((z) => {
+        boxComponent(registry, item, bunkBedFurniture, 'frame', {
+          width: postW, height: postH, depth: postW
+        }, { position: { x: x * (size.width / 2 - postW / 2), y: postH / 2, z: z * (size.depth / 2 - postW / 2) } }, { parent: node });
+      });
+    });
+
+    const bedT = 0.06;
+    const sheetH = 0.04;
+    // 2.   (Lower Berth) - y = 8 （ 0.2 ）
+    boxComponent(registry, item, bunkBedFurniture, 'frame', {
+      width: size.width - postW * 2, height: bedT, depth: size.depth - postW * 2
+    }, { position: { x: 0, y: size.height * 0.12, z: 0 } }, { parent: node });
+
+    boxComponent(registry, item, bunkBedFurniture, 'blankets', {
+      width: size.width - postW * 2, height: sheetH, depth: size.depth * 0.76
+    }, { position: { x: 0, y: size.height * 0.12 + bedT / 2 + sheetH / 2, z: size.depth * 0.08 } }, { parent: node });
+
+    boxComponent(registry, item, bunkBedFurniture, 'pillows', {
+      width: size.width * 0.62, height: 0.05, depth: 0.15
+    }, { position: { x: 0, y: size.height * 0.12 + bedT + 0.025, z: -size.depth * 0.32 } }, { parent: node });
+
+    // 3.   (Upper Berth) - y = 44 （ 1.1 ）
+    boxComponent(registry, item, bunkBedFurniture, 'frame', {
+      width: size.width - postW * 2, height: bedT, depth: size.depth - postW * 2
+    }, { position: { x: 0, y: size.height * 0.68, z: 0 } }, { parent: node });
+
+    boxComponent(registry, item, bunkBedFurniture, 'blankets', {
+      width: size.width - postW * 2, height: sheetH, depth: size.depth * 0.76
+    }, { position: { x: 0, y: size.height * 0.68 + bedT / 2 + sheetH / 2, z: size.depth * 0.08 } }, { parent: node });
+
+    boxComponent(registry, item, bunkBedFurniture, 'pillows', {
+      width: size.width * 0.62, height: 0.05, depth: 0.15
+    }, { position: { x: 0, y: size.height * 0.68 + bedT + 0.025, z: -size.depth * 0.32 } }, { parent: node });
+
+    // 4.   (Ladder)
+    boxComponent(registry, item, bunkBedFurniture, 'frame', {
+      width: 0.04, height: size.height * 0.68, depth: 0.02
+    }, { position: { x: size.width / 2 + 0.01, y: size.height * 0.34, z: size.depth * 0.12 } }, { parent: node });
+  }
+};
+
+// 6.   (Mattress)
+export const mattressFurniture = {
+  type: 'mattress',
+  name: 'Mattress',
+  unit: 'm',
+  defaultSize: { width: 1.5, depth: 2.05, height: 0.15 },
+  components: [
+    { id: 'body', label: 'Component', defaultColor: '#f0e8dc' },
+    { id: 'pillow', label: 'Pillows', defaultColor: '#ffffff' }
+  ],
+  build(registry, item, node, size) {
+    //  
+    boxComponent(registry, item, mattressFurniture, 'body', {
+      width: size.width, height: size.height, depth: size.depth
+    }, { position: { x: 0, y: size.height / 2, z: 0 } }, { parent: node });
+
+    boxComponent(registry, item, mattressFurniture, 'pillow', {
+      width: size.width * 0.62, height: size.height * 0.5, depth: size.depth * 0.14
+    }, { position: { x: 0, y: size.height + 0.02, z: -size.depth * 0.36 } }, { parent: node });
+  }
+};
+
+// 7.   (Canopy Bed)
+export const canopyBedFurniture = {
+  type: 'canopy_bed',
+  name: 'Canopy Bed',
+  unit: 'm',
+  defaultSize: { width: 2.05, depth: 2.25, height: 2.15 },
+  components: [
+    { id: 'frame', label: 'Component', defaultColor: '#2e2b29' },
+    { id: 'mattress', label: 'Component', defaultColor: '#ffffff' },
+    { id: 'blanket', label: 'Component', defaultColor: '#b3a79d' }
+  ],
+  build(registry, item, node, size) {
+    const bottomH = size.height * 0.16;
+    const matH = size.height * 0.18;
+
+    //   (Canopy Posts)
+    const postD = 0.04;
+    [-1, 1].forEach((x) => {
+      [-1, 1].forEach((z) => {
+        boxComponent(registry, item, canopyBedFurniture, 'frame', {
+          width: postD, height: size.height, depth: postD
+        }, { position: { x: x * (size.width / 2 - postD / 2), y: size.height / 2, z: z * (size.depth / 2 - postD / 2) } }, { parent: node });
+      });
+    });
+
+    //   (Canopy Top)
+    boxComponent(registry, item, canopyBedFurniture, 'frame', {
+      width: size.width, height: 0.03, depth: postD
+    }, { position: { x: 0, y: size.height - 0.015, z: -size.depth / 2 + postD / 2 } }, { parent: node });
+    boxComponent(registry, item, canopyBedFurniture, 'frame', {
+      width: size.width, height: 0.03, depth: postD
+    }, { position: { x: 0, y: size.height - 0.015, z: size.depth / 2 - postD / 2 } }, { parent: node });
+
+    //  
+    boxComponent(registry, item, canopyBedFurniture, 'mattress', {
+      width: size.width - postD * 2, height: bottomH + matH, depth: size.depth - postD * 2
+    }, { position: { x: 0, y: (bottomH + matH) / 2, z: 0 } }, { parent: node });
+
+    boxComponent(registry, item, canopyBedFurniture, 'blanket', {
+      width: size.width - postD * 2, height: 0.02, depth: size.depth * 0.62
+    }, { position: { x: 0, y: bottomH + matH + 0.01, z: size.depth * 0.12 } }, { parent: node });
+  }
+};
+
+// 8.   (Vanity)
+export const vanityFurniture = {
+  type: 'vanity',
+  name: 'Vanity',
+  unit: 'm',
+  defaultSize: { width: 0.9, depth: 0.45, height: 1.3 },
+  isMirror: true,
+  components: [
+    { id: 'desk', label: 'Component', defaultColor: '#ebccd7' },
+    { id: 'mirror', label: 'Emissive Item', defaultColor: '#e6efff' },
+    { id: 'drawer', label: 'Component', defaultColor: '#cca6b4' }
+  ],
+  build(registry, item, node, size) {
+    const deskH = size.height * 0.58;
+
+    // 1.   (Desk)
+    boxComponent(registry, item, vanityFurniture, 'desk', {
+      width: size.width, height: deskH, depth: size.depth
+    }, { position: { x: 0, y: deskH / 2, z: 0 } }, { parent: node });
+
+    // 2.   (Drawer)
+    boxComponent(registry, item, vanityFurniture, 'drawer', {
+      width: size.width * 0.90, height: deskH * 0.16, depth: size.depth * 0.02
+    }, { position: { x: 0, y: deskH * 0.72, z: size.depth / 2 } }, { parent: node });
+
+    // 3.  Circle  (Mirror)
+    const mirrorR = size.width * 0.78;
+    cylinderComponent(registry, item, vanityFurniture, 'mirror', {
+      diameterTop: mirrorR, diameterBottom: mirrorR, height: 0.02, tessellation: 24
+    }, {
+      position: { x: 0, y: deskH + mirrorR / 2, z: -size.depth / 2 + 0.03 }
+    }, { parent: node });
+    // Rotate 
+    const mirrorMesh = node.getChildren().find(child => child.name.includes('mirror'));
+    if (mirrorMesh) {
+      mirrorMesh.rotation.x = Math.PI * 0.5;
+    }
+  }
+};
+
+// 9. Bedroom  (Hammock)
+export const hammockFurniture = {
+  type: 'hammock',
+  name: 'Hammock',
+  unit: 'm',
+  defaultSize: { width: 0.6, depth: 1.5, height: 0.8 },
+  components: [
+    { id: 'stand', label: 'Component', defaultColor: '#404040' },
+    { id: 'cradle', label: 'Component', defaultColor: '#ebdcb3' }
+  ],
+  build(registry, item, node, size) {
+    // 1.   (Hammock Support)
+    boxComponent(registry, item, hammockFurniture, 'stand', {
+      width: 0.04, height: size.height, depth: 0.04
+    }, { position: { x: 0, y: size.height / 2, z: -size.depth / 2 + 0.02 } }, { parent: node });
+
+    boxComponent(registry, item, hammockFurniture, 'stand', {
+      width: 0.04, height: 0.04, depth: size.depth * 0.96
+    }, { position: { x: 0, y: size.height - 0.02, z: 0 } }, { parent: node });
+
+    // 2.   (Sling Cradle)
+    const sling = boxComponent(registry, item, hammockFurniture, 'cradle', {
+      width: size.width * 0.88, height: 0.02, depth: size.depth * 0.78
+    }, { position: { x: 0, y: size.height * 0.42, z: size.depth * 0.08 } }, { parent: node });
+    sling.rotation.x = Math.PI * 0.06;
+  }
+};
+
+// 10.   (Bed Bench)
+export const bedBenchFurniture = {
+  type: 'bed_bench',
+  name: 'Bed Bench',
+  unit: 'm',
+  defaultSize: { width: 1.35, depth: 0.4, height: 0.45 },
+  components: [
+    { id: 'seat', label: 'Component', defaultColor: '#e2decb' },
+    { id: 'legs', label: 'Component', defaultColor: '#7b705f' }
+  ],
+  build(registry, item, node, size) {
+    const seatH = size.height * 0.36;
+    boxComponent(registry, item, bedBenchFurniture, 'seat', {
+      width: size.width, height: seatH, depth: size.depth
+    }, { position: { x: 0, y: size.height - seatH / 2, z: 0 } }, { parent: node });
+
+    const legH = size.height - seatH;
+    const legW = 0.04;
+    [-1, 1].forEach((x) => {
+      [-1, 1].forEach((z) => {
+        boxComponent(registry, item, bedBenchFurniture, 'legs', {
+          width: legW, height: legH, depth: legW
+        }, { position: { x: x * (size.width / 2 - legW / 2 - 0.02), y: legH / 2, z: z * (size.depth / 2 - legW / 2 - 0.02) } }, { parent: node });
+      });
+    });
+  }
+};
+
+// 11.   (Cosmetics)
+export const cosmeticsFurniture = {
+  type: 'cosmetics',
+  name: 'Cosmetics',
+  unit: 'm',
+  defaultSize: { width: 0.25, depth: 0.2, height: 0.2 },
+  components: [
+    { id: 'tray', label: 'Component', defaultColor: '#d4af37' },
+    { id: 'perfume', label: 'Component', defaultColor: '#fff3cd' },
+    { id: 'lipstick', label: 'Component', defaultColor: '#dc3545' }
+  ],
+  build(registry, item, node, size) {
+    boxComponent(registry, item, cosmeticsFurniture, 'tray', {
+      width: size.width, height: size.height * 0.15, depth: size.depth
+    }, { position: { x: 0, y: size.height * 0.075, z: 0 } }, { parent: node });
+
+    cylinderComponent(registry, item, cosmeticsFurniture, 'perfume', {
+      diameterTop: size.width * 0.28, diameterBottom: size.width * 0.28, height: size.height * 0.72
+    }, { position: { x: -size.width * 0.22, y: size.height * 0.5, z: -size.depth * 0.1 } }, { parent: node });
+
+    sphereComponent(registry, item, cosmeticsFurniture, 'perfume', {
+      diameterX: size.width * 0.32, diameterY: size.height * 0.42, diameterZ: size.width * 0.32
+    }, { position: { x: size.width * 0.18, y: size.height * 0.36, z: -size.depth * 0.15 } }, { parent: node });
+
+    cylinderComponent(registry, item, cosmeticsFurniture, 'lipstick', {
+      diameterTop: size.width * 0.12, diameterBottom: size.width * 0.12, height: size.height * 0.48
+    }, { position: { x: size.width * 0.22, y: size.height * 0.38, z: size.depth * 0.22 } }, { parent: node });
+  }
+};
+
+// 12.   (Stationery)
+export const stationeryFurniture = {
+  type: 'stationery',
+  name: 'Stationery',
+  unit: 'm',
+  defaultSize: { width: 0.3, depth: 0.25, height: 0.15 },
+  components: [
+    { id: 'book', label: ' ItemComputer', defaultColor: '#fd7e14' },
+    { id: 'holder', label: 'Metal Item', defaultColor: '#2b2b2b' },
+    { id: 'pens', label: 'Component', defaultColor: '#0056b3' }
+  ],
+  build(registry, item, node, size) {
+    boxComponent(registry, item, stationeryFurniture, 'book', {
+      width: size.width * 0.55, height: 0.024, depth: size.depth * 0.8
+    }, { position: { x: -size.width * 0.18, y: 0.012, z: 0 } }, { parent: node });
+
+    cylinderComponent(registry, item, stationeryFurniture, 'holder', {
+      diameterTop: size.width * 0.28, diameterBottom: size.width * 0.28, height: size.height * 0.8
+    }, { position: { x: size.width * 0.28, y: size.height * 0.4, z: -size.depth * 0.1 } }, { parent: node });
+
+    const p1 = cylinderComponent(registry, item, stationeryFurniture, 'pens', {
+      diameterTop: 0.012, diameterBottom: 0.012, height: size.height * 1.1
+    }, { position: { x: size.width * 0.26, y: size.height * 0.72, z: -size.depth * 0.1 } }, { parent: node });
+    p1.rotation.z = Math.PI * 0.12;
+
+    const p2 = cylinderComponent(registry, item, stationeryFurniture, 'pens', {
+      diameterTop: 0.012, diameterBottom: 0.012, height: size.height * 1.1
+    }, { position: { x: size.width * 0.3, y: size.height * 0.72, z: -size.depth * 0.06 } }, { parent: node });
+    p2.rotation.z = -Math.PI * 0.08;
+    p2.rotation.x = Math.PI * 0.08;
+  }
+};
+
+// 13.   (eyeshadowCompact)
+export const eyeshadowCompactFurniture = {
+  type: 'eyeshadow_compact',
+  name: 'Eyeshadow Compact',
+  unit: 'm',
+  defaultSize: { width: 0.15, depth: 0.15, height: 0.08 },
+  components: [
+    { id: 'eyeshadow', label: 'Component', defaultColor: '#3e2723' },
+    { id: 'compact', label: 'Component', defaultColor: '#ffe0b2' },
+    { id: 'mirror', label: 'Component', defaultColor: '#e0f7fa' }
+  ],
+  build(registry, item, node, size) {
+    boxComponent(registry, item, eyeshadowCompactFurniture, 'eyeshadow', {
+      width: size.width * 0.48, height: size.height * 0.25, depth: size.depth * 0.9
+    }, { position: { x: -size.width * 0.22, y: size.height * 0.125, z: 0 } }, { parent: node });
+
+    cylinderComponent(registry, item, eyeshadowCompactFurniture, 'compact', {
+      diameterTop: size.width * 0.4, diameterBottom: size.width * 0.4, height: size.height * 0.35
+    }, { position: { x: size.width * 0.25, y: size.height * 0.175, z: -size.depth * 0.1 } }, { parent: node });
+
+    cylinderComponent(registry, item, eyeshadowCompactFurniture, 'mirror', {
+      diameterTop: size.width * 0.25, diameterBottom: size.width * 0.25, height: 0.005
+    }, { position: { x: size.width * 0.22, y: 0.003, z: size.depth * 0.3 } }, { parent: node });
+  }
+};
+
+// 14.   (luxuryPerfumes)
+export const luxuryPerfumesFurniture = {
+  type: 'luxury_perfumes',
+  name: 'Luxury Perfumes',
+  unit: 'm',
+  defaultSize: { width: 0.2, depth: 0.15, height: 0.15 },
+  components: [
+    { id: 'bottleA', label: 'Component', defaultColor: '#f48fb1' },
+    { id: 'bottleB', label: 'Component', defaultColor: '#ffe082' },
+    { id: 'cap', label: 'Component', defaultColor: '#ffffff' }
+  ],
+  build(registry, item, node, size) {
+    boxComponent(registry, item, luxuryPerfumesFurniture, 'bottleA', {
+      width: size.width * 0.35, height: size.height * 0.72, depth: size.depth * 0.45
+    }, { position: { x: -size.width * 0.2, y: size.height * 0.36, z: 0 } }, { parent: node });
+
+    cylinderComponent(registry, item, luxuryPerfumesFurniture, 'cap', {
+      diameterTop: 0.015, diameterBottom: 0.015, height: size.height * 0.18
+    }, { position: { x: -size.width * 0.2, y: size.height * 0.81, z: 0 } }, { parent: node });
+
+    cylinderComponent(registry, item, luxuryPerfumesFurniture, 'bottleB', {
+      diameterTop: size.width * 0.3, diameterBottom: size.width * 0.3, height: size.height * 0.65
+    }, { position: { x: size.width * 0.22, y: size.height * 0.325, z: 0.02 } }, { parent: node });
+
+    sphereComponent(registry, item, luxuryPerfumesFurniture, 'cap', {
+      diameterX: 0.025, diameterY: 0.025, diameterZ: 0.025
+    }, { position: { x: size.width * 0.22, y: size.height * 0.72, z: 0.02 } }, { parent: node });
+  }
+};
+
+// 15.   (skincareSet)
+export const skincareSetFurniture = {
+  type: 'skincare_set',
+  name: 'Skincare Set',
+  unit: 'm',
+  defaultSize: { width: 0.2, depth: 0.2, height: 0.2 },
+  components: [
+    { id: 'holder', label: 'Component', defaultColor: '#cfd8dc' },
+    { id: 'lotion', label: 'Component', defaultColor: '#e0f2f1' },
+    { id: 'toner', label: 'Component', defaultColor: '#b2dfdb' }
+  ],
+  build(registry, item, node, size) {
+    boxComponent(registry, item, skincareSetFurniture, 'holder', {
+      width: size.width, height: size.height * 0.12, depth: size.depth
+    }, { position: { x: 0, y: size.height * 0.06, z: 0 } }, { parent: node });
+
+    cylinderComponent(registry, item, skincareSetFurniture, 'lotion', {
+      diameterTop: size.width * 0.38, diameterBottom: size.width * 0.38, height: size.height * 0.42
+    }, { position: { x: -size.width * 0.22, y: size.height * 0.33, z: -size.depth * 0.12 } }, { parent: node });
+
+    cylinderComponent(registry, item, skincareSetFurniture, 'toner', {
+      diameterTop: size.width * 0.28, diameterBottom: size.width * 0.28, height: size.height * 0.82
+    }, { position: { x: size.width * 0.22, y: size.height * 0.53, z: 0.05 } }, { parent: node });
+  }
+};
+
+// 16.   (makeupBrushes)
+export const makeupBrushesFurniture = {
+  type: 'makeup_brushes',
+  name: 'Makeup Brushes',
+  unit: 'm',
+  defaultSize: { width: 0.15, depth: 0.15, height: 0.2 },
+  components: [
+    { id: 'holder', label: 'Component', defaultColor: '#efebe9' },
+    { id: 'brush', label: 'Component', defaultColor: '#3e2723' },
+    { id: 'bristle', label: 'Component', defaultColor: '#ffe0b2' }
+  ],
+  build(registry, item, node, size) {
+    cylinderComponent(registry, item, makeupBrushesFurniture, 'holder', {
+      diameterTop: size.width, diameterBottom: size.width * 0.9, height: size.height * 0.65
+    }, { position: { x: 0, y: size.height * 0.325, z: 0 } }, { parent: node });
+
+    const offsets = [
+      { x: -0.02, y: 0.82, z: 0.015, rx: -0.12, rz: 0.08 },
+      { x: 0.02, y: 0.85, z: -0.015, rx: 0.12, rz: -0.08 },
+      { x: 0, y: 0.92, z: 0.01, rx: 0.05, rz: 0.05 }
+    ];
+
+    offsets.forEach(off => {
+      const handle = cylinderComponent(registry, item, makeupBrushesFurniture, 'brush', {
+        diameterTop: 0.008, diameterBottom: 0.008, height: size.height * 0.65
+      }, { position: { x: off.x, y: size.height * 0.45, z: off.z } }, { parent: node });
+      handle.rotation.x = off.rx;
+      handle.rotation.z = off.rz;
+
+      const br = sphereComponent(registry, item, makeupBrushesFurniture, 'bristle', {
+        diameterX: 0.024, diameterY: 0.035, diameterZ: 0.024
+      }, { position: { x: off.x * 1.6, y: size.height * 0.78, z: off.z * 1.6 } }, { parent: node });
+      br.rotation.x = off.rx;
+      br.rotation.z = off.rz;
+    });
+  }
+};
+
+// 17.   (lipstickNailPolish)
+export const lipstickNailPolishFurniture = {
+  type: 'lipstick_nail_polish',
+  name: 'Lipstick Nail Polish',
+  unit: 'm',
+  defaultSize: { width: 0.15, depth: 0.1, height: 0.15 },
+  components: [
+    { id: 'lipstick', label: 'Component', defaultColor: '#d81b60' },
+    { id: 'polish', label: 'Component', defaultColor: '#8e24aa' },
+    { id: 'cap', label: 'Component', defaultColor: '#212121' }
+  ],
+  build(registry, item, node, size) {
+    boxComponent(registry, item, lipstickNailPolishFurniture, 'cap', {
+      width: size.width * 0.22, height: size.height * 0.4, depth: size.depth * 0.35
+    }, { position: { x: -size.width * 0.2, y: size.height * 0.2, z: 0 } }, { parent: node });
+
+    boxComponent(registry, item, lipstickNailPolishFurniture, 'lipstick', {
+      width: size.width * 0.16, height: size.height * 0.42, depth: size.depth * 0.28
+    }, { position: { x: -size.width * 0.2, y: size.height * 0.61, z: 0 } }, { parent: node });
+
+    cylinderComponent(registry, item, lipstickNailPolishFurniture, 'polish', {
+      diameterTop: size.width * 0.26, diameterBottom: size.width * 0.26, height: size.height * 0.45
+    }, { position: { x: size.width * 0.2, y: size.height * 0.225, z: 0 } }, { parent: node });
+
+    cylinderComponent(registry, item, lipstickNailPolishFurniture, 'cap', {
+      diameterTop: size.width * 0.1, diameterBottom: size.width * 0.1, height: size.height * 0.38
+    }, { position: { x: size.width * 0.2, y: size.height * 0.64, z: 0 } }, { parent: node });
+  }
+};
+
+// 18.   (deskCalendar)
+export const deskCalendarFurniture = {
+  type: 'desk_calendar',
+  name: 'Desk Calendar',
+  unit: 'm',
+  defaultSize: { width: 0.2, depth: 0.1, height: 0.15 },
+  components: [
+    { id: 'stand', label: 'Component', defaultColor: '#795548' },
+    { id: 'paper', label: 'Component', defaultColor: '#ffffff' }
+  ],
+  build(registry, item, node, size) {
+    const side1 = boxComponent(registry, item, deskCalendarFurniture, 'stand', {
+      width: size.width, height: size.height * 0.95, depth: 0.015
+    }, { position: { x: 0, y: size.height * 0.48, z: -size.depth * 0.12 } }, { parent: node });
+    side1.rotation.x = Math.PI * 0.08;
+
+    const side2 = boxComponent(registry, item, deskCalendarFurniture, 'stand', {
+      width: size.width, height: size.height * 0.95, depth: 0.015
+    }, { position: { x: 0, y: size.height * 0.48, z: size.depth * 0.12 } }, { parent: node });
+    side2.rotation.x = -Math.PI * 0.08;
+
+    const pap = boxComponent(registry, item, deskCalendarFurniture, 'paper', {
+      width: size.width * 0.9, height: size.height * 0.8, depth: 0.005
+    }, { position: { x: 0, y: size.height * 0.48, z: size.depth * 0.13 + 0.004 } }, { parent: node });
+    pap.rotation.x = -Math.PI * 0.08;
+  }
+};
+
+// 19.  Wood  (woodenPenStand)
+export const woodenPenStandFurniture = {
+  type: 'wooden_pen_stand',
+  name: 'Wooden Pen Stand',
+  unit: 'm',
+  defaultSize: { width: 0.2, depth: 0.15, height: 0.2 },
+  components: [
+    { id: 'body', label: 'Component', defaultColor: '#a1887f' },
+    { id: 'compartment', label: 'Component', defaultColor: '#d7ccc8' }
+  ],
+  build(registry, item, node, size) {
+    boxComponent(registry, item, woodenPenStandFurniture, 'body', {
+      width: size.width, height: size.height, depth: size.depth
+    }, { position: { x: 0, y: size.height / 2, z: 0 } }, { parent: node });
+
+    boxComponent(registry, item, woodenPenStandFurniture, 'compartment', {
+      width: size.width * 0.9, height: size.height * 0.03, depth: size.depth * 0.9
+    }, { position: { x: 0, y: size.height * 0.6, z: 0.01 } }, { parent: node });
+
+    boxComponent(registry, item, woodenPenStandFurniture, 'compartment', {
+      width: size.width * 0.9, height: size.height * 0.03, depth: size.depth * 0.9
+    }, { position: { x: 0, y: size.height * 0.35, z: 0.01 } }, { parent: node });
+  }
+};
+
+// 20.   (calculator)
+export const calculatorFurniture = {
+  type: 'calculator',
+  name: 'Calculator',
+  unit: 'm',
+  defaultSize: { width: 0.15, depth: 0.2, height: 0.05 },
+  components: [
+    { id: 'body', label: 'Component', defaultColor: '#455a64' },
+    { id: 'screen', label: 'Component', defaultColor: '#9ccc65' },
+    { id: 'buttons', label: 'Component', defaultColor: '#eceff1' }
+  ],
+  build(registry, item, node, size) {
+    const base = boxComponent(registry, item, calculatorFurniture, 'body', {
+      width: size.width, height: size.height * 0.7, depth: size.depth
+    }, { position: { x: 0, y: size.height * 0.35, z: 0 } }, { parent: node });
+    base.rotation.x = Math.PI * 0.03;
+
+    const sc = boxComponent(registry, item, calculatorFurniture, 'screen', {
+      width: size.width * 0.8, height: 0.005, depth: size.depth * 0.22
+    }, { position: { x: 0, y: size.height * 0.66 + 0.005, z: -size.depth * 0.25 } }, { parent: node });
+    sc.rotation.x = Math.PI * 0.03;
+
+    const key = boxComponent(registry, item, calculatorFurniture, 'buttons', {
+      width: size.width * 0.8, height: 0.008, depth: size.depth * 0.5
+    }, { position: { x: 0, y: size.height * 0.62, z: size.depth * 0.16 } }, { parent: node });
+    key.rotation.x = Math.PI * 0.03;
+  }
+};
+
+// 21.   (staplerNotes)
+export const staplerNotesFurniture = {
+  type: 'stapler_notes',
+  name: 'Stapler Notes',
+  unit: 'm',
+  defaultSize: { width: 0.2, depth: 0.15, height: 0.1 },
+  components: [
+    { id: 'notes', label: 'Component', defaultColor: '#fff59d' },
+    { id: 'stapler', label: 'Component', defaultColor: '#00e676' },
+    { id: 'holder', label: 'Component', defaultColor: '#cfd8dc' }
+  ],
+  build(registry, item, node, size) {
+    boxComponent(registry, item, staplerNotesFurniture, 'holder', {
+      width: size.width * 0.5, height: size.height * 0.7, depth: size.depth * 0.68
+    }, { position: { x: -size.width * 0.18, y: size.height * 0.35, z: 0 } }, { parent: node });
+
+    boxComponent(registry, item, staplerNotesFurniture, 'notes', {
+      width: size.width * 0.44, height: size.height * 0.6, depth: size.depth * 0.6
+    }, { position: { x: -size.width * 0.18, y: size.height * 0.35 + 0.015, z: 0 } }, { parent: node });
+
+    const st = boxComponent(registry, item, staplerNotesFurniture, 'stapler', {
+      width: size.width * 0.16, height: size.height * 0.65, depth: size.depth * 0.6
+    }, { position: { x: size.width * 0.28, y: size.height * 0.325, z: -0.01 } }, { parent: node });
+    st.rotation.y = -Math.PI * 0.08;
+  }
+};
+
+// 22.   (premiumDeskPen)
+export const premiumDeskPenFurniture = {
+  type: 'premium_desk_pen',
+  name: 'Premium Desk Pen',
+  unit: 'm',
+  defaultSize: { width: 0.15, depth: 0.15, height: 0.25 },
+  components: [
+    { id: 'base', label: 'Component', defaultColor: '#37474f' },
+    { id: 'pen', label: 'Component', defaultColor: '#212121' },
+    { id: 'accent', label: 'Component', defaultColor: '#ffd740' }
+  ],
+  build(registry, item, node, size) {
+    cylinderComponent(registry, item, premiumDeskPenFurniture, 'base', {
+      diameterTop: size.width * 0.6, diameterBottom: size.width * 0.8, height: size.height * 0.2
+    }, { position: { x: 0, y: size.height * 0.1, z: 0 } }, { parent: node });
+
+    sphereComponent(registry, item, premiumDeskPenFurniture, 'accent', {
+      diameterX: size.width * 0.2, diameterY: size.width * 0.2, diameterZ: size.width * 0.2
+    }, { position: { x: 0, y: size.height * 0.23, z: 0 } }, { parent: node });
+
+    const pen = cylinderComponent(registry, item, premiumDeskPenFurniture, 'pen', {
+      diameterTop: 0.012, diameterBottom: 0.016, height: size.height * 0.82
+    }, { position: { x: size.width * 0.12, y: size.height * 0.58, z: 0 } }, { parent: node });
+    pen.rotation.z = -Math.PI * 0.15;
+  }
+};
+

@@ -1,0 +1,16 @@
+1. Door/window material support.
+2. Opaque glass material bug fix.
+3. Planar mirror reflection strategy refactoring.
+4. Unified design tool icons and cursor styles.
+5. Full regression feature verification.
+6. Rewritten README documentation with SEO keywords and live demo links.
+7. Refactored architecture function optimizations.
+8. Red delete button styling for right-click context menu.
+9. Symmetrical double door opening hinge rotation bug fix.
+10. Upside-down custom texture UV mapping fix for TV screens.
+11. Room rotation mechanics.
+12. Prevent loose furniture ingestion during room dragging.
+13. Fix railing submesh material assignment.
+14. Multi-submesh color grading for railings.
+15. Pick proxy collider maintenance for hidden door/window panels.
+16. Smooth CSG door/window dragging without flicker.
