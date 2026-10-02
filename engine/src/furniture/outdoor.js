@@ -777,7 +777,7 @@ export const patioSwingFurniture = {
 
 export const hammockStandFurniture = {
   type: 'hammock_stand',
-  name: 'Bed Frame',
+  name: 'Hammock Stand',
   unit: 'm',
   defaultSize: { width: 2.6, depth: 0.85, height: 1.2 },
   components: [
@@ -926,7 +926,7 @@ export const patioHeaterFurniture = {
 export const gardenFountainFurniture = {
   type: 'garden_fountain',
   waterControllable: true,
-  name: ' Item',
+  name: 'Garden Fountain',
   unit: 'm',
   defaultSize: { width: 0.8, depth: 0.8, height: 1.3 },
   components: [
@@ -1023,7 +1023,7 @@ export const gardenFountainFurniture = {
 export const birdbathFurniture = {
   type: 'birdbath',
   waterControllable: true,
-  name: ' Item',
+  name: 'Birdbath',
   unit: 'm',
   defaultSize: { width: 0.45, depth: 0.45, height: 0.85 },
   components: [
@@ -1084,7 +1084,7 @@ export const planterBoxFurniture = {
   components: [
     { id: 'box', label: 'Component', defaultColor: SOFT_LOW_POLY_OUTDOOR_PALETTE.terracotta },
     { id: 'legs', label: 'Component', defaultColor: SOFT_LOW_POLY_OUTDOOR_PALETTE.darkWood },
-    { id: 'soil', label: 'Earth', defaultColor: SOFT_LOW_POLY_OUTDOOR_PALETTE.soil }
+    { id: 'soil', label: 'Soil', defaultColor: SOFT_LOW_POLY_OUTDOOR_PALETTE.soil }
   ],
   build(registry, item, node, size) {
     const boxW = size.width;
@@ -1503,7 +1503,7 @@ export const sharedBicycleFurniture = {
   components: [
     { id: 'frame', label: 'Component', defaultColor: SOFT_LOW_POLY_OUTDOOR_PALETTE.sage },
     { id: 'tires', label: 'Component', defaultColor: SOFT_LOW_POLY_OUTDOOR_PALETTE.charcoal },
-    { id: 'metal', label: 'Metal Item', defaultColor: SOFT_LOW_POLY_OUTDOOR_PALETTE.lightMetal }
+    { id: 'metal', label: 'Metal parts', defaultColor: SOFT_LOW_POLY_OUTDOOR_PALETTE.lightMetal }
   ],
   build(registry, item, node, size) {
     // === 1.   ===
@@ -1730,7 +1730,7 @@ export const sharedBicycleFurniture = {
 export const landscapeMarbleFountain = {
   type: 'landscape_marble_fountain',
   waterControllable: true,
-  name: ' Item',
+  name: 'Marble Fountain',
   unit: 'm',
   defaultSize: { width: 1.4, depth: 1.4, height: 1.5 },
   components: [
@@ -1801,7 +1801,7 @@ export const landscapeMarbleFountain = {
 export const landscapeEuroPondSculpture = {
   type: 'landscape_euro_pond_sculpture',
   waterControllable: true,
-  name: ' Item',
+  name: 'European Pond Sculpture',
   unit: 'm',
   defaultSize: { width: 1.65, depth: 1.65, height: 1.85 },
   components: [
@@ -2010,7 +2010,7 @@ export const outdoorDragonBubbleStoneStool = {
   components: [
     { id: 'dragon-body', label: 'Component', defaultColor: SOFT_LOW_POLY_OUTDOOR_PALETTE.paleStone },
     { id: 'dragon-features', label: 'Component', defaultColor: SOFT_LOW_POLY_OUTDOOR_PALETTE.stone },
-    { id: 'dragon-base', label: 'Circle Item', defaultColor: SOFT_LOW_POLY_OUTDOOR_PALETTE.paleStone }
+    { id: 'dragon-base', label: 'Round base', defaultColor: SOFT_LOW_POLY_OUTDOOR_PALETTE.paleStone }
   ],
   interaction: {
     type: 'sit',
@@ -2203,7 +2203,7 @@ export const outdoorPhoneBoothFurniture = {
   components: [
     { id: 'booth-body', label: 'Component', defaultColor: SOFT_LOW_POLY_OUTDOOR_PALETTE.classicRed },
     { id: 'booth-roof', label: 'Component', defaultColor: SOFT_LOW_POLY_OUTDOOR_PALETTE.classicRed },
-    { id: 'booth-glass', label: ' ItemGlass', defaultColor: SOFT_LOW_POLY_OUTDOOR_PALETTE.water },
+    { id: 'booth-glass', label: 'Booth glass', defaultColor: SOFT_LOW_POLY_OUTDOOR_PALETTE.water },
     { id: 'booth-base', label: 'Component', defaultColor: SOFT_LOW_POLY_OUTDOOR_PALETTE.darkStone },
     { id: 'booth-interior', label: 'Component', defaultColor: SOFT_LOW_POLY_OUTDOOR_PALETTE.charcoal },
     { id: 'booth-sign', label: 'Component', defaultColor: SOFT_LOW_POLY_OUTDOOR_PALETTE.cream }
@@ -2429,10 +2429,10 @@ export const electricScooterFurniture = {
   defaultSize: { width: 1.5, depth: 0.6, height: 1.05 },
   components: [
     { id: 'body', label: 'Component', defaultColor: SOFT_LOW_POLY_OUTDOOR_PALETTE.cream },
-    { id: 'seat', label: ' Item/ Item', defaultColor: SOFT_LOW_POLY_OUTDOOR_PALETTE.warmWood },
+    { id: 'seat', label: 'Seat', defaultColor: SOFT_LOW_POLY_OUTDOOR_PALETTE.warmWood },
     { id: 'wheels', label: 'Component', defaultColor: SOFT_LOW_POLY_OUTDOOR_PALETTE.charcoal },
     { id: 'light', label: 'Component', defaultColor: SOFT_LOW_POLY_OUTDOOR_PALETTE.paleStone },
-    { id: 'trunk', label: ' ItemStorage Item', defaultColor: SOFT_LOW_POLY_OUTDOOR_PALETTE.cream }
+    { id: 'trunk', label: 'Storage box', defaultColor: SOFT_LOW_POLY_OUTDOOR_PALETTE.cream }
   ],
   interaction: {
     type: 'sit',
@@ -2665,7 +2665,7 @@ export const stepladderFurniture = {
   components: [
     { id: 'steps', label: 'Component', defaultColor: SOFT_LOW_POLY_OUTDOOR_PALETTE.warmWood },
     { id: 'frame', label: 'Component', defaultColor: SOFT_LOW_POLY_OUTDOOR_PALETTE.darkWood },
-    { id: 'hinge', label: 'Metal Item', defaultColor: SOFT_LOW_POLY_OUTDOOR_PALETTE.charcoal }
+    { id: 'hinge', label: 'Metal hinges', defaultColor: SOFT_LOW_POLY_OUTDOOR_PALETTE.charcoal }
   ],
   interaction: {
     type: 'stand',

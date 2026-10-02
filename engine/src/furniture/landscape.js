@@ -66,7 +66,7 @@ export const landscapeTaihuStone = {
 export const landscapeRockeryFountain = {
   type: 'landscape_rockery_fountain',
   waterControllable: true,
-  name: ' Item',
+  name: 'Rockery Fountain',
   unit: 'm',
   defaultSize: { width: 1.2, depth: 0.9, height: 1 },
   components: [
@@ -131,7 +131,7 @@ export const landscapeZenGravel = {
   unit: 'm',
   defaultSize: { width: 1.85, depth: 1.2, height: 0.4 },
   components: [
-    { id: 'zen-sand', label: 'White Sand Item', defaultColor: '#e8dfcf' },
+    { id: 'zen-sand', label: 'White sand', defaultColor: '#e8dfcf' },
     { id: 'zen-stone', label: 'Component', defaultColor: LANDSCAPE_COLORS.deepStone }
   ],
   build(registry, item, node, size) {
@@ -158,7 +158,7 @@ export const landscapeZenGravel = {
 export const landscapeKoiPond = {
   type: 'landscape_koi_pond',
   waterControllable: true,
-  name: ' Item',
+  name: 'Koi Pond',
   unit: 'm',
   defaultSize: { width: 2.05, depth: 1.5, height: 0.45 },
   components: [
@@ -215,7 +215,7 @@ export const landscapeKoiPond = {
 export const landscapeStoneTrough = {
   type: 'landscape_stone_trough',
   waterControllable: true,
-  name: ' Item',
+  name: 'Stone Trough',
   unit: 'm',
   defaultSize: { width: 0.9, depth: 0.45, height: 0.4 },
   components: [
@@ -303,7 +303,7 @@ export const landscapeTaishanStone = {
 export const landscapeCascadingTerrace = {
   type: 'landscape_cascading_terrace',
   waterControllable: true,
-  name: ' Item',
+  name: 'Cascading Terrace',
   unit: 'm',
   defaultSize: { width: 1.3, depth: 1.3, height: 0.9 },
   components: [
@@ -337,7 +337,7 @@ export const landscapeCascadingTerrace = {
 export const landscapeShishiOdoshi = {
   type: 'landscape_shishi_odoshi',
   waterControllable: true,
-  name: ' Item',
+  name: 'Shishi Odoshi',
   unit: 'm',
   defaultSize: { width: 0.6, depth: 0.6, height: 0.7 },
   components: [
@@ -391,12 +391,12 @@ export const landscapeShishiOdoshi = {
 
 export const landscapeGlassWaterfall = {
   type: 'landscape_glass_waterfall',
-  name: 'Glass',
+  name: 'Landscape Glass Waterfall',
   unit: 'm',
   defaultSize: { width: 1.4, depth: 0.45, height: 1.85 },
   components: [
     { id: 'waterfall-base', label: 'Component', defaultColor: LANDSCAPE_COLORS.deepStone },
-    { id: 'waterfall-glass', label: ' ItemGlass', defaultColor: LANDSCAPE_COLORS.paleWater },
+    { id: 'waterfall-glass', label: 'Glass panel', defaultColor: LANDSCAPE_COLORS.paleWater },
     { id: 'waterfall-frame', label: 'Component', defaultColor: '#79817e' }
   ],
   build(registry, item, node, size) {
@@ -426,7 +426,7 @@ export const landscapeGlassWaterfall = {
 export const landscapeStreamRockery = {
   type: 'landscape_stream_rockery',
   waterControllable: true,
-  name: ' Item',
+  name: 'Stream Rockery',
   unit: 'm',
   defaultSize: { width: 2.15, depth: 0.9, height: 0.45 },
   components: [
@@ -467,7 +467,7 @@ export const landscapeStreamRockery = {
 export const landscapeLotusPond = {
   type: 'landscape_lotus_pond',
   waterControllable: true,
-  name: ' Item',
+  name: 'Lotus Pond',
   unit: 'm',
   defaultSize: { width: 1.65, depth: 1.2, height: 0.4 },
   components: [
@@ -570,7 +570,7 @@ export const landscapeMistGenerator = {
   unit: 'm',
   defaultSize: { width: 0.7, depth: 0.7, height: 0.8 },
   components: [
-    { id: 'mist-base', label: 'Metal Item', defaultColor: '#858d89' },
+    { id: 'mist-base', label: 'Metal base', defaultColor: '#858d89' },
     { id: 'mist-fog', label: 'Component', defaultColor: '#f2f0e9' }
   ],
   build(registry, item, node, size) {
@@ -596,7 +596,7 @@ export const landscapeRockeryCave = {
   unit: 'm',
   defaultSize: { width: 1.85, depth: 0.9, height: 1.5 },
   components: [
-    { id: 'cave-rocks', label: ' ItemRock', defaultColor: LANDSCAPE_COLORS.deepStone }
+    { id: 'cave-rocks', label: 'Cave rocks', defaultColor: LANDSCAPE_COLORS.deepStone }
   ],
   build(registry, item, node, size) {
     const postW = size.width * 0.28;
@@ -659,7 +659,7 @@ export const landscapeSlatePath = {
 export const landscapeModernWaterWall = {
   type: 'landscape_modern_water_wall',
   waterControllable: true,
-  name: 'Metal Item',
+  name: 'Modern Water Wall',
   unit: 'm',
   defaultSize: { width: 1.2, depth: 0.4, height: 1.85 },
   components: [
@@ -689,7 +689,7 @@ export const landscapeModernWaterWall = {
 export const landscapeWaterLilyPond = {
   type: 'landscape_water_lily_pond',
   waterControllable: true,
-  name: ' Item',
+  name: 'Water Lily Pond',
   unit: 'm',
   defaultSize: { width: 1.4, depth: 1.4, height: 0.4 },
   components: [
@@ -748,7 +748,7 @@ export const landscapeWaterLilyPond = {
 export const landscapeTaijiPond = {
   type: 'landscape_taiji_pond',
   waterControllable: true,
-  name: ' Item',
+  name: 'Taiji Pond',
   unit: 'm',
   defaultSize: { width: 1.5, depth: 1.5, height: 0.3 },
   components: [
@@ -780,7 +780,7 @@ export const landscapeWindingStream = {
   unit: 'm',
   defaultSize: { width: 2.3, depth: 0.9, height: 0.05 },
   components: [
-    { id: 'stream-water', label: ' ItemMirror', defaultColor: LANDSCAPE_COLORS.water }
+    { id: 'stream-water', label: 'Water surface', defaultColor: LANDSCAPE_COLORS.water }
   ],
   build(registry, item, node, size) {
     if (item.waterEnabled === false) return;
@@ -807,7 +807,7 @@ export const landscapeWindingStream = {
 export const landscapeNaturalSpring = {
   type: 'landscape_natural_spring',
   waterControllable: true,
-  name: ' Item',
+  name: 'Natural Spring',
   unit: 'm',
   defaultSize: { width: 1.1, depth: 1.1, height: 0.45 },
   components: [
@@ -845,7 +845,7 @@ export const landscapeNaturalSpring = {
 export const landscapeOldWell = {
   type: 'landscape_old_well',
   waterControllable: true,
-  name: ' Item',
+  name: 'Old Well',
   unit: 'm',
   defaultSize: { width: 0.7, depth: 0.7, height: 1.05 },
   components: [

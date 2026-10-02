@@ -305,7 +305,7 @@ export function handleHotkeys(event, ctx) {
     if (ctx.selectedRoomId) {
       event.preventDefault();
       if (ctx.testMap.getEntity('room', ctx.selectedRoomId)?.locked) return;
-      ctx.showCustomConfirm(' Item', ' ItemDelete ItemRoom Item？Room ItemFurniture Item').then((confirmed) => {
+      ctx.showCustomConfirm('Delete room', 'Delete the selected room? Furniture inside the room will also be deleted.').then((confirmed) => {
         if (confirmed) {
           ctx.pushHistory();
           ctx.testMap.deleteRoom(ctx.selectedRoomId);

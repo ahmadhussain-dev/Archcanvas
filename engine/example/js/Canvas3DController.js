@@ -230,7 +230,7 @@ function begin3DDrag(pointerInfo) {
       } else {
         pushHistory();
         if (isAddRoomMode()) {
-          const room = testMap.executeCommand('addRoom', { x: snapped.x, z: snapped.z, shape: roomShapeFromMode(), name: ` ItemRoom ${Context.roomCounter++}` });
+          const room = testMap.executeCommand('addRoom', { x: snapped.x, z: snapped.z, shape: roomShapeFromMode(), name: `Room ${Context.roomCounter++}` });
           refreshShadows();
           selectRoom(room.id);
         } else if (Context.mode.startsWith('add-roof')) {

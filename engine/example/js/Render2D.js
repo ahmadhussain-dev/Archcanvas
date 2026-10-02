@@ -2,6 +2,7 @@ import { getRoomVertices, isItemSnappedToBookshelfOrMannequin } from '../../src/
 
 import { createStoreProxy } from '../store/proxyHelper.js';
 import { render2DFurniturePlacementPreview } from './FurniturePlacementController.js';
+import { formatRoomSize } from './Units.js';
 
 let rawCtx = null;
 const ctx = createStoreProxy(() => rawCtx);
@@ -178,6 +179,8 @@ export function renderRoom(room) {
   const centerX = sumX / vertices.length;
   const centerZ = sumZ / vertices.length;
   const svgCenter = worldToSvg(centerX, centerZ);
+  // ArchCanvas: the plot outline is labelled in the page header, not on the plan.
+  if (room.id === 'plot') return;
 
   //  Room 
   let area = 0;
@@ -194,6 +197,7 @@ export function renderRoom(room) {
 
   //  ：Room （  800，  slate  ）
   const nameNode = createSvgElement('text', {
+    class: 'room-name-label',
     x: svgCenter.x,
     y: svgCenter.y - 5,
     fill: 'rgba(15, 23, 42, 0.18)',
@@ -207,6 +211,7 @@ export function renderRoom(room) {
 
   //  ： （  800， ， ）
   const areaNode = createSvgElement('text', {
+    class: 'room-size-label',
     x: svgCenter.x,
     y: svgCenter.y + 8,
     fill: 'rgba(15, 23, 42, 0.14)',
@@ -216,10 +221,12 @@ export function renderRoom(room) {
     'text-anchor': 'middle',
     'dominant-baseline': 'middle'
   });
-  areaNode.textContent = `${formattedArea} ㎡`;
+  areaNode.textContent = formatRoomSize(room, formattedArea);
 
   labelGroup.appendChild(nameNode);
-  labelGroup.appendChild(areaNode);
+  // ArchCanvas: leave the size line off rooms too narrow to hold it.
+  const roomWidthPx = Math.abs(worldToSvg(room.width || 0, 0).x - worldToSvg(0, 0).x);
+  if (areaNode.textContent.length * 6.2 <= roomWidthPx - 8) labelGroup.appendChild(areaNode);
   ctx.svg.appendChild(labelGroup);
 }
 

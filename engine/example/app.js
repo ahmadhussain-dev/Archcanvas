@@ -69,6 +69,7 @@ import { showCustomConfirm, showCustomAlert, showCustomPrompt, showProjectListMo
 import { createCustomDropdown } from './js/Dropdown.js';
 import { handleHotkeys } from './js/Hotkeys.js';
 import { Store, showToast, formatTimestamp, readLocalSave } from './js/Store.js';
+import { EMBEDDED, blankFloorplan, initEmbedBridge } from './js/Embed.js';
 import { EntityManager } from './js/EntityManager.js';
 import { Viewer3D } from './js/Viewer3D.js';
 import * as DragHandler from './js/DragHandler.js';
@@ -518,7 +519,7 @@ function applyCameraSettings() {
 if (initialLocalSave.buildingData) restoreFloorplanMaterials(initialLocalSave.buildingData);
 let testMap = createEditor({
   scene,
-  floorplan: initialLocalSave.buildingData || BLUEPRINT3D_TEST_FLOORPLAN,
+  floorplan: EMBEDDED ? blankFloorplan() : (initialLocalSave.buildingData || BLUEPRINT3D_TEST_FLOORPLAN),
   options: { renderingEnabled: false }
 });
 window.testMap = testMap;
@@ -837,7 +838,7 @@ store.on('saved', () => {
 
 //  Save ，  toast  
 store.on('autoSaved', () => {
-  showToast(' ItemSave');
+  showToast('Auto-saved');
   if (window.testMap && typeof window.testMap.requestReflectionUpdate === 'function') {
     window.testMap.requestReflectionUpdate();
   } else if (typeof testMap !== 'undefined' && testMap && typeof testMap.requestReflectionUpdate === 'function') {
@@ -847,7 +848,7 @@ store.on('autoSaved', () => {
 
 //  
 store.on('saveError', () => {
-  showToast(' Item? Item ItemocalStorage  Item Item');
+  showToast('Auto-save failed: browser storage (localStorage) may be full');
 });
 
 //   10  Save
@@ -894,7 +895,7 @@ if (snapToggleBtn) {
     const saved = initialLocalSave;
     if (saved.buildingData) {
       // The saved floorplan was supplied to the constructor, so no second rebuild is needed.
-      showToast(' Item');
+      showToast('Restored your last saved design');
     }
     if (saved.materialLibrary && saved.materialLibrary.length) {
       const storedStr = localStorage.getItem('custom_material_sources');
@@ -960,7 +961,7 @@ if (snapToggleBtn) {
 
   const removedCount = beforeCount - materialLibrary.length;
   if (removedCount > 0) {
-    console.log(`[ Item]  Item ${removedCount}  Item`);
+    console.log(`[Material cleanup] Removed ${removedCount} unused derived textures`);
   }
 })();
 syncLocalToStore();
@@ -1073,6 +1074,12 @@ function resetInteractionState() {
 
 window.Context = appState;
 initAppEventBindings(appState);
+
+initEmbedBridge({
+  testMap,
+  store,
+  loadBuildingText: (text) => FileManager.loadBuildingFile({ text: async () => text })
+});
 
 function getSnapEnabled() {
   return snapEnabled;

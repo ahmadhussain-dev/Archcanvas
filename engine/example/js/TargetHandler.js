@@ -187,17 +187,17 @@ export function showObjectContextMenu(target, clientX, clientY) {
 
   ctx.showIconMenu(clientX, clientY, [
     { icon: 'copy', title: 'Duplicate', onClick: () => copyTarget(target) },
-    { icon: 'pipette', title: ' Item', onClick: () => pickColorFromContextMenu(target) },
+    { icon: 'pipette', title: 'Pick material', onClick: () => pickColorFromContextMenu(target) },
     isRotatable && {
       icon: 'rotate',
       title: 'Rotate',
       disabled: isLocked || (target.type === 'fence_gate' && !!ctx.testMap.getEntity('fence_gate', target.id)?.fenceId),
       onClick: () => rotateTarget(target)
     },
-    isMirrorable && { icon: 'flip', title: ' Item', disabled: isLocked, onClick: () => mirrorTarget(target) },
+    isMirrorable && { icon: 'flip', title: 'Mirror', disabled: isLocked, onClick: () => mirrorTarget(target) },
     isDoorLike && {
       icon: 'double_door',
-      title: isDouble ? ' Item' : ' Item',
+      title: isDouble ? 'Single door' : 'Double door',
       disabled: isLocked,
       onClick: () => {
         ctx.pushHistory();
@@ -215,25 +215,25 @@ export function showObjectContextMenu(target, clientX, clientY) {
     },
     isWaterContainer && {
       icon: 'droplet',
-      title: isWaterOn ? ' Item' : ' Item',
+      title: isWaterOn ? 'Turn water off' : 'Turn water on',
       disabled: isLocked,
       onClick: () => ctx.entityManager.toggleItemWater(target.id)
     },
     isToilet && {
       icon: 'door',
-      title: isLidOpen ? ' Item' : ' Item',
+      title: isLidOpen ? 'Close lid' : 'Open lid',
       disabled: isLocked,
       onClick: () => ctx.entityManager.toggleItemLid(target.id)
     },
     isSwitchable && { 
       icon: isLighting ? 'power' : (['opening', 'fence_gate'].includes(target.type) ? 'door' : 'power'), 
-      title: ' Item', 
+      title: 'Toggle on/off', 
       disabled: isLocked,
       onClick: () => toggleTarget(target) 
     },
     window.firstPersonActive && hasInteraction && {
       icon: 'power',
-      title: interactionType === 'lie' ? ' Item' : ' Item',
+      title: interactionType === 'lie' ? 'Lie down' : 'Sit down',
       onClick: () => {
         document.querySelector('.icon-menu')?.remove();
         if (typeof window.firstPersonSitOnSeat === 'function') {
@@ -243,7 +243,7 @@ export function showObjectContextMenu(target, clientX, clientY) {
     },
     isMannequin && {
       icon: 'power',
-      title: ' Item',
+      title: 'First-person view',
       onClick: () => {
         document.querySelector('.icon-menu')?.remove();
         toggleFirstPerson(rawCtx, target.id);
@@ -251,13 +251,13 @@ export function showObjectContextMenu(target, clientX, clientY) {
     },
     seasonalMeta && {
       icon: { name: 'season', active: seasonalMeta.currentSeason },
-      title: ` Item：${seasonalMeta.currentLabel}`,
+      title: `Season: ${seasonalMeta.currentLabel}`,
       disabled: isLocked,
       onClick: () => ctx.entityManager.cycleItemSeason(target.id)
     },
     isDoor && {
       icon: isPanelHidden ? 'eye' : 'eye_off',
-      title: isPanelHidden ? ' Item' : ' Item',
+      title: isPanelHidden ? 'Show door panel' : 'Hide door panel',
       disabled: isLocked,
       onClick: () => {
         ctx.pushHistory();
@@ -269,7 +269,7 @@ export function showObjectContextMenu(target, clientX, clientY) {
     },
     isWindow && {
       icon: isGlassHidden ? 'eye' : 'eye_off',
-      title: isGlassHidden ? ' ItemGlass' : ' ItemGlass',
+      title: isGlassHidden ? 'Show glass' : 'Hide glass',
       disabled: isLocked,
       onClick: () => {
         ctx.pushHistory();
@@ -876,7 +876,7 @@ export function deleteTarget(target) {
     return;
   }
   if (target.type === 'room') {
-    ctx.showCustomConfirm(' Item', ' ItemDelete ItemRoom Item？Room ItemFurniture Item').then((confirmed) => {
+    ctx.showCustomConfirm('Delete room', 'Delete the selected room? Furniture inside the room will also be deleted.').then((confirmed) => {
       if (confirmed) {
         ctx.pushHistory();
         ctx.testMap.executeCommand('deleteRoom', { roomId: target.id });

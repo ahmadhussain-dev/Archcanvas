@@ -22,9 +22,11 @@ npm install                      # installs all three parts
 cp api/.env.example api/.env     # then fill in MONGODB_URI and the secrets
 
 npm run dev:api                  # API on http://localhost:4000
-npm run dev:web                  # website on http://localhost:5173
-npm run dev:engine               # engine demo on http://localhost:3000
+npm run dev:editor               # 2D/3D editor on http://localhost:3000/editor/
+npm run dev:web                  # website on http://localhost:5173 (open this one)
 ```
+
+Run all three in separate terminals. The website forwards `/api` to the API and `/editor` to the editor, which opens inside the project page. `npm run dev:engine` still runs the engine's own demo app on its own.
 
 Check the API is up: open http://localhost:4000/api/health.
 
@@ -54,7 +56,7 @@ Send the access token as `Authorization: Bearer <token>`. The estimate rules of 
 
 ```bash
 npm test          # API tests and engine tests (database tests need MongoDB on localhost, else they are skipped)
-npm run build     # production build of the website
+npm run build     # production build of the website, with the editor in web/dist/editor
 ```
 
 GitHub Actions runs the same checks on every pull request.

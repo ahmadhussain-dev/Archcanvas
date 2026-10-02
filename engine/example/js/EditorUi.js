@@ -66,6 +66,7 @@ import { toggleFirstPerson } from './FirstPersonController.js';
 import { getActiveMaterialDisplayName, getActiveMaterialArrayDisplayName } from './MaterialManager.js';
 import { getRoomVertices, MaterialResolver, resolveMaterialAssetDescriptor } from '../../src/index.js';
 import { startFurniturePlacement } from './FurniturePlacementController.js';
+import { formatArea } from './Units.js';
 
 let lastActiveRoomId = null;
 
@@ -83,7 +84,7 @@ export function ensure3DGridControls() {
   input.type = 'checkbox';
   input.checked = viewer3d.show3DGrid;
   const span = document.createElement('span');
-  span.textContent = ' Item3D Item';
+  span.textContent = 'Show 3D grid';
   label.append(input, span);
   anchor.insertAdjacentElement('afterend', label);
   input.addEventListener('change', (event) => {
@@ -116,7 +117,7 @@ export function ensureStructureEditor() {
 
   const title = document.createElement('strong');
   title.id = 'selected-structure-name';
-  title.textContent = ' Item';
+  title.textContent = 'Structure';
 
   const lockLabel = document.createElement('label');
   lockLabel.className = 'switch';
@@ -143,7 +144,7 @@ export function ensureStructureEditor() {
   const subtypeLabel = document.createElement('label');
   subtypeLabel.className = 'field';
   const subtypeSpan = document.createElement('span');
-  subtypeSpan.textContent = ' Item';
+  subtypeSpan.textContent = 'Type';
   const subtypeSelect = document.createElement('select');
   subtypeSelect.id = 'structure-subtype';
   subtypeLabel.append(subtypeSpan, subtypeSelect);
@@ -153,22 +154,22 @@ export function ensureStructureEditor() {
   editor.appendChild(createStructureField('Z (m)', 'structure-z', { type: 'number', step: '0.1' }));
   const dimRow = document.createElement('div');
   dimRow.className = 'fields-row';
-  dimRow.appendChild(createStructureField(' Item (m)', 'structure-width', { type: 'number', min: '0.6', step: '0.1' }));
-  dimRow.appendChild(createStructureField(' Item (m)', 'structure-depth', { type: 'number', min: '0.6', step: '0.1' }));
-  dimRow.appendChild(createStructureField(' Item (m)', 'structure-height', { type: 'number', min: '0.2', step: '0.1' }));
+  dimRow.appendChild(createStructureField('Width (m)', 'structure-width', { type: 'number', min: '0.6', step: '0.1' }));
+  dimRow.appendChild(createStructureField('Depth (m)', 'structure-depth', { type: 'number', min: '0.6', step: '0.1' }));
+  dimRow.appendChild(createStructureField('Height (m)', 'structure-height', { type: 'number', min: '0.2', step: '0.1' }));
   editor.appendChild(dimRow);
   const topRow = document.createElement('div');
   topRow.className = 'fields-row';
-  topRow.appendChild(createStructureField(' Item (m)', 'structure-top-width', { type: 'number', min: '0.1', step: '0.1' }));
-  topRow.appendChild(createStructureField(' Item (m)', 'structure-top-depth', { type: 'number', min: '0.1', step: '0.1' }));
+  topRow.appendChild(createStructureField('Top width (m)', 'structure-top-width', { type: 'number', min: '0.1', step: '0.1' }));
+  topRow.appendChild(createStructureField('Top depth (m)', 'structure-top-depth', { type: 'number', min: '0.1', step: '0.1' }));
   editor.appendChild(topRow);
-  const eaveOverhangField = createStructureField(' Item (m)', 'structure-eave-overhang', { type: 'number', min: '0', max: '3', step: '0.05' });
+  const eaveOverhangField = createStructureField('Eave overhang (m)', 'structure-eave-overhang', { type: 'number', min: '0', max: '3', step: '0.05' });
   eaveOverhangField.id = 'structure-eave-overhang-field';
   editor.appendChild(eaveOverhangField);
-  const elevationField = createStructureField(' Item (m)', 'structure-elevation', { type: 'number', step: '0.1' });
+  const elevationField = createStructureField('Elevation (m)', 'structure-elevation', { type: 'number', step: '0.1' });
   elevationField.id = 'structure-elevation-field';
   editor.appendChild(elevationField);
-  const rotationLabel = createStructureField('Rotate ( Item)', 'structure-rotation', { type: 'number', min: '0', max: '359', step: '15' });
+  const rotationLabel = createStructureField('Rotation (°)', 'structure-rotation', { type: 'number', min: '0', max: '359', step: '15' });
   const rotationRange = document.createElement('input');
   rotationRange.id = 'structure-rotation-range';
   rotationRange.type = 'range';
@@ -177,7 +178,7 @@ export function ensureStructureEditor() {
   rotationRange.step = '1';
   rotationLabel.appendChild(rotationRange);
   editor.appendChild(rotationLabel);
-  editor.appendChild(createStructureField(' Item', 'structure-steps', { type: 'number', min: '3', max: '32', step: '1' }));
+  editor.appendChild(createStructureField('Steps', 'structure-steps', { type: 'number', min: '3', max: '32', step: '1' }));
 
   const sideHiddenLabel = document.createElement('label');
   sideHiddenLabel.className = 'check-field';
@@ -186,7 +187,7 @@ export function ensureStructureEditor() {
   sideHiddenInput.id = 'structure-side-hidden';
   sideHiddenInput.type = 'checkbox';
   const sideHiddenSpan = document.createElement('span');
-  sideHiddenSpan.textContent = ' Item';
+  sideHiddenSpan.textContent = 'Hide sides';
   sideHiddenLabel.append(sideHiddenInput, sideHiddenSpan);
   editor.appendChild(sideHiddenLabel);
 
@@ -197,7 +198,7 @@ export function ensureStructureEditor() {
   bottomHiddenInput.id = 'structure-bottom-hidden';
   bottomHiddenInput.type = 'checkbox';
   const bottomHiddenSpan = document.createElement('span');
-  bottomHiddenSpan.textContent = ' Item';
+  bottomHiddenSpan.textContent = 'Hide underside';
   bottomHiddenLabel.append(bottomHiddenInput, bottomHiddenSpan);
   editor.appendChild(bottomHiddenLabel);
 
@@ -208,7 +209,7 @@ export function ensureStructureEditor() {
   hideFrameInput.id = 'structure-hide-frame';
   hideFrameInput.type = 'checkbox';
   const hideFrameSpan = document.createElement('span');
-  hideFrameSpan.textContent = ' Item';
+  hideFrameSpan.textContent = 'Hide frame';
   hideFrameLabel.append(hideFrameInput, hideFrameSpan);
   editor.appendChild(hideFrameLabel);
 
@@ -219,19 +220,19 @@ export function ensureStructureEditor() {
   mirroredInput.id = 'structure-mirrored';
   mirroredInput.type = 'checkbox';
   const mirroredSpan = document.createElement('span');
-  mirroredSpan.textContent = ' ItemFlip';
+  mirroredSpan.textContent = 'Mirrored';
   mirroredLabel.append(mirroredInput, mirroredSpan);
   editor.appendChild(mirroredLabel);
 
-  editor.appendChild(createStructureField('Rotate Item ( Item)', 'structure-spiral-degrees', { type: 'number', min: '45', max: '720', step: '15' }));
-  editor.appendChild(createStructureField(' Item', 'structure-corner-step', { type: 'number', min: '1', step: '1' }));
-  editor.appendChild(createStructureField(' Item (m)', 'structure-run-before-corner', { type: 'number', min: '0.2', max: '20', step: '0.1' }));
-  editor.appendChild(createStructureField(' Item (m)', 'structure-run-after-corner', { type: 'number', min: '0.2', max: '20', step: '0.1' }));
-  editor.appendChild(createStructureField(' Item (m)', 'structure-u-slot-width', { type: 'number', min: '0', max: '1.0', step: '0.05' }));
-  editor.appendChild(createStructureField(' Item (m)', 'structure-u-void-length', { type: 'number', min: '0', max: '3.0', step: '0.1' }));
-  editor.appendChild(createStructureField(' Item', 'structure-beam-count', { type: 'number', min: '0', max: '4', step: '1' }));
+  editor.appendChild(createStructureField('Turn angle (°)', 'structure-spiral-degrees', { type: 'number', min: '45', max: '720', step: '15' }));
+  editor.appendChild(createStructureField('Corner step', 'structure-corner-step', { type: 'number', min: '1', step: '1' }));
+  editor.appendChild(createStructureField('Run before corner (m)', 'structure-run-before-corner', { type: 'number', min: '0.2', max: '20', step: '0.1' }));
+  editor.appendChild(createStructureField('Run after corner (m)', 'structure-run-after-corner', { type: 'number', min: '0.2', max: '20', step: '0.1' }));
+  editor.appendChild(createStructureField('Gap width (m)', 'structure-u-slot-width', { type: 'number', min: '0', max: '1.0', step: '0.05' }));
+  editor.appendChild(createStructureField('Void length (m)', 'structure-u-void-length', { type: 'number', min: '0', max: '3.0', step: '0.1' }));
+  editor.appendChild(createStructureField('Beam count', 'structure-beam-count', { type: 'number', min: '0', max: '4', step: '1' }));
 
-  editor.appendChild(createStructureField(' Item (m)', 'structure-curve', { type: 'number', step: '0.05' }));
+  editor.appendChild(createStructureField('Curvature (m)', 'structure-curve', { type: 'number', step: '0.05' }));
 
 
 
@@ -239,7 +240,7 @@ export function ensureStructureEditor() {
   deleteButton.id = 'btn-delete-structure';
   deleteButton.type = 'button';
   deleteButton.className = 'danger';
-  deleteButton.textContent = 'Delete Item';
+  deleteButton.textContent = 'Delete structure';
   editor.appendChild(deleteButton);
   const openingEditor = document.getElementById('opening-editor');
   if (openingEditor) {
@@ -295,7 +296,7 @@ export function updateEditor() {
       let totalArea = 0;
       try {
         const rooms = testMap.getSnapshot().floor?.rooms || testMap.getSnapshot().rooms || [];
-        const floorRooms = rooms.filter(r => r.floorId === currentFloorId);
+        const floorRooms = rooms.filter(r => r.floorId === currentFloorId && r.id !== 'plot'); // ArchCanvas: the plot outline is not a room
         floorRooms.forEach(room => {
           const vertices = getRoomVertices(room);
           let area = 0;
@@ -308,8 +309,7 @@ export function updateEditor() {
       } catch (err) {
         console.warn('Failed to calculate floor total area:', err);
       }
-      const formattedTotalArea = Number(totalArea.toFixed(2));
-      document.getElementById('selected-floor-name').textContent = `${currentFloor.name || ' Item'} (${formattedTotalArea} ㎡)`;
+      document.getElementById('selected-floor-name').textContent = `${currentFloor.name || 'Floor'} (${formatArea(totalArea)})`;
       document.getElementById('floor-name').value = currentFloor.name || '';
       document.getElementById('floor-wall-height').value = Number((currentFloor.wallHeight ?? testMap.getSnapshot().wallHeight ?? 3.0).toFixed(2));
       document.getElementById('floor-height').value = Number((currentFloor.floorHeight ?? testMap.getSnapshot().floorHeight ?? 0.06).toFixed(2));
@@ -347,7 +347,7 @@ export function updateEditor() {
       console.warn('Failed to calculate room area:', err);
     }
 
-    document.getElementById('selected-room-name').textContent = `${room.name || 'Room'} (${areaVal} ㎡)`;
+    document.getElementById('selected-room-name').textContent = `${room.name || 'Room'} (${formatArea(areaVal)})`;
     document.getElementById('room-name').value = room.name || '';
     document.getElementById('room-width').value = Number(room.width.toFixed(2));
     document.getElementById('room-depth').value = Number(room.depth.toFixed(2));
@@ -367,7 +367,7 @@ export function updateEditor() {
     document.getElementById('btn-delete-room').disabled = !!room.locked;
   }
   if (wall) {
-    document.getElementById('selected-wall-name').textContent = ' Item';
+    document.getElementById('selected-wall-name').textContent = 'Wall';
     document.getElementById('wall-length').value = Number(testMap.getWallLength(wall.id).toFixed(2));
     const dx = wall.to[0] - wall.from[0];
     const dz = wall.to[1] - wall.from[1];
@@ -393,7 +393,7 @@ export function updateEditor() {
     }
   }
   if (fence) {
-    document.getElementById('selected-fence-name').textContent = ' Item';
+    document.getElementById('selected-fence-name').textContent = 'Fence';
     document.getElementById('fence-subtype').value = fence.subtype || 'picket_wood';
     const dx = fence.to[0] - fence.from[0];
     const dz = fence.to[1] - fence.from[1];
@@ -487,11 +487,11 @@ export function updateEditor() {
       if (def.category === 'lighting' || def.lightSource) {
         lightField.classList.remove('hidden');
         powerInput.checked = item.lightOn !== false;
-        if (powerLabel) powerLabel.textContent = ' Item';
+        if (powerLabel) powerLabel.textContent = 'Light on';
       } else if (def.powerEffect) {
         lightField.classList.remove('hidden');
         powerInput.checked = item.isOn === true;
-        if (powerLabel) powerLabel.textContent = ` Item${def.powerEffect.label || ' Item'}`;
+        if (powerLabel) powerLabel.textContent = `Turn on ${def.powerEffect.label || 'appliance'}`;
       } else {
         lightField.classList.add('hidden');
       }
@@ -511,7 +511,7 @@ export function updateEditor() {
   }
 
   if (structure) {
-    document.getElementById('selected-structure-name').textContent = structureType === 'roof' ? ' Item' : ' Item';
+    document.getElementById('selected-structure-name').textContent = structureType === 'roof' ? 'Roof' : 'Stairs';
     
     const xLabel = document.getElementById('structure-x')?.closest('label');
     const zLabel = document.getElementById('structure-z')?.closest('label');
@@ -661,13 +661,13 @@ export function updateEditor() {
       subtypeSelect.innerHTML = '';
       if (structureType === 'roof') {
         const options = [
-          { value: 'gable', label: ' Item' },
-          { value: 'shed', label: ' Item' },
-          { value: 'arch', label: ' Item' },
-          { value: 'dome', label: ' Item' },
-          { value: 'trapezoid', label: ' Item' },
-          { value: 'hip', label: 'Diamond Item' },
-          { value: 'flat', label: ' Item' }
+          { value: 'gable', label: 'Gable' },
+          { value: 'shed', label: 'Shed' },
+          { value: 'arch', label: 'Arch' },
+          { value: 'dome', label: 'Dome' },
+          { value: 'trapezoid', label: 'Trapezoid' },
+          { value: 'hip', label: 'Hip' },
+          { value: 'flat', label: 'Flat' }
         ];
         options.forEach(opt => {
           const o = document.createElement('option');
@@ -678,14 +678,14 @@ export function updateEditor() {
         subtypeSelect.value = structure.subtype || structure.type || 'gable';
       } else {
         const options = [
-          { value: 'straight', label: ' Item' },
-          { value: 'lshape', label: 'L-Shape Item' },
-          { value: 'ushape', label: 'U Item' },
-          { value: 'spiral', label: 'Rotate Item' },
-          { value: 'curved', label: ' Item' },
-          { value: 'floating', label: ' Item' },
-          { value: 'ladder', label: ' Item' },
-          { value: 'slide', label: ' Item' }
+          { value: 'straight', label: 'Straight' },
+          { value: 'lshape', label: 'L-shaped' },
+          { value: 'ushape', label: 'U-shaped' },
+          { value: 'spiral', label: 'Spiral' },
+          { value: 'curved', label: 'Curved' },
+          { value: 'floating', label: 'Floating' },
+          { value: 'ladder', label: 'Ladder' },
+          { value: 'slide', label: 'Slide' }
         ];
         options.forEach(opt => {
           const o = document.createElement('option');
@@ -699,7 +699,7 @@ export function updateEditor() {
   }
 
   if (opening) {
-    document.getElementById('selected-opening-name').textContent = opening.type === 'door' ? ' Item' : ' Item';
+    document.getElementById('selected-opening-name').textContent = opening.type === 'door' ? 'Door' : 'Window';
     document.getElementById('opening-position').value = Math.round((opening.t ?? 0.5) * 100);
     document.getElementById('opening-width').value = opening.width || (opening.type === 'door' ? 0.9 : 1.25);
     document.getElementById('opening-shape').value = opening.shape || 'square';
@@ -727,7 +727,7 @@ export function updateEditor() {
     const flipIoField = document.getElementById('opening-flip-io-field');
     const isDoor = opening.type === 'door';
     document.getElementById('opening-content-hidden').checked = isDoor ? !!opening.panelHidden : !!opening.glassHidden;
-    document.getElementById('opening-content-hidden-label').textContent = isDoor ? ' Item' : ' ItemGlass';
+    document.getElementById('opening-content-hidden-label').textContent = isDoor ? 'Hide door panel' : 'Hide glass';
     const frameHiddenField = document.getElementById('opening-frame-hidden-field');
     frameHiddenField?.classList.toggle('hidden', isDoor);
     document.getElementById('opening-frame-hidden').checked = !isDoor && !!opening.frameHidden;
@@ -803,10 +803,10 @@ export function renderDesignPanel(room, wall, item, structure = null, structureT
   if (room) {
     const group = document.createElement('div');
     group.className = 'component-material-row';
-    group.appendChild(createColorField(' Item', room.color || '#f4efe6', (color) => {
+    group.appendChild(createColorField('Floor', room.color || '#f4efe6', (color) => {
       updateComponentMaterial('room', room.id, 'floor', color);
     }, getMaterialFriendlyName(room.material), room.material));
-    group.appendChild(createApplyMaterialButton(' Item', () => updateComponentMaterial('room', room.id, 'floor', activeMaterialDescriptor)));
+    group.appendChild(createApplyMaterialButton('Apply material', () => updateComponentMaterial('room', room.id, 'floor', activeMaterialDescriptor)));
     designSelectionPanel.appendChild(group);
     return;
   }
@@ -818,21 +818,21 @@ export function renderDesignPanel(room, wall, item, structure = null, structureT
       group.appendChild(createColorField(label, colorValue || '#f9fbff', (color) => {
         updateComponentMaterial('wall', wall.id, part, color);
       }, materialName, materialDescriptor));
-      group.appendChild(createApplyMaterialButton(' Item', () => updateComponentMaterial('wall', wall.id, part, activeMaterialDescriptor)));
+      group.appendChild(createApplyMaterialButton('Apply material', () => updateComponentMaterial('wall', wall.id, part, activeMaterialDescriptor)));
       designSelectionPanel.appendChild(group);
     };
 
-    appendWallRow(' Item', wall.colorFront || wall.color || '#f9fbff', 'front', getMaterialFriendlyName(wall.materialFront), wall.materialFront);
-    appendWallRow(' Item', wall.colorBack || wall.color || '#f9fbff', 'back', getMaterialFriendlyName(wall.materialBack), wall.materialBack);
+    appendWallRow('Front side', wall.colorFront || wall.color || '#f9fbff', 'front', getMaterialFriendlyName(wall.materialFront), wall.materialFront);
+    appendWallRow('Back side', wall.colorBack || wall.color || '#f9fbff', 'back', getMaterialFriendlyName(wall.materialBack), wall.materialBack);
 
     if (wall.baseboardEnabled) {
-      appendWallRow(' Item', wall.baseboardColorFront || wall.colorFront || wall.color || '#f9fbff', 'front-baseboard', getMaterialFriendlyName(wall.baseboardMaterialFront || wall.materialFront), wall.baseboardMaterialFront || wall.materialFront);
-      appendWallRow(' Item', wall.baseboardColorBack || wall.colorBack || wall.color || '#f9fbff', 'back-baseboard', getMaterialFriendlyName(wall.baseboardMaterialBack || wall.materialBack), wall.baseboardMaterialBack || wall.materialBack);
+      appendWallRow('Front baseboard', wall.baseboardColorFront || wall.colorFront || wall.color || '#f9fbff', 'front-baseboard', getMaterialFriendlyName(wall.baseboardMaterialFront || wall.materialFront), wall.baseboardMaterialFront || wall.materialFront);
+      appendWallRow('Back baseboard', wall.baseboardColorBack || wall.colorBack || wall.color || '#f9fbff', 'back-baseboard', getMaterialFriendlyName(wall.baseboardMaterialBack || wall.materialBack), wall.baseboardMaterialBack || wall.materialBack);
     }
 
     if (wall.wainscotEnabled) {
-      appendWallRow(' ItemWall Panel Moulding', wall.wainscotColorFront || wall.colorFront || wall.color || '#f9fbff', 'front-wainscot', getMaterialFriendlyName(wall.wainscotMaterialFront || wall.materialFront), wall.wainscotMaterialFront || wall.materialFront);
-      appendWallRow(' ItemWall Panel Moulding', wall.wainscotColorBack || wall.colorBack || wall.color || '#f9fbff', 'back-wainscot', getMaterialFriendlyName(wall.wainscotMaterialBack || wall.materialBack), wall.wainscotMaterialBack || wall.materialBack);
+      appendWallRow('Front wainscot', wall.wainscotColorFront || wall.colorFront || wall.color || '#f9fbff', 'front-wainscot', getMaterialFriendlyName(wall.wainscotMaterialFront || wall.materialFront), wall.wainscotMaterialFront || wall.materialFront);
+      appendWallRow('Back wainscot', wall.wainscotColorBack || wall.colorBack || wall.color || '#f9fbff', 'back-wainscot', getMaterialFriendlyName(wall.wainscotMaterialBack || wall.materialBack), wall.wainscotMaterialBack || wall.materialBack);
     }
     return;
   }
@@ -840,46 +840,46 @@ export function renderDesignPanel(room, wall, item, structure = null, structureT
   if (structure) {
     const title = document.createElement('p');
     title.className = 'selection-title';
-    title.textContent = structureType === 'roof' ? ' Item' : ' Item';
+    title.textContent = structureType === 'roof' ? 'Roof' : 'Stairs';
     designSelectionPanel.appendChild(title);
 
     // 1.   ( ) /   ( )
     const groupTop = document.createElement('div');
     groupTop.className = 'component-material-row';
-    const labelTop = structureType === 'roof' ? ' Item' : ' Item';
+    const labelTop = structureType === 'roof' ? 'Roof surface' : 'Treads';
     groupTop.appendChild(createColorField(labelTop, structure.color || (structureType === 'roof' ? '#b75b54' : '#d8c0a0'), (color) => {
       updateComponentMaterial(structureType, structure.id, 'top', color);
     }, getMaterialFriendlyName(structure.material), structure.material));
-    groupTop.appendChild(createApplyMaterialButton(' Item', () => updateComponentMaterial(structureType, structure.id, 'top', activeMaterialDescriptor)));
+    groupTop.appendChild(createApplyMaterialButton('Apply material', () => updateComponentMaterial(structureType, structure.id, 'top', activeMaterialDescriptor)));
     designSelectionPanel.appendChild(groupTop);
 
     // 2.   ( ) /   ( )
     const groupSide = document.createElement('div');
     groupSide.className = 'component-material-row';
-    const labelSide = structureType === 'roof' ? ' Item' : ' Item';
+    const labelSide = structureType === 'roof' ? 'Roof sides' : 'Stair sides';
     groupSide.appendChild(createColorField(labelSide, structure.sideColor || (structure.color || (structureType === 'roof' ? '#b75b54' : '#d8c0a0')), (color) => {
       updateComponentMaterial(structureType, structure.id, 'side', color);
     }, getMaterialFriendlyName(structure.sideMaterial || structure.material), structure.sideMaterial || structure.material));
-    groupSide.appendChild(createApplyMaterialButton(' Item', () => updateComponentMaterial(structureType, structure.id, 'side', activeMaterialDescriptor)));
+    groupSide.appendChild(createApplyMaterialButton('Apply material', () => updateComponentMaterial(structureType, structure.id, 'side', activeMaterialDescriptor)));
     designSelectionPanel.appendChild(groupSide);
 
     // 3.   ( )
     if (structureType === 'roof') {
       const groupBottom = document.createElement('div');
       groupBottom.className = 'component-material-row';
-      groupBottom.appendChild(createColorField(' Item', structure.bottomColor || '#ffffff', (color) => {
+      groupBottom.appendChild(createColorField('Underside', structure.bottomColor || '#ffffff', (color) => {
         updateComponentMaterial(structureType, structure.id, 'bottom', color);
       }, getMaterialFriendlyName(structure.bottomMaterial || structure.bottomColor || '#ffffff'), structure.bottomMaterial));
-      groupBottom.appendChild(createApplyMaterialButton(' Item', () => updateComponentMaterial(structureType, structure.id, 'bottom', activeMaterialDescriptor)));
+      groupBottom.appendChild(createApplyMaterialButton('Apply material', () => updateComponentMaterial(structureType, structure.id, 'bottom', activeMaterialDescriptor)));
       designSelectionPanel.appendChild(groupBottom);
 
       // 4.   ( )
       const groupFrame = document.createElement('div');
       groupFrame.className = 'component-material-row';
-      groupFrame.appendChild(createColorField(' Item', structure.frameColor || '#2c2c2c', (color) => {
+      groupFrame.appendChild(createColorField('Frame', structure.frameColor || '#2c2c2c', (color) => {
         updateComponentMaterial(structureType, structure.id, 'frame', color);
       }, getMaterialFriendlyName(structure.frameMaterial || structure.frameColor || '#2c2c2c'), structure.frameMaterial));
-      groupFrame.appendChild(createApplyMaterialButton(' Item', () => updateComponentMaterial(structureType, structure.id, 'frame', activeMaterialDescriptor)));
+      groupFrame.appendChild(createApplyMaterialButton('Apply material', () => updateComponentMaterial(structureType, structure.id, 'frame', activeMaterialDescriptor)));
       designSelectionPanel.appendChild(groupFrame);
     }
     return;
@@ -889,19 +889,19 @@ export function renderDesignPanel(room, wall, item, structure = null, structureT
     const definition = testMap.getFurnitureDefinition(item.type);
     const title = document.createElement('p');
     title.className = 'selection-title';
-    title.textContent = `${item.name}  Item`;
+    title.textContent = `${item.name} materials`;
     designSelectionPanel.appendChild(title);
     definition.components.forEach((component) => {
       const group = document.createElement('div');
       group.className = 'component-material-row';
       group.appendChild(createColorField(component.label, item.colors?.[component.id] || component.defaultColor, (color) => {
         if (isTargetLocked({ type: 'item', id: item.id })) {
-          showToast(' ItemLock');
+          showToast('This item is locked');
           return;
         }
         entityManager.updateItemComponentColor(item.id, component.id, color);
       }, getMaterialFriendlyName(item.materials?.[component.id]), item.materials?.[component.id]));
-      group.appendChild(createApplyMaterialButton(' Item', () => applyMaterialToItemComponent(component.id, activeMaterialDescriptor)));
+      group.appendChild(createApplyMaterialButton('Apply material', () => applyMaterialToItemComponent(component.id, activeMaterialDescriptor)));
       designSelectionPanel.appendChild(group);
     });
     return;
@@ -910,37 +910,37 @@ export function renderDesignPanel(room, wall, item, structure = null, structureT
   if (fence) {
     const title = document.createElement('p');
     title.className = 'selection-title';
-    title.textContent = ' Item';
+    title.textContent = 'Fence';
     designSelectionPanel.appendChild(title);
 
     //  
-    let frameLabel = ' Item';
-    let panelLabel = ' Item';
+    let frameLabel = 'Frame';
+    let panelLabel = 'Panel';
 
     if (fence.subtype === 'glass_rail') {
-      frameLabel = ' Item';
-      panelLabel = 'Glass Item';
+      frameLabel = 'Rail';
+      panelLabel = 'Glass panel';
     } else if (fence.subtype === 'picket_wood') {
-      frameLabel = ' Item';
-      panelLabel = ' Item';
+      frameLabel = 'Rails';
+      panelLabel = 'Pickets';
     } else if (fence.subtype === 'iron_ornamental') {
-      frameLabel = ' Item';
-      panelLabel = ' Item';
+      frameLabel = 'Frame';
+      panelLabel = 'Bars';
     } else if (fence.subtype === 'wire_mesh') {
-      frameLabel = ' Item';
-      panelLabel = ' Item';
+      frameLabel = 'Posts';
+      panelLabel = 'Mesh';
     } else if (fence.subtype === 'stone_masonry') {
-      frameLabel = ' Item';
-      panelLabel = ' Item';
+      frameLabel = 'Pillars';
+      panelLabel = 'Stonework';
     } else if (fence.subtype === 'bamboo') {
-      frameLabel = ' Item';
-      panelLabel = ' Item';
+      frameLabel = 'Posts';
+      panelLabel = 'Bamboo poles';
     } else if (fence.subtype === 'rope') {
-      frameLabel = ' Item';
-      panelLabel = ' Item';
+      frameLabel = 'Posts';
+      panelLabel = 'Rope';
     } else if (fence.subtype === 'concrete') {
-      frameLabel = ' Item';
-      panelLabel = ' Item';
+      frameLabel = 'Posts';
+      panelLabel = 'Panels';
     }
 
     // 1.  / 
@@ -949,7 +949,7 @@ export function renderDesignPanel(room, wall, item, structure = null, structureT
     groupFrame.appendChild(createColorField(frameLabel, fence.frameColor || fence.color || '#8d6e63', (color) => {
       updateComponentMaterial('fence', fence.id, 'frame', color);
     }, getMaterialFriendlyName(fence.frameMaterial), fence.frameMaterial));
-    groupFrame.appendChild(createApplyMaterialButton(` Item`, () => updateComponentMaterial('fence', fence.id, 'frame', activeMaterialDescriptor)));
+    groupFrame.appendChild(createApplyMaterialButton(`Apply material`, () => updateComponentMaterial('fence', fence.id, 'frame', activeMaterialDescriptor)));
     designSelectionPanel.appendChild(groupFrame);
 
     // 2.  /Glass 
@@ -958,7 +958,7 @@ export function renderDesignPanel(room, wall, item, structure = null, structureT
     groupPanel.appendChild(createColorField(panelLabel, fence.panelColor || fence.color || '#8d6e63', (color) => {
       updateComponentMaterial('fence', fence.id, 'panel', color);
     }, getMaterialFriendlyName(fence.panelMaterial), fence.panelMaterial));
-    groupPanel.appendChild(createApplyMaterialButton(` Item`, () => updateComponentMaterial('fence', fence.id, 'panel', activeMaterialDescriptor)));
+    groupPanel.appendChild(createApplyMaterialButton(`Apply material`, () => updateComponentMaterial('fence', fence.id, 'panel', activeMaterialDescriptor)));
     designSelectionPanel.appendChild(groupPanel);
     return;
   }
@@ -966,37 +966,37 @@ export function renderDesignPanel(room, wall, item, structure = null, structureT
   if (opening) {
     const title = document.createElement('p');
     title.className = 'selection-title';
-    title.textContent = opening.type === 'door' ? ' Item' : ' Item、 ItemGlass Item';
+    title.textContent = opening.type === 'door' ? 'Door' : 'Window';
     designSelectionPanel.appendChild(title);
 
     const isDoor = opening.type === 'door';
 
     const groupFrame = document.createElement('div');
     groupFrame.className = 'component-material-row';
-    groupFrame.appendChild(createColorField(isDoor ? ' Item' : ' Item', opening.frameMaterial || '#ffffff', (color) => {
+    groupFrame.appendChild(createColorField(isDoor ? 'Door frame' : 'Window frame', opening.frameMaterial || '#ffffff', (color) => {
       updateComponentMaterial('opening', opening.id, 'frame', color);
     }, getMaterialFriendlyName(opening.frameMaterial), opening.frameMaterial));
-    groupFrame.appendChild(createApplyMaterialButton(' Item', () => {
+    groupFrame.appendChild(createApplyMaterialButton('Apply material', () => {
       updateComponentMaterial('opening', opening.id, 'frame', activeMaterialDescriptor);
     }));
     designSelectionPanel.appendChild(groupFrame);
 
     const groupMullion = document.createElement('div');
     groupMullion.className = 'component-material-row';
-    groupMullion.appendChild(createColorField(' Item', opening.mullionMaterial || opening.frameMaterial || '#ffffff', (color) => {
+    groupMullion.appendChild(createColorField('Mullions', opening.mullionMaterial || opening.frameMaterial || '#ffffff', (color) => {
       updateComponentMaterial('opening', opening.id, 'mullion', color);
     }, getMaterialFriendlyName(opening.mullionMaterial || opening.frameMaterial), opening.mullionMaterial || opening.frameMaterial));
-    groupMullion.appendChild(createApplyMaterialButton(' Item', () => {
+    groupMullion.appendChild(createApplyMaterialButton('Apply material', () => {
       updateComponentMaterial('opening', opening.id, 'mullion', activeMaterialDescriptor);
     }));
     designSelectionPanel.appendChild(groupMullion);
 
     const groupContent = document.createElement('div');
     groupContent.className = 'component-material-row';
-    groupContent.appendChild(createColorField(isDoor ? ' Item' : 'Glass Item', isDoor ? (opening.panelMaterial || '#ffffff') : (opening.glassMaterial || '#e0f7fa'), (color) => {
+    groupContent.appendChild(createColorField(isDoor ? 'Door panel' : 'Glass', isDoor ? (opening.panelMaterial || '#ffffff') : (opening.glassMaterial || '#e0f7fa'), (color) => {
       updateComponentMaterial('opening', opening.id, isDoor ? 'panel' : 'glass', color);
     }, getMaterialFriendlyName(isDoor ? opening.panelMaterial : opening.glassMaterial), isDoor ? opening.panelMaterial : opening.glassMaterial));
-    groupContent.appendChild(createApplyMaterialButton(' Item', () => {
+    groupContent.appendChild(createApplyMaterialButton('Apply material', () => {
       updateComponentMaterial('opening', opening.id, isDoor ? 'panel' : 'glass', activeMaterialDescriptor);
     }));
     designSelectionPanel.appendChild(groupContent);
@@ -1005,25 +1005,25 @@ export function renderDesignPanel(room, wall, item, structure = null, structureT
   if (fenceGate) {
     const title = document.createElement('p');
     title.className = 'selection-title';
-    title.textContent = ' Item';
+    title.textContent = 'Fence gate';
     designSelectionPanel.appendChild(title);
 
     const groupFrame = document.createElement('div');
     groupFrame.className = 'component-material-row';
-    groupFrame.appendChild(createColorField(' Item', fenceGate.frameMaterial || '#ffffff', (color) => {
+    groupFrame.appendChild(createColorField('Frame', fenceGate.frameMaterial || '#ffffff', (color) => {
       updateComponentMaterial('fence_gate', fenceGate.id, 'frame', color);
     }, getMaterialFriendlyName(fenceGate.frameMaterial), fenceGate.frameMaterial));
-    groupFrame.appendChild(createApplyMaterialButton(' Item', () => {
+    groupFrame.appendChild(createApplyMaterialButton('Apply material', () => {
       updateComponentMaterial('fence_gate', fenceGate.id, 'frame', activeMaterialDescriptor);
     }));
     designSelectionPanel.appendChild(groupFrame);
 
     const groupContent = document.createElement('div');
     groupContent.className = 'component-material-row';
-    groupContent.appendChild(createColorField(' Item', fenceGate.panelMaterial || '#ffffff', (color) => {
+    groupContent.appendChild(createColorField('Panel', fenceGate.panelMaterial || '#ffffff', (color) => {
       updateComponentMaterial('fence_gate', fenceGate.id, 'panel', color);
     }, getMaterialFriendlyName(fenceGate.panelMaterial), fenceGate.panelMaterial));
-    groupContent.appendChild(createApplyMaterialButton(' Item', () => {
+    groupContent.appendChild(createApplyMaterialButton('Apply material', () => {
       updateComponentMaterial('fence_gate', fenceGate.id, 'panel', activeMaterialDescriptor);
     }));
     designSelectionPanel.appendChild(groupContent);
@@ -1045,7 +1045,7 @@ export function renderDesignPanel(room, wall, item, structure = null, structureT
       group.appendChild(createColorField(label, material?.color || fallbackColor, (color) => {
         applyEnvironmentMaterial(component, color);
       }, getMaterialFriendlyName(material), material));
-      group.appendChild(createApplyMaterialButton(' Item', () => {
+      group.appendChild(createApplyMaterialButton('Apply material', () => {
         applyEnvironmentMaterial(component, activeMaterialDescriptor);
       }));
       designSelectionPanel.appendChild(group);
@@ -1053,17 +1053,17 @@ export function renderDesignPanel(room, wall, item, structure = null, structureT
 
     const title = document.createElement('p');
     title.className = 'selection-title';
-    title.textContent = 'Sky Item';
+    title.textContent = 'Sky and ground';
     designSelectionPanel.appendChild(title);
     appendEnvironmentRow('sky', 'Sky', environment.skyMaterial, '#d9ecff');
-    appendEnvironmentRow('ground', ' Item', environment.groundMaterial, '#8ca66b');
+    appendEnvironmentRow('ground', 'Ground', environment.groundMaterial, '#8ca66b');
   }
 }
 
 export function getMaterialFriendlyName(material) {
-  if (!material) return ' Item';
+  if (!material) return 'Default';
   if (typeof material === 'string') {
-    if (material.startsWith('#')) return ` Item ${material}`;
+    if (material.startsWith('#')) return `Color ${material}`;
     if (material.includes('/')) {
       const parts = material.split('/');
       const filename = parts[parts.length - 1];
@@ -1072,18 +1072,18 @@ export function getMaterialFriendlyName(material) {
     return material;
   }
   if (material.name) return material.name;
-  if (material.kind === 'color') return ` Item ${material.color || '#ffffff'}`;
+  if (material.kind === 'color') return `Color ${material.color || '#ffffff'}`;
   if (material.kind) {
     const kindMap = {
       mirror: 'Mirror',
       metal: 'Metal',
       glass: 'Glass',
-      texture: ' Item',
+      texture: 'Texture',
       emissive: 'Emissive'
     };
     return kindMap[material.kind] || material.kind;
   }
-  return 'Custom Item';
+  return 'Custom material';
 }
 
 export function createColorField(label, value, onChange, currentMaterialName = '', materialDescriptor = null) {
@@ -1110,7 +1110,7 @@ export function createColorField(label, value, onChange, currentMaterialName = '
 
   const input = document.createElement('input');
   input.type = 'color';
-  input.setAttribute('aria-label', `${label}：SelectCustom Item`);
+  input.setAttribute('aria-label', `${label}: choose a custom color`);
   input.style.cssText = 'position: absolute; inset: 0; width: 100%; height: 30px; opacity: 0.001; cursor: pointer; z-index: 2; padding: 0; border: 0;';
   
   let hexColor = '#ffffff';
@@ -1125,7 +1125,7 @@ export function createColorField(label, value, onChange, currentMaterialName = '
   
   const colorBtn = document.createElement('button');
   colorBtn.type = 'button';
-  colorBtn.setAttribute('aria-label', `${label}：SelectCustom Item`);
+  colorBtn.setAttribute('aria-label', `${label}: choose a custom color`);
   colorBtn.tabIndex = -1;
   colorBtn.className = 'color-preview-btn';
   colorBtn.style.cssText = 'width: 100%; height: 30px; padding: 0; appearance: none; border: 1px solid rgba(42, 65, 92, 0.2); border-radius: 6px; pointer-events: none; box-sizing: border-box;';
@@ -1728,7 +1728,7 @@ export function initUiEventListeners() {
   document.getElementById('btn-delete-room').addEventListener('click', () => {
     if (!selection.selectedRoomId) return;
     if (testMap.getEntity('room', selection.selectedRoomId)?.locked) return;
-    showCustomConfirm(' Item', ' ItemDelete ItemRoom Item？Room ItemFurniture Item').then((confirmed) => {
+    showCustomConfirm('Delete room', 'Delete this room? Furniture in the room will also be deleted.').then((confirmed) => {
       if (confirmed) {
         pushHistory();
         testMap.deleteRoom(selection.selectedRoomId);
@@ -1741,10 +1741,10 @@ export function initUiEventListeners() {
   document.getElementById('btn-delete-floor')?.addEventListener('click', () => {
     const currentFloorId = testMap.getCurrentFloorId();
     if (testMap.getFloors().length <= 1) {
-      showCustomAlert(' Item', ' Item！');
+      showCustomAlert('Cannot delete floor', 'At least one floor must remain.');
       return;
     }
-    showCustomConfirm(' Item', ' ItemDelete Item？Delete ItemRoom、 ItemFurniture Item。').then((confirmed) => {
+    showCustomConfirm('Delete floor', 'Delete this floor? All rooms and furniture on it will also be deleted.').then((confirmed) => {
       if (confirmed) {
         pushHistory();
         const success = testMap.deleteFloor(currentFloorId);
@@ -1984,7 +1984,7 @@ export function renderCurrentMaterial() {
     } else if (activeMaterialDescriptor) {
       nameText = getActiveMaterialDisplayName(activeMaterialDescriptor);
     }
-    currentLabel.textContent = nameText ? ` Item：${nameText}` : ' Item';
+    currentLabel.textContent = nameText ? `Current material: ${nameText}` : 'No material selected';
   }
 
   if (!currentGrid) return;
@@ -2001,7 +2001,7 @@ export function renderCurrentMaterial() {
   if (materialsToShow.length === 0) {
     const emptySwatch = document.createElement('div');
     emptySwatch.className = 'material-swatch empty-swatch';
-    emptySwatch.title = ' ItemSelect Item';
+    emptySwatch.title = 'Select a material first';
     currentGrid.appendChild(emptySwatch);
     return;
   }
@@ -2015,7 +2015,7 @@ export function renderCurrentMaterial() {
       material = mat.material;
     }
 
-    let titleText = 'Custom Item';
+    let titleText = 'Custom material';
     if (material && typeof material === 'object') {
       titleText = material.name || titleText;
     } else if (typeof material === 'string') {

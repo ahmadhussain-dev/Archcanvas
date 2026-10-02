@@ -1,4 +1,5 @@
 import './styles.css';
+import './embed.css';
 
 function registerImageCache() {
   if (!('serviceWorker' in navigator) || !import.meta.env.PROD) return;

@@ -306,7 +306,7 @@ export const consoleTableFurniture = {
 // 8.  Computer  (Computer Desk)
 export const computerDeskFurniture = {
   type: 'computer_desk',
-  name: 'Computer',
+  name: 'Computer Desk',
   unit: 'm',
   defaultSize: { width: 1.4, depth: 0.65, height: 0.75 },
   components: [
@@ -434,12 +434,12 @@ export const patioDiningTableFurniture = {
 // 12. Glass 
 export const bistroTableFurniture = {
   type: 'bistro_table',
-  name: 'Glass',
+  name: 'Glass Bistro Table',
   unit: 'm',
   defaultSize: { width: 0.65, depth: 0.65, height: 0.7 },
   components: [
-    { id: 'glass', label: 'Glass Item', defaultColor: '#e0f2f1' },
-    { id: 'frame', label: 'Metal Item', defaultColor: '#37474f' }
+    { id: 'glass', label: 'Glass top', defaultColor: '#e0f2f1' },
+    { id: 'frame', label: 'Metal frame', defaultColor: '#37474f' }
   ],
   build(registry, item, node, size) {
     // 1. DiamondMetal 
@@ -662,7 +662,7 @@ export const triangularRoundCoffeeTableFurniture = {
 // 16. C  (C-Shape Side Table)
 export const cShapeSideTableFurniture = {
   type: 'c_shape_side_table',
-  name: 'C',
+  name: 'C-Shape Side Table',
   unit: 'm',
   defaultSize: { width: 0.35, depth: 0.42, height: 0.46 },
   components: [

@@ -154,7 +154,7 @@ export class MaterialResolver {
         id: value.id,
         kind: 'stained-glass',
         category: value.category || 'glass',
-        name: value.name || ' ItemGlass',
+        name: value.name || 'Stained glass',
         color: value.color || '#8e4cc9',
         alpha: value.alpha !== undefined ? value.alpha : 0.72,
         patternScale: Number(value.patternScale || 1.1),
@@ -191,7 +191,7 @@ export class MaterialResolver {
         id: value.id,
         kind: 'texture',
         category: value.category || 'custom',
-        name: value.name || value.fileName || 'Custom Item',
+        name: value.name || value.fileName || 'Custom texture',
         fileName: value.fileName,
         src: value.src || value.url,
         derivedFrom: value.derivedFrom,
@@ -213,7 +213,7 @@ export class MaterialResolver {
       id: value?.id,
       kind: 'color',
       category: value?.category || 'custom',
-      name: value?.name || ' Item',
+      name: value?.name || 'Color',
       color: typeof colorStr === 'string' ? colorStr : fallbackColor,
       alpha: value?.alpha !== undefined ? Number(value.alpha) : undefined
     };

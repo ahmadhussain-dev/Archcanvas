@@ -45,7 +45,7 @@ export function createCustomDropdown(selectId) {
     const children = Array.from(select.children);
     
     if (children.length === 0) {
-      trigger.querySelector('.custom-dropdown-text').textContent = ' Item';
+      trigger.querySelector('.custom-dropdown-text').textContent = 'No options';
       return;
     }
 
