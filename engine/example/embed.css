@@ -1,0 +1,359 @@
+/* ArchCanvas look for the editor when it runs inside the app (?embed=1).
+   Everything is scoped to html.archcanvas-embed, so the engine's own demo
+   keeps its original styling. Tokens follow docs/design/archcanvas-ui-guidelines.md. */
+
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600;700&display=swap');
+
+html.archcanvas-embed {
+  --ac-navy: #13202c;
+  --ac-ink-2: #4a5867;
+  --ac-ink-3: #6b7785;
+  --ac-line: #e3e8ee;
+  --ac-line-2: #cfd7e0;
+  --ac-paper: #f6f8fa;
+  --ac-blue: #1e5aa8;
+  --ac-blue-soft: #eaf1fb;
+  --ac-red: #b42318;
+  --ac-mono: 'IBM Plex Mono', ui-monospace, monospace;
+  font-family: Inter, system-ui, sans-serif;
+  color: var(--ac-navy);
+  background: #ffffff;
+}
+
+/* Layout: panels sit flush against the canvas, separated by hairlines. */
+.archcanvas-embed .workspace {
+  grid-template-columns: 248px minmax(0, 1fr) 288px;
+}
+.archcanvas-embed .workspace:has(.left-panel.collapsed) { grid-template-columns: 0px minmax(0, 1fr) 288px; }
+.archcanvas-embed .workspace:has(.right-panel.collapsed) { grid-template-columns: 248px minmax(0, 1fr) 0px; }
+.archcanvas-embed .left-panel:not(.collapsed),
+.archcanvas-embed .right-panel:not(.collapsed) { margin: 0; }
+.archcanvas-embed .panel,
+.archcanvas-embed .view-card {
+  background: #ffffff;
+  backdrop-filter: none;
+  box-shadow: none;
+  border: 0;
+  border-radius: 0;
+}
+.archcanvas-embed .left-panel { border-right: 1px solid var(--ac-line); }
+.archcanvas-embed .right-panel { border-left: 1px solid var(--ac-line); }
+.archcanvas-embed .left-panel-content,
+.archcanvas-embed .right-panel-content { padding: 12px; }
+.archcanvas-embed .panel h2 {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ac-ink-3);
+  margin: 4px 0 8px;
+}
+.archcanvas-embed .stage {
+  background: var(--ac-paper);
+  height: 100vh;
+  grid-template-rows: minmax(0, 1fr);
+}
+
+/* Buttons: 8px radius, blueprint blue for interaction. */
+.archcanvas-embed button {
+  border-radius: 8px;
+  border-color: var(--ac-line-2);
+  color: var(--ac-navy);
+  box-shadow: none;
+}
+.archcanvas-embed button:hover {
+  background-color: var(--ac-blue-soft);
+  border-color: var(--ac-blue-soft);
+  color: var(--ac-blue);
+}
+.archcanvas-embed button.active {
+  background-color: var(--ac-blue);
+  border-color: var(--ac-blue);
+  color: #ffffff;
+}
+.archcanvas-embed button.primary,
+.archcanvas-embed #btn-view-toggle {
+  background: var(--ac-navy);
+  border-color: var(--ac-navy);
+  color: #ffffff;
+  border-radius: 8px;
+}
+.archcanvas-embed button.danger {
+  background: #ffffff;
+  border-color: var(--ac-line-2);
+  color: var(--ac-red);
+}
+.archcanvas-embed button.danger:hover {
+  background: #fdf0ef;
+  border-color: #f3c7c3;
+}
+
+/* Panel tabs */
+.archcanvas-embed .tabs {
+  background: var(--ac-paper);
+  border-color: var(--ac-line);
+  border-radius: 8px;
+  margin-bottom: 12px;
+}
+.archcanvas-embed .tabs .tab { min-height: 40px !important; color: var(--ac-ink-3) !important; }
+.archcanvas-embed .tabs .tab.active { color: var(--ac-blue) !important; }
+.archcanvas-embed .tabs .tab .tab-text { font-size: 11px; font-weight: 600; }
+.archcanvas-embed .tabs-slider { box-shadow: 0 1px 2px rgba(19, 32, 44, 0.12); }
+
+/* Tool groups: compact tiles, three to a row. */
+.archcanvas-embed .tool-group-toggle {
+  min-height: 30px;
+  background: transparent;
+  border: 0;
+  padding: 0 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ac-ink-3);
+}
+.archcanvas-embed .tool-group-toggle:hover { background: transparent; color: var(--ac-navy); }
+.archcanvas-embed .building-tool-group { gap: 2px; margin-bottom: 6px; }
+.archcanvas-embed :is(.floor-tools, .room-tools, .opening-tools, .roof-tools, .stairs-tools, .design-tools) {
+  grid-template-columns: repeat(3, 1fr) !important;
+  gap: 4px !important;
+  background: transparent;
+  border: 0;
+  margin-bottom: 8px;
+}
+.archcanvas-embed :is(.floor-tools, .room-tools, .opening-tools, .roof-tools, .stairs-tools) .mode,
+.archcanvas-embed .design-tools .design-mode {
+  height: 56px !important;
+  min-height: 56px !important;
+  color: var(--ac-ink-2) !important;
+  border: 1px solid transparent !important;
+  border-radius: 8px !important;
+}
+.archcanvas-embed :is(.floor-tools, .room-tools, .opening-tools, .roof-tools, .stairs-tools) .mode:hover,
+.archcanvas-embed .design-tools .design-mode:hover {
+  background: var(--ac-paper) !important;
+  color: var(--ac-navy) !important;
+}
+.archcanvas-embed :is(.floor-tools, .room-tools, .opening-tools, .roof-tools, .stairs-tools) .mode.active,
+.archcanvas-embed .design-tools .design-mode.active {
+  background: var(--ac-blue-soft) !important;
+  color: var(--ac-blue) !important;
+  border-color: rgba(30, 90, 168, 0.25) !important;
+  box-shadow: none !important;
+}
+.archcanvas-embed .mode-shortcut { display: none; }
+
+/* Progressive complexity: tools a Pakistani house plan rarely needs stay out of the way. */
+.archcanvas-embed [data-tool-group="fence"],
+.archcanvas-embed [data-tool-group="fence-gate"],
+.archcanvas-embed [data-mode="add-stairs-floating"],
+.archcanvas-embed [data-mode="add-stairs-ladder"],
+.archcanvas-embed [data-mode="add-stairs-slide"],
+.archcanvas-embed [data-mode="add-roof-arch"],
+.archcanvas-embed [data-mode="add-roof-dome"],
+.archcanvas-embed [data-mode="add-roof-trapezoid"],
+.archcanvas-embed [data-mode$="-diamond"],
+.archcanvas-embed [data-mode$="-quarter-sector"],
+.archcanvas-embed [data-mode$="-right-triangle"],
+.archcanvas-embed [data-mode$="-octagon"],
+.archcanvas-embed [data-mode="add-room-sector"],
+.archcanvas-embed [data-mode="add-door-circle"],
+.archcanvas-embed #btn-upload-furniture,
+.archcanvas-embed #btn-furniture-upload-help,
+.archcanvas-embed #btn-export-3mf,
+.archcanvas-embed #btn-export-zip {
+  display: none !important;
+}
+
+/* Properties panel */
+.archcanvas-embed .editor-header strong,
+.archcanvas-embed .selection-title,
+.archcanvas-embed #selected-floor-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ac-navy);
+}
+.archcanvas-embed .field span,
+.archcanvas-embed .check-field span { font-size: 12px; color: var(--ac-ink-2); }
+.archcanvas-embed .field input[type="text"],
+.archcanvas-embed .field input[type="number"],
+.archcanvas-embed select {
+  height: 36px;
+  border: 1px solid var(--ac-line-2);
+  border-radius: 8px;
+  color: var(--ac-navy);
+  background: #ffffff;
+}
+.archcanvas-embed .field input[type="number"] { font-family: var(--ac-mono); font-size: 13px; }
+.archcanvas-embed .field input:focus,
+.archcanvas-embed select:focus {
+  outline: 2px solid rgba(30, 90, 168, 0.35);
+  outline-offset: 0;
+  border-color: var(--ac-blue);
+}
+.archcanvas-embed input[type="checkbox"],
+.archcanvas-embed input[type="range"] { accent-color: var(--ac-blue); }
+.archcanvas-embed .empty-state {
+  border: 1px dashed var(--ac-line-2);
+  border-radius: 12px;
+  color: var(--ac-ink-3);
+}
+.archcanvas-embed .hint { color: var(--ac-ink-3); }
+
+/* Floor switcher */
+.archcanvas-embed .floor-floating-group {
+  background: #ffffff;
+  border-color: var(--ac-line);
+  border-radius: 10px;
+  box-shadow: 0 1px 3px rgba(19, 32, 44, 0.1);
+}
+.archcanvas-embed .btn-floor-item,
+.archcanvas-embed .btn-floor-add { border-radius: 8px; font-family: var(--ac-mono); color: var(--ac-ink-2); }
+.archcanvas-embed .btn-floor-item.active,
+.archcanvas-embed .btn-floor-item.active:hover {
+  background: var(--ac-navy);
+  color: #ffffff;
+  box-shadow: none;
+}
+
+/* Plan: readable, centred room labels with sizes in mono. */
+.archcanvas-embed .room-name-label { fill: var(--ac-navy); font-weight: 600; font-family: Inter, system-ui, sans-serif; }
+.archcanvas-embed .room-size-label { fill: var(--ac-ink-2); font-weight: 400; font-family: var(--ac-mono); }
+
+/* Plan geometry: navy walls, neutral rooms, blueprint-blue selection. */
+.archcanvas-embed .room-rect { fill: #f7f5f0; stroke: rgba(19, 32, 44, 0.18); }
+.archcanvas-embed .wall-line { stroke: var(--ac-navy); filter: none; }
+.archcanvas-embed .room-rect.selected,
+.archcanvas-embed .room-selected-outline,
+.archcanvas-embed .wall-line:hover,
+.archcanvas-embed .wall-line.selected,
+.archcanvas-embed .opening-line.selected { stroke: var(--ac-blue); }
+.archcanvas-embed .room-selected-outline { stroke-width: 2; }
+.archcanvas-embed .room-resize-handle,
+.archcanvas-embed .roof-resize-handle { stroke: var(--ac-blue); filter: none; }
+.archcanvas-embed .window-line { stroke: #8fb3e0; }
+
+/* Material library: bigger tiles with a one-line name (full name on hover). */
+.material-swatch-name { display: none; }
+.archcanvas-embed .material-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px 10px;
+}
+.archcanvas-embed .material-swatch {
+  position: relative;
+  margin-bottom: 16px;
+  overflow: visible;
+}
+.archcanvas-embed #current-material-grid { grid-template-columns: 40px; }
+.archcanvas-embed #current-material-grid .material-swatch { margin-bottom: 0; }
+.archcanvas-embed #current-material-grid .material-swatch-name { display: none; }
+.archcanvas-embed .material-swatch-name {
+  display: block;
+  position: absolute;
+  top: calc(100% + 3px);
+  left: 0;
+  right: 0;
+  font-size: 10.5px;
+  line-height: 1.2;
+  color: var(--ac-ink-2);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+
+/* Drawn plan (PlanDrawing.js): walls at real thickness, door and window
+   symbols, dimension lines; opening lines stay as invisible hit areas. */
+.archcanvas-embed .plan-drawing .wall-line { stroke: var(--ac-navy); stroke-linecap: square; }
+.archcanvas-embed .plan-drawing .wall-line:hover,
+.archcanvas-embed .plan-drawing .wall-line.selected { stroke: var(--ac-blue); }
+.archcanvas-embed .plan-drawing .room-rect { fill: #ffffff; stroke: none; }
+.archcanvas-embed .plan-drawing .room-rect.selected { fill: rgba(30, 90, 168, 0.06); }
+.archcanvas-embed .plan-drawing .opening-line { stroke: transparent; stroke-width: 10px; }
+.archcanvas-embed .plan-drawing .opening-line:hover,
+.archcanvas-embed .plan-drawing .opening-line.selected { stroke: rgba(30, 90, 168, 0.35); }
+.archcanvas-embed .plan-drawing .grid-line { stroke-opacity: 0.45; }
+.archcanvas-embed .plan-drawing .room-name-label { font-size: 10px; font-weight: 600; }
+.archcanvas-embed .plan-drawing .room-size-label { font-size: 9px; fill: var(--ac-ink-2); }
+.archcanvas-embed .plan-dimension-label {
+  font-family: var(--ac-mono);
+  font-size: 10px;
+  fill: var(--ac-navy);
+  paint-order: stroke;
+  stroke: #ffffff;
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+
+/* Furniture library: one-line labels, full name on hover (title). */
+.archcanvas-embed .furniture-item-btn { padding: 4px !important; }
+.archcanvas-embed .furniture-item-btn span {
+  display: block !important;
+  width: 100%;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  word-break: normal !important;
+  color: var(--ac-ink-2) !important;
+}
+.archcanvas-embed .editor strong { word-break: normal; }
+
+/* The page's 2D / 3D / Split control replaces the editor's own toggle. */
+.archcanvas-embed #btn-view-toggle { display: none !important; }
+.archcanvas-embed .stage[data-split="true"] {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
+}
+.archcanvas-embed .stage[data-split="true"] .plan-card,
+.archcanvas-embed .stage[data-split="true"] .canvas-card { display: grid; }
+.archcanvas-embed .stage[data-split="true"] .canvas-card { border-left: 1px solid var(--ac-line); }
+/* Pin the canvases to their card so a resize never feeds back into the layout. */
+.archcanvas-embed .plan-card,
+.archcanvas-embed .canvas-card { position: relative; }
+.archcanvas-embed #floorplan,
+.archcanvas-embed #render-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+/* Bottom status bar */
+.archcanvas-embed .ac-status-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 12;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 8px;
+  background: #ffffff;
+  border-top: 1px solid var(--ac-line);
+  font-size: 12px;
+  color: var(--ac-ink-2);
+}
+.archcanvas-embed .ac-status-item {
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 8px;
+  border-right: 1px solid var(--ac-line);
+  white-space: nowrap;
+}
+.archcanvas-embed .ac-status-toggle {
+  min-height: 24px;
+  border: 0;
+  border-right: 1px solid var(--ac-line);
+  border-radius: 0;
+  background: transparent;
+  font-size: 12px;
+  color: var(--ac-ink-2);
+}
+.archcanvas-embed .ac-status-toggle[aria-pressed="true"] { color: var(--ac-blue); }
+.archcanvas-embed .ac-status-pointer {
+  margin-left: auto;
+  border-right: 0;
+  font-family: var(--ac-mono);
+  white-space: pre;
+}
+.archcanvas-embed .plan-card,
+.archcanvas-embed .canvas-card { margin-bottom: 32px; }

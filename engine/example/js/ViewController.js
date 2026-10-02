@@ -6,6 +6,7 @@ import * as FloorManager from './FloorManager.js';
 import { showObjectContextMenu } from './TargetHandler.js';
 import { clear3DEditHandles } from './Viewer3DHandles.js';
 import { fitBoundsToViewport } from './ViewGeometry.js';
+import { isPlanDrawing, itemsOnPlan } from './PlanDrawing.js';
 import { exitFirstPerson } from './FirstPersonController.js';
 
 let Context = null;
@@ -340,7 +341,7 @@ export function updateViewBounds() {
     push(wall?.to?.[0], wall?.to?.[1]);
   });
   currentRooms().forEach((room) => getRoomVertices(room).forEach((point) => push(point.x, point.z)));
-  currentItems().forEach((item) => {
+  if (itemsOnPlan()) currentItems().forEach((item) => {
     const width = Context.inchesToWorld(item.width) * Number(item.scale || 1) / 2;
     const depth = Context.inchesToWorld(item.depth) * Number(item.scale || 1) / 2;
     push(item.x - width, item.z - depth);
@@ -354,8 +355,10 @@ export function updateViewBounds() {
   }
   const xs = corners.map((point) => point.x);
   const zs = corners.map((point) => point.z);
+  // Room around the plan for the dimension lines in ArchCanvas.
+  const margin = isPlanDrawing() ? 2.4 : 1.5;
   Object.assign(Context.view, fitBoundsToViewport({
-    minX: Math.min(...xs) - 1.5, maxX: Math.max(...xs) + 1.5,
-    minZ: Math.min(...zs) - 1.5, maxZ: Math.max(...zs) + 1.5
+    minX: Math.min(...xs) - margin, maxX: Math.max(...xs) + margin,
+    minZ: Math.min(...zs) - margin, maxZ: Math.max(...zs) + margin
   }, Context.view));
 }

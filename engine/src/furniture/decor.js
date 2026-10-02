@@ -32,7 +32,7 @@ export const paintingFurniture = {
       id: 'canvas',
       label: 'Component',
       defaultColor: '#ffffff',
-      defaultMaterial: posterMaterial('poster-bauhaus-primary', ' Item')
+      defaultMaterial: posterMaterial('poster-bauhaus-primary', 'Bauhaus Primary Poster')
     }
   ],
   build(registry, item, node, size) {
@@ -59,7 +59,7 @@ export const posterFurniture = {
       id: 'poster',
       label: 'Component',
       defaultColor: '#ffffff',
-      defaultMaterial: posterMaterial('poster-celestial-moons', ' ItemStarry Sky')
+      defaultMaterial: posterMaterial('poster-celestial-moons', 'Celestial Moons Poster')
     }
   ],
   build(registry, item, node, size) {
@@ -83,7 +83,7 @@ export const triptychPosterFurniture = {
       id: 'poster',
       label: 'Component',
       defaultColor: '#ffffff',
-      defaultMaterial: posterMaterial('poster-botanical-sage', ' Item')
+      defaultMaterial: posterMaterial('poster-botanical-sage', 'Botanical Sage Poster')
     }
   ],
   build(registry, item, node, size) {
@@ -118,7 +118,7 @@ export const quadPosterFurniture = {
       id: 'poster',
       label: 'Component',
       defaultColor: '#ffffff',
-      defaultMaterial: posterMaterial('poster-abstract-arches', ' Item')
+      defaultMaterial: posterMaterial('poster-abstract-arches', 'Abstract Arches Poster')
     }
   ],
   build(registry, item, node, size) {
@@ -149,7 +149,7 @@ export const quadPosterFurniture = {
 
 export const circularPaintingFurniture = {
   type: 'circular_painting',
-  name: 'Circle',
+  name: 'Round Painting',
   placeType: 'wall',
   unit: 'm',
   defaultSize: { width: 0.6, depth: 0.03, height: 0.6 },
@@ -188,7 +188,7 @@ export const vaseFurniture = {
   unit: 'm',
   defaultSize: { width: 0.2, depth: 0.2, height: 0.45 },
   components: [
-    { id: 'glass', label: ' ItemGlass Item', defaultColor: '#bfe3d6' },
+    { id: 'glass', label: 'Glass vase', defaultColor: '#bfe3d6' },
     { id: 'flower', label: 'Component', defaultColor: '#f09ab5' }
   ],
   build(registry, item, node, size) {
@@ -211,7 +211,7 @@ export const mirrorWallFurniture = {
   isMirror: true,
   isSwitchable: true,
   components: [
-    { id: 'mirror', label: ' ItemMirror', defaultColor: '#edf7f6' },
+    { id: 'mirror', label: 'Mirror', defaultColor: '#edf7f6' },
     { id: 'border', label: 'Component', defaultColor: '#222222' },
     { id: 'frame', label: 'Component', defaultColor: '#aa845d' }
   ],
@@ -270,7 +270,7 @@ export const mirrorFramedWallFurniture = {
   isMirror: true,
   isSwitchable: true,
   components: [
-    { id: 'mirror', label: ' ItemMirror', defaultColor: '#edf7f6' },
+    { id: 'mirror', label: 'Mirror', defaultColor: '#edf7f6' },
     { id: 'border', label: 'Component', defaultColor: '#222222' }
   ],
   build(registry, item, node, size) {
@@ -311,14 +311,14 @@ export const mirrorFramedWallFurniture = {
 
 export const mirrorRoundWallFurniture = {
   type: 'mirror_round_wall',
-  name: 'Circle',
+  name: 'Round Wall Mirror',
   unit: 'm',
   defaultSize: { width: 0.6, depth: 0.03, height: 0.6 },
   placeType: 'wall',
   isMirror: true,
   isSwitchable: true,
   components: [
-    { id: 'mirror', label: ' ItemMirror', defaultColor: '#edf7f6' },
+    { id: 'mirror', label: 'Mirror', defaultColor: '#edf7f6' },
     { id: 'border', label: 'Component', defaultColor: '#222222' }
   ],
   build(registry, item, node, size) {
@@ -356,7 +356,7 @@ export const mirrorRoundedWallFurniture = {
   isMirror: true,
   isSwitchable: true,
   components: [
-    { id: 'mirror', label: ' ItemMirror', defaultColor: '#edf7f6' },
+    { id: 'mirror', label: 'Mirror', defaultColor: '#edf7f6' },
     { id: 'border', label: 'Component', defaultColor: '#222222' }
   ],
   build(registry, item, node, size) {
@@ -756,9 +756,9 @@ export const triptychPaintingFurniture = {
   placeType: 'wall',
   components: [
     { id: 'frame', label: 'Component', defaultColor: '#000000' },
-    { id: 'canvas1', label: ' Item1', defaultColor: '#ffcc00' },
-    { id: 'canvas2', label: ' Item2', defaultColor: '#0066cc' },
-    { id: 'canvas3', label: ' Item3', defaultColor: '#cc3333' }
+    { id: 'canvas1', label: 'Canvas 1', defaultColor: '#ffcc00' },
+    { id: 'canvas2', label: 'Canvas 2', defaultColor: '#0066cc' },
+    { id: 'canvas3', label: 'Canvas 3', defaultColor: '#cc3333' }
   ],
   build(registry, item, node, size) {
     const singleW = (size.width - 0.1) / 3;
@@ -799,7 +799,7 @@ export const landscapePaintingFurniture = {
       id: 'canvas',
       label: 'Component',
       defaultColor: '#ffffff',
-      defaultMaterial: posterMaterial('wallpaper-ink-bamboo-mist', ' Item')
+      defaultMaterial: posterMaterial('wallpaper-ink-bamboo-mist', 'Ink Bamboo Mist Wallpaper')
     }
   ],
   build(registry, item, node, size) {
@@ -920,8 +920,8 @@ export const booksFullRowFurniture = {
     { id: 'book-straight-2', label: 'Component', defaultColor: '#0d47a1' },
     { id: 'book-straight-3', label: 'Component', defaultColor: '#1b5e20' },
     { id: 'book-straight-4', label: 'Component', defaultColor: '#f57f17' },
-    { id: 'book-lean-1', label: ' ItemA', defaultColor: '#4a148c' },
-    { id: 'book-lean-2', label: ' ItemB', defaultColor: '#e65100' }
+    { id: 'book-lean-1', label: 'Leaning book A', defaultColor: '#4a148c' },
+    { id: 'book-lean-2', label: 'Leaning book B', defaultColor: '#e65100' }
   ],
   build(registry, item, node, size) {
     const bookW = size.width / 8;
@@ -1009,8 +1009,8 @@ export const hourglassFurniture = {
   defaultSize: { width: 0.15, depth: 0.15, height: 0.25 },
   components: [
     { id: 'frame', label: 'Component', defaultColor: '#b5a642' },
-    { id: 'glass', label: ' ItemGlass Item', defaultColor: '#d4efff' },
-    { id: 'sand', label: ' ItemFine Sand', defaultColor: '#ab47bc' }
+    { id: 'glass', label: 'Glass body', defaultColor: '#d4efff' },
+    { id: 'sand', label: 'Fine sand', defaultColor: '#ab47bc' }
   ],
   build(registry, item, node, size) {
     const topH = 0.015;
@@ -1095,7 +1095,7 @@ export const scentedCandleFurniture = {
   unit: 'm',
   defaultSize: { width: 0.13, depth: 0.13, height: 0.15 },
   components: [
-    { id: 'jar', label: ' ItemGlass Item', defaultColor: '#cfd8dc' },
+    { id: 'jar', label: 'Glass jar', defaultColor: '#cfd8dc' },
     { id: 'wax', label: 'Component', defaultColor: '#fff9c4' },
     { id: 'wick', label: 'Component', defaultColor: '#3e2723' }
   ],
@@ -1255,7 +1255,7 @@ export const windChimeFurniture = {
   placeType: 'ceiling',
   components: [
     { id: 'cap', label: 'Component', defaultColor: '#8d6e63' },
-    { id: 'tubes', label: 'Metal Item', defaultColor: '#cfd8dc' },
+    { id: 'tubes', label: 'Metal tubes', defaultColor: '#cfd8dc' },
     { id: 'pendant', label: 'Component', defaultColor: '#8d6e63' },
     { id: 'string', label: 'Component', defaultColor: '#3e2723' }
   ],
@@ -1292,12 +1292,12 @@ export const windChimeFurniture = {
 export const landscapeRockeryAquarium = {
   type: 'landscape_rockery_aquarium',
   waterControllable: true,
-  name: ' Item',
+  name: 'Rockery Aquarium',
   unit: 'm',
   defaultSize: { width: 1, depth: 0.6, height: 1.2 },
   components: [
     { id: 'aquarium-stand', label: 'Component', defaultColor: '#2d1d16' },
-    { id: 'aquarium-glass', label: ' ItemGlass Item', defaultColor: '#e0f2f1' },
+    { id: 'aquarium-glass', label: 'Aquarium glass', defaultColor: '#e0f2f1' },
     { id: 'aquarium-rock', label: 'Component', defaultColor: '#455a64' },
     { id: 'aquarium-water', label: 'Component', defaultColor: { kind: 'glass', color: '#00b0ff', alpha: 0.45 } },
     { id: 'aquarium-plant', label: 'Component', defaultColor: '#2e7d32' },
@@ -1511,7 +1511,7 @@ export const rattanWaveScreenFurniture = {
   defaultSize: { width: 1.35, depth: 0.25, height: 1.5 },
   components: [
     { id: 'frame', label: 'Component', defaultColor: '#d7ccc8' },
-    { id: 'weave', label: 'Octagon Item', defaultColor: '#e0c097' }
+    { id: 'weave', label: 'Rattan weave', defaultColor: '#e0c097' }
   ],
   build(registry, item, node, size) {
     const wPart = size.width / 3;
@@ -1587,12 +1587,12 @@ export const rattanWaveScreenFurniture = {
 
 export const luxuryMetalGlassScreenFurniture = {
   type: 'luxury_metal_glass_screen',
-  name: 'Glass',
+  name: 'Luxury Metal Glass Screen',
   unit: 'm',
   defaultSize: { width: 1.1, depth: 0.2, height: 1.8 },
   components: [
     { id: 'frame', label: 'Component', defaultColor: '#cfb53b' },
-    { id: 'glass', label: ' ItemGlass', defaultColor: '#e0f7fa' }
+    { id: 'glass', label: 'Glass panels', defaultColor: '#e0f7fa' }
   ],
   build(registry, item, node, size) {
     const baseH = size.height * 0.06;

@@ -14,8 +14,9 @@
   "scripts": {
     "dev:web": "npm run dev -w @archcanvas/web",
     "dev:api": "npm run dev -w @archcanvas/api",
+    "dev:editor": "npm run dev:editor -w blueprint3d-babylon",
     "dev:engine": "npm run dev -w blueprint3d-babylon",
-    "build": "npm run build -w @archcanvas/web",
+    "build": "npm run build -w @archcanvas/web && npm run build:editor -w blueprint3d-babylon",
     "test": "npm test -w @archcanvas/api && npm test -w blueprint3d-babylon"
   }
 }

@@ -1,10 +1,10 @@
 const FALLBACK_FURNITURE_DEFINITION = Object.freeze({
   type: 'table',
-  name: ' Item',
+  name: 'Table',
   defaultSize: Object.freeze({ width: 48, depth: 30, height: 30 }),
   components: Object.freeze([
-    Object.freeze({ id: 'top', label: ' Item', defaultColor: '#ffffff' }),
-    Object.freeze({ id: 'legs', label: ' Item', defaultColor: '#c7c1b7' })
+    Object.freeze({ id: 'top', label: 'Tabletop', defaultColor: '#ffffff' }),
+    Object.freeze({ id: 'legs', label: 'Legs', defaultColor: '#c7c1b7' })
   ])
 });
 

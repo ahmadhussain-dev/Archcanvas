@@ -18,7 +18,7 @@ export function showCustomConfirm(title, message = '') {
     let finalTitle = title;
     let finalMessage = message;
     if (!message) {
-      finalTitle = ' Item';
+      finalTitle = 'Confirm';
       finalMessage = title;
     }
 
@@ -32,8 +32,8 @@ export function showCustomConfirm(title, message = '') {
         </div>
         <div class="custom-modal-body">${finalMessage}</div>
         <div class="custom-modal-footer">
-          <button type="button" class="custom-modal-btn btn-secondary" id="custom-modal-cancel"> Item</button>
-          <button type="button" class="custom-modal-btn btn-primary" id="custom-modal-confirm"> Item</button>
+          <button type="button" class="custom-modal-btn btn-secondary" id="custom-modal-cancel">Cancel</button>
+          <button type="button" class="custom-modal-btn btn-primary" id="custom-modal-confirm">Confirm</button>
         </div>
       </div>
     `;
@@ -84,7 +84,7 @@ export function showCustomAlert(title, message = '') {
     let finalTitle = title;
     let finalMessage = message;
     if (!message) {
-      finalTitle = ' Item';
+      finalTitle = 'Notice';
       finalMessage = title;
     }
 
@@ -98,7 +98,7 @@ export function showCustomAlert(title, message = '') {
         </div>
         <div class="custom-modal-body">${finalMessage}</div>
         <div class="custom-modal-footer">
-          <button type="button" class="custom-modal-btn btn-primary" id="custom-modal-ok"> Item</button>
+          <button type="button" class="custom-modal-btn btn-primary" id="custom-modal-ok">OK</button>
         </div>
       </div>
     `;
@@ -152,7 +152,7 @@ export function showCustomPrompt(title, message = '', defaultValue = '') {
     let finalTitle = title;
     let finalMessage = message;
     if (!message) {
-      finalTitle = ' Item';
+      finalTitle = 'Enter a value';
       finalMessage = title;
     }
 
@@ -169,8 +169,8 @@ export function showCustomPrompt(title, message = '', defaultValue = '') {
           <input type="text" id="custom-modal-input" class="custom-modal-input" value="${defaultValue.replace(/"/g, '&quot;')}" autocomplete="off" />
         </div>
         <div class="custom-modal-footer">
-          <button type="button" class="custom-modal-btn btn-secondary" id="custom-modal-cancel"> Item</button>
-          <button type="button" class="custom-modal-btn btn-primary" id="custom-modal-confirm"> Item</button>
+          <button type="button" class="custom-modal-btn btn-secondary" id="custom-modal-cancel">Cancel</button>
+          <button type="button" class="custom-modal-btn btn-primary" id="custom-modal-confirm">OK</button>
         </div>
       </div>
     `;
@@ -253,13 +253,13 @@ export function showProjectListModal(projects) {
           <div class="custom-modal-icon-wrapper confirm">
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
           </div>
-          <h3 class="custom-modal-title">Open Item</h3>
+          <h3 class="custom-modal-title">Open project</h3>
         </div>
         <div class="custom-modal-body" style="margin-bottom:16px">
           <div class="project-list">${listHtml}</div>
         </div>
         <div class="custom-modal-footer">
-          <button type="button" class="custom-modal-btn btn-secondary" id="custom-modal-cancel"> Item</button>
+          <button type="button" class="custom-modal-btn btn-secondary" id="custom-modal-cancel">Cancel</button>
         </div>
       </div>
     `;
@@ -317,26 +317,26 @@ export function show3MFExportDialog() {
     
     backdrop.innerHTML = `
       <div class="custom-modal-container" style="max-width: 420px; position: relative; max-height: 90vh; overflow-y: auto;">
-        <button type="button" class="custom-modal-close" id="export-close-btn" aria-label=" Item">
+        <button type="button" class="custom-modal-close" id="export-close-btn" aria-label="Close">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
         <div class="custom-modal-header">
           <div class="custom-modal-icon-wrapper confirm">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>
           </div>
-          <h3 class="custom-modal-title">Export 3MF  Item</h3>
+          <h3 class="custom-modal-title">Export 3MF model</h3>
         </div>
         <div class="custom-modal-body" style="text-align: center; font-size: 14px; color: var(--text-secondary, #666); line-height: 1.5;">
 
           <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
             <input type="checkbox" id="enable-tenon-joint" checked style="cursor: pointer; width: 15px; height: 15px; margin: 0;">
-            <label for="enable-tenon-joint" style="cursor: pointer; font-size: 13px; color: var(--text-primary, #333); user-select: none;"> Item ( Item)</label>
+            <label for="enable-tenon-joint" style="cursor: pointer; font-size: 13px; color: var(--text-primary, #333); user-select: none;">Add tenon joints (for assembling printed parts)</label>
           </div>
         </div>
         <div class="custom-modal-footer" style="display: flex; flex-direction: column; gap: 10px; width: 100%;">
-          <button type="button" class="custom-modal-btn btn-primary" id="export-building-only" style="width: 100%; margin: 0; padding: 12px 16px;"> ItemExport Item ( Item、 Item、 Item、 Item)</button>
-          <button type="button" class="custom-modal-btn btn-primary" id="export-furniture-only" style="width: 100%; margin: 0; padding: 12px 16px;"> ItemExportFurniture ( Item)</button>
-          <button type="button" class="custom-modal-btn btn-secondary" id="export-all" style="width: 100%; margin: 0; padding: 12px 16px; border: 1px solid var(--border-color, #ddd);">ExportAll ( Item 3MF  Item)</button>
+          <button type="button" class="custom-modal-btn btn-primary" id="export-building-only" style="width: 100%; margin: 0; padding: 12px 16px;">Export building only (walls, floors, roofs, stairs)</button>
+          <button type="button" class="custom-modal-btn btn-primary" id="export-furniture-only" style="width: 100%; margin: 0; padding: 12px 16px;">Export furniture only (separate parts)</button>
+          <button type="button" class="custom-modal-btn btn-secondary" id="export-all" style="width: 100%; margin: 0; padding: 12px 16px; border: 1px solid var(--border-color, #ddd);">Export all (single 3MF file)</button>
         </div>
       </div>
     `;
@@ -403,22 +403,22 @@ export function showFurnitureUploadHelp() {
   backdrop.innerHTML = `
     <div class="custom-modal-container furniture-upload-modal" role="dialog" aria-modal="true" aria-labelledby="furniture-upload-modal-title">
       <div class="custom-modal-header">
-        <h3 id="furniture-upload-modal-title" class="custom-modal-title"> ItemFurniture</h3>
+        <h3 id="furniture-upload-modal-title" class="custom-modal-title">Upload furniture</h3>
       </div>
       <div class="custom-modal-body furniture-upload-modal-body">
-        <p> ItemCustom <code>.js</code>  Item <code>.mjs</code>  Item， ItemFurniture ItemCustom Item。</p>
-        <p class="furniture-upload-tip"> Item： Item， Item。</p>
+        <p>Upload a custom <code>.js</code> or <code>.mjs</code> script to add your own furniture to the catalog.</p>
+        <p class="furniture-upload-tip">Tip: start from the example file, or give the AI skill to an AI assistant to write one for you.</p>
         <div class="furniture-upload-links">
           <button id="btn-download-furniture-example" type="button" class="custom-modal-btn btn-secondary btn-sm">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M12 18v-6"/><path d="m9 15 3 3 3-3"/></svg> Furniture 
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M12 18v-6"/><path d="m9 15 3 3 3-3"/></svg> Download example
           </button>
           <button id="btn-download-furniture-skill" type="button" class="custom-modal-btn btn-secondary btn-sm">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275Z"/><path d="m5 3 1 2.5L8.5 6 6 7 5 9.5 4 7 1.5 6 4 5Z"/><path d="m19 17 1 2.5 2.5.5-2.5 1-1 2.5-1-2.5-2.5-1 2.5-1Z"/></svg>  AI  
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275Z"/><path d="m5 3 1 2.5L8.5 6 6 7 5 9.5 4 7 1.5 6 4 5Z"/><path d="m19 17 1 2.5 2.5.5-2.5 1-1 2.5-1-2.5-2.5-1 2.5-1Z"/></svg> Download AI skill
           </button>
         </div>
       </div>
       <div class="custom-modal-footer">
-        <button id="btn-close-furniture-upload-help" type="button" class="custom-modal-btn btn-primary"> Item</button>
+        <button id="btn-close-furniture-upload-help" type="button" class="custom-modal-btn btn-primary">Close</button>
       </div>
     </div>
   `;
@@ -461,22 +461,22 @@ export function showAiBuildingHelp() {
   backdrop.innerHTML = `
     <div class="custom-modal-container furniture-upload-modal" role="dialog" aria-modal="true" aria-labelledby="ai-building-modal-title">
       <div class="custom-modal-header">
-        <h3 id="ai-building-modal-title" class="custom-modal-title">AI  Item 3D  Item</h3>
+        <h3 id="ai-building-modal-title" class="custom-modal-title">Generate 3D buildings with AI</h3>
       </div>
       <div class="custom-modal-body furniture-upload-modal-body">
-        <p> Item AI  Item， ItemFloorplan Item <code>blueprint3d-babylon.building.v1</code>  Item <code>.b3dbuilding.json</code>  Item。</p>
-        <p class="furniture-upload-tip"> Item： Item AI  Item JSON  Item， Item 3D  ItemDesign Item。</p>
+        <p>Ask an AI assistant to describe your floor plan in the <code>blueprint3d-babylon.building.v1</code> format and save it as a <code>.b3dbuilding.json</code> file.</p>
+        <p class="furniture-upload-tip">Tip: give the AI skill file to the assistant so its JSON imports cleanly into the 3D design.</p>
         <div class="furniture-upload-links">
           <button id="btn-download-building-example" type="button" class="custom-modal-btn btn-secondary btn-sm">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M12 18v-6"/><path d="m9 15 3 3 3-3"/></svg> 
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M12 18v-6"/><path d="m9 15 3 3 3-3"/></svg> Download example
           </button>
           <button id="btn-download-building-skill" type="button" class="custom-modal-btn btn-secondary btn-sm">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275Z"/><path d="m5 3 1 2.5L8.5 6 6 7 5 9.5 4 7 1.5 6 4 5Z"/><path d="m19 17 1 2.5 2.5.5-2.5 1-1 2.5-1-2.5-2.5-1 2.5-1Z"/></svg>  AI  
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275Z"/><path d="m5 3 1 2.5L8.5 6 6 7 5 9.5 4 7 1.5 6 4 5Z"/><path d="m19 17 1 2.5 2.5.5-2.5 1-1 2.5-1-2.5-2.5-1 2.5-1Z"/></svg> Download AI skill
           </button>
         </div>
       </div>
       <div class="custom-modal-footer">
-        <button id="btn-close-ai-building-help" type="button" class="custom-modal-btn btn-primary"> Item</button>
+        <button id="btn-close-ai-building-help" type="button" class="custom-modal-btn btn-primary">Close</button>
       </div>
     </div>
   `;
@@ -526,7 +526,7 @@ export function showLoading(title, message = '') {
   let finalTitle = title;
   let finalMessage = message;
   if (!message) {
-    finalTitle = ' Item';
+    finalTitle = 'Please wait';
     finalMessage = title;
   }
 
@@ -609,34 +609,34 @@ export function showSettingsModal(appContext = {}) {
             <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
             <circle cx="12" cy="12" r="3"/>
           </svg>
-          <h3> Item</h3>
+          <h3>Settings</h3>
         </div>
-        <button type="button" class="custom-modal-close" id="btn-close-settings" aria-label=" Item">✕</button>
+        <button type="button" class="custom-modal-close" id="btn-close-settings" aria-label="Close">✕</button>
       </div>
 
       <div class="settings-modal-body">
         <!--  Item 5  Item -->
-        <nav class="settings-tabs-sidebar" aria-label=" Item">
+        <nav class="settings-tabs-sidebar" aria-label="Settings sections">
           <div class="settings-tabs-slider" id="settings-tabs-slider"></div>
           <button type="button" class="settings-tab-item active" data-tab="tab-rendering">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a7 7 0 1 0 10 10"/></svg>
-            <span> Item</span>
+            <span>Rendering</span>
           </button>
           <button type="button" class="settings-tab-item" data-tab="tab-editor">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/></svg>
-            <span> Item</span>
+            <span>Editor</span>
           </button>
           <button type="button" class="settings-tab-item" data-tab="tab-camera">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 10 4.553-2.276A1 1 0 0 1 21 8.618v6.764a1 1 0 0 1-1.447.894L15 14M5 18h8a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2z"/></svg>
-            <span> Item</span>
+            <span>Camera</span>
           </button>
           <button type="button" class="settings-tab-item" data-tab="tab-simulation">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg>
-            <span> Item</span>
+            <span>General</span>
           </button>
           <button type="button" class="settings-tab-item" data-tab="tab-ai">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3z"/></svg>
-            <span> Item AI</span>
+            <span>AI tools</span>
           </button>
         </nav>
 
@@ -645,11 +645,11 @@ export function showSettingsModal(appContext = {}) {
 
           <!-- 1.  Item -->
           <div class="settings-panel active" id="tab-rendering">
-            <h4 class="panel-section-title"> Item</h4>
+            <h4 class="panel-section-title">Display</h4>
             <div class="setting-item">
               <div class="setting-info">
-                <span class="setting-label"> ItemSky Item</span>
-                <span class="setting-desc"> Item 360  ItemSky Item</span>
+                <span class="setting-label">Show sky</span>
+                <span class="setting-desc">Show a 360° panoramic sky</span>
               </div>
               <label class="toggle-switch">
                 <input type="checkbox" id="set-skybox" ${currentSkybox ? 'checked' : ''}>
@@ -659,8 +659,8 @@ export function showSettingsModal(appContext = {}) {
 
             <div class="setting-item">
               <div class="setting-info">
-                <span class="setting-label"> Item 3D  Item</span>
-                <span class="setting-desc"> Item</span>
+                <span class="setting-label">Show 3D grid</span>
+                <span class="setting-desc">Show the ground grid in the 3D view</span>
               </div>
               <label class="toggle-switch">
                 <input type="checkbox" id="set-grid" checked>
@@ -670,8 +670,8 @@ export function showSettingsModal(appContext = {}) {
 
             <div class="setting-item">
               <div class="setting-info">
-                <span class="setting-label"> Item</span>
-                <span class="setting-desc"> Item</span>
+                <span class="setting-label">Show all floors</span>
+                <span class="setting-desc">Show every floor in 3D, not just the current one</span>
               </div>
               <label class="toggle-switch">
                 <input type="checkbox" id="set-show-all-floors" ${currentShowAllFloors ? 'checked' : ''}>
@@ -679,48 +679,48 @@ export function showSettingsModal(appContext = {}) {
               </label>
             </div>
 
-            <h4 class="panel-section-title"> Item</h4>
+            <h4 class="panel-section-title">Quality</h4>
             <div class="setting-item">
               <div class="setting-info">
-                <span class="setting-label"> Item</span>
-                <span class="setting-desc"> Item</span>
+                <span class="setting-label">Graphics preset</span>
+                <span class="setting-desc">Overall rendering quality</span>
               </div>
               <div class="setting-control">
                 <select class="settings-select" id="set-graphics-preset">
-                  <option value="ultra" ${renderSettings.graphicsPreset === 'ultra' ? 'selected' : ''}> Item</option>
-                  <option value="high" ${renderSettings.graphicsPreset === 'high' ? 'selected' : ''}> Item</option>
-                  <option value="medium" ${renderSettings.graphicsPreset === 'medium' ? 'selected' : ''}> Item</option>
-                  <option value="low" ${renderSettings.graphicsPreset === 'low' ? 'selected' : ''}> Item</option>
+                  <option value="ultra" ${renderSettings.graphicsPreset === 'ultra' ? 'selected' : ''}>Ultra</option>
+                  <option value="high" ${renderSettings.graphicsPreset === 'high' ? 'selected' : ''}>High</option>
+                  <option value="medium" ${renderSettings.graphicsPreset === 'medium' ? 'selected' : ''}>Medium</option>
+                  <option value="low" ${renderSettings.graphicsPreset === 'low' ? 'selected' : ''}>Low</option>
                 </select>
               </div>
             </div>
 
             <div class="setting-item">
               <div class="setting-info">
-                <span class="setting-label"> Item</span>
-                <span class="setting-desc"> Item</span>
+                <span class="setting-label">Shadow quality</span>
+                <span class="setting-desc">Shadow resolution and softness</span>
               </div>
               <div class="setting-control">
                 <select class="settings-select" id="set-shadow-quality">
-                  <option value="ultra" ${renderSettings.shadowQuality === 'ultra' ? 'selected' : ''}> Item</option>
-                  <option value="high" ${renderSettings.shadowQuality === 'high' ? 'selected' : ''}> Item</option>
-                  <option value="medium" ${renderSettings.shadowQuality === 'medium' ? 'selected' : ''}> Item</option>
-                  <option value="off" ${renderSettings.shadowQuality === 'off' ? 'selected' : ''}> Item</option>
+                  <option value="ultra" ${renderSettings.shadowQuality === 'ultra' ? 'selected' : ''}>Ultra</option>
+                  <option value="high" ${renderSettings.shadowQuality === 'high' ? 'selected' : ''}>High</option>
+                  <option value="medium" ${renderSettings.shadowQuality === 'medium' ? 'selected' : ''}>Medium</option>
+                  <option value="off" ${renderSettings.shadowQuality === 'off' ? 'selected' : ''}>Off</option>
                 </select>
               </div>
             </div>
 
             <div class="setting-item">
               <div class="setting-info">
-                <span class="setting-label"> Item</span>
-                <span class="setting-desc"> ItemHigh Quality， ItemMirror Item</span>
+                <span class="setting-label">Reflection quality</span>
+                <span class="setting-desc">High quality and above enable mirror reflections</span>
               </div>
               <div class="setting-control">
                 <select class="settings-select" id="set-reflection-quality">
-                  <option value="ultra" ${renderSettings.reflectionQuality === 'ultra' ? 'selected' : ''}> Item</option>
-                  <option value="high" ${renderSettings.reflectionQuality === 'high' ? 'selected' : ''}> Item</option>
-                  <option value="medium" ${renderSettings.reflectionQuality === 'medium' ? 'selected' : ''}> Item</option>
-                  <option value="low" ${renderSettings.reflectionQuality === 'low' ? 'selected' : ''}> Item</option>
+                  <option value="ultra" ${renderSettings.reflectionQuality === 'ultra' ? 'selected' : ''}>Ultra</option>
+                  <option value="high" ${renderSettings.reflectionQuality === 'high' ? 'selected' : ''}>High</option>
+                  <option value="medium" ${renderSettings.reflectionQuality === 'medium' ? 'selected' : ''}>Medium</option>
+                  <option value="low" ${renderSettings.reflectionQuality === 'low' ? 'selected' : ''}>Low</option>
                 </select>
               </div>
             </div>
@@ -729,11 +729,11 @@ export function showSettingsModal(appContext = {}) {
 
           <!-- 2.  Item -->
           <div class="settings-panel" id="tab-editor">
-            <h4 class="panel-section-title"> Item</h4>
+            <h4 class="panel-section-title">Drawing</h4>
             <div class="setting-item">
               <div class="setting-info">
-                <span class="setting-label"> Item</span>
-                <span class="setting-desc"> ItemFurniture Item</span>
+                <span class="setting-label">Snapping</span>
+                <span class="setting-desc">Snap walls and furniture into place</span>
               </div>
               <label class="toggle-switch">
                 <input type="checkbox" id="set-snap" ${currentSnapEnabled ? 'checked' : ''}>
@@ -743,25 +743,25 @@ export function showSettingsModal(appContext = {}) {
 
             <div class="setting-item">
               <div class="setting-info">
-                <span class="setting-label"> Item</span>
-                <span class="setting-desc"> Item（ Item 1m）</span>
+                <span class="setting-label">Grid size</span>
+                <span class="setting-desc">Grid spacing (fixed at 1m)</span>
               </div>
               <div class="setting-control">
                 <input type="text" class="settings-input" value="1m" disabled readonly style="width: 90px; text-align: center; font-weight: bold; background: #f1f5f9; color: #94a3b8; cursor: not-allowed;" />
               </div>
             </div>
 
-            <h4 class="panel-section-title"> Item</h4>
+            <h4 class="panel-section-title">History</h4>
             <div class="setting-item">
               <div class="setting-info">
-                <span class="setting-label"> ItemUndo Item</span>
-                <span class="setting-desc"> ItemUndo/Redo Item（ Item 80  Item）</span>
+                <span class="setting-label">Undo steps</span>
+                <span class="setting-desc">Maximum undo/redo steps (default 80)</span>
               </div>
               <div class="setting-control">
                 <div class="slider-with-val">
                   <input type="range" class="settings-range" id="set-undo-steps" min="20" max="200" step="5" value="${currentUndoSteps}">
-                  <span class="range-val" id="val-undo-steps">${currentUndoSteps}  Item</span>
-                  <button type="button" class="btn-range-reset" data-target="set-undo-steps" data-val-target="val-undo-steps" data-default="80" data-suffix="  Item" title=" Item 80  Item" aria-label=" Item">
+                  <span class="range-val" id="val-undo-steps">${currentUndoSteps} steps</span>
+                  <button type="button" class="btn-range-reset" data-target="set-undo-steps" data-val-target="val-undo-steps" data-default="80" data-suffix=" steps" title="Reset to 80 steps" aria-label="Reset">
                     <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
                   </button>
                 </div>
@@ -771,17 +771,17 @@ export function showSettingsModal(appContext = {}) {
 
           <!-- 3.  Item -->
           <div class="settings-panel" id="tab-camera">
-            <h4 class="panel-section-title"> Item</h4>
+            <h4 class="panel-section-title">Camera</h4>
             <div class="setting-item">
               <div class="setting-info">
-                <span class="setting-label">2D  Item</span>
-                <span class="setting-desc"> Item</span>
+                <span class="setting-label">2D pan speed</span>
+                <span class="setting-desc">Drag speed in the 2D plan</span>
               </div>
               <div class="setting-control">
                 <div class="slider-with-val">
                   <input type="range" class="settings-range" id="set-2d-speed" min="0.5" max="2.0" step="0.1" value="${cameraSettings.pan2DSpeed ?? 1.0}">
                   <span class="range-val" id="val-2d-speed">${cameraSettings.pan2DSpeed ?? 1.0}x</span>
-                  <button type="button" class="btn-range-reset" data-target="set-2d-speed" data-val-target="val-2d-speed" data-default="1.0" data-suffix="x" title=" Item 1.0x" aria-label=" Item">
+                  <button type="button" class="btn-range-reset" data-target="set-2d-speed" data-val-target="val-2d-speed" data-default="1.0" data-suffix="x" title="Reset to 1.0x" aria-label="Reset">
                     <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
                   </button>
                 </div>
@@ -790,14 +790,14 @@ export function showSettingsModal(appContext = {}) {
 
             <div class="setting-item">
               <div class="setting-info">
-                <span class="setting-label">3D  Item</span>
-                <span class="setting-desc"> Item</span>
+                <span class="setting-label">3D pan speed</span>
+                <span class="setting-desc">Pan speed in the 3D view</span>
               </div>
               <div class="setting-control">
                 <div class="slider-with-val">
                   <input type="range" class="settings-range" id="set-3d-pan" min="0.5" max="2.0" step="0.1" value="${cameraSettings.pan3DSpeed ?? 1.0}">
                   <span class="range-val" id="val-3d-pan">${cameraSettings.pan3DSpeed ?? 1.0}x</span>
-                  <button type="button" class="btn-range-reset" data-target="set-3d-pan" data-val-target="val-3d-pan" data-default="1.0" data-suffix="x" title=" Item 1.0x" aria-label=" Item">
+                  <button type="button" class="btn-range-reset" data-target="set-3d-pan" data-val-target="val-3d-pan" data-default="1.0" data-suffix="x" title="Reset to 1.0x" aria-label="Reset">
                     <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
                   </button>
                 </div>
@@ -806,14 +806,14 @@ export function showSettingsModal(appContext = {}) {
 
             <div class="setting-item">
               <div class="setting-info">
-                <span class="setting-label">3D  ItemRotate Item</span>
-                <span class="setting-desc"> ItemRotate Item</span>
+                <span class="setting-label">3D rotation speed</span>
+                <span class="setting-desc">Orbit speed in the 3D view</span>
               </div>
               <div class="setting-control">
                 <div class="slider-with-val">
                   <input type="range" class="settings-range" id="set-3d-rotate" min="0.5" max="2.0" step="0.1" value="${cameraSettings.rotate3DSpeed ?? 1.0}">
                   <span class="range-val" id="val-3d-rotate">${cameraSettings.rotate3DSpeed ?? 1.0}x</span>
-                  <button type="button" class="btn-range-reset" data-target="set-3d-rotate" data-val-target="val-3d-rotate" data-default="1.0" data-suffix="x" title=" Item 1.0x" aria-label=" Item">
+                  <button type="button" class="btn-range-reset" data-target="set-3d-rotate" data-val-target="val-3d-rotate" data-default="1.0" data-suffix="x" title="Reset to 1.0x" aria-label="Reset">
                     <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
                   </button>
                 </div>
@@ -822,25 +822,25 @@ export function showSettingsModal(appContext = {}) {
 
             <div class="setting-item">
               <div class="setting-info">
-                <span class="setting-label">3D  Item (FOV)</span>
-                <span class="setting-desc"> Item ( Item 60°)</span>
+                <span class="setting-label">3D field of view (FOV)</span>
+                <span class="setting-desc">Camera viewing angle (default 60°)</span>
               </div>
               <div class="setting-control">
                 <div class="slider-with-val">
                   <input type="range" class="settings-range" id="set-3d-fov" min="30" max="120" step="1" value="${cameraSettings.camera3DFov ?? 60}">
                   <span class="range-val" id="val-3d-fov">${cameraSettings.camera3DFov ?? 60}°</span>
-                  <button type="button" class="btn-range-reset" data-target="set-3d-fov" data-val-target="val-3d-fov" data-default="60" data-suffix="°" title=" Item 60°" aria-label=" Item">
+                  <button type="button" class="btn-range-reset" data-target="set-3d-fov" data-val-target="val-3d-fov" data-default="60" data-suffix="°" title="Reset to 60°" aria-label="Reset">
                     <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
                   </button>
                 </div>
               </div>
             </div>
 
-            <h4 class="panel-section-title"> Item</h4>
+            <h4 class="panel-section-title">First person</h4>
              <div class="setting-item">
               <div class="setting-info">
-                <span class="setting-label"> Item</span>
-                <span class="setting-desc"> Item 3D  Item</span>
+                <span class="setting-label">First-person mode</span>
+                <span class="setting-desc">Walk through the 3D model</span>
               </div>
               <label class="toggle-switch">
                 <input type="checkbox" id="set-fp-mode" ${isFPActive ? 'checked' : ''}>
@@ -849,14 +849,14 @@ export function showSettingsModal(appContext = {}) {
             </div>
             <div class="setting-item">
               <div class="setting-info">
-                <span class="setting-label"> Item</span>
-                <span class="setting-desc"> Item WASD  Item</span>
+                <span class="setting-label">Move speed</span>
+                <span class="setting-desc">WASD movement speed</span>
               </div>
               <div class="setting-control">
                 <div class="slider-with-val">
                   <input type="range" class="settings-range" id="set-fp-move" min="0.5" max="2.0" step="0.1" value="${cameraSettings.fpMoveSpeed ?? 1.0}">
                   <span class="range-val" id="val-fp-move">${cameraSettings.fpMoveSpeed ?? 1.0}x</span>
-                  <button type="button" class="btn-range-reset" data-target="set-fp-move" data-val-target="val-fp-move" data-default="1.0" data-suffix="x" title=" Item 1.0x" aria-label=" Item">
+                  <button type="button" class="btn-range-reset" data-target="set-fp-move" data-val-target="val-fp-move" data-default="1.0" data-suffix="x" title="Reset to 1.0x" aria-label="Reset">
                     <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
                   </button>
                 </div>
@@ -865,14 +865,14 @@ export function showSettingsModal(appContext = {}) {
 
             <div class="setting-item">
               <div class="setting-info">
-                <span class="setting-label"> Item</span>
-                <span class="setting-desc"> Item</span>
+                <span class="setting-label">Look sensitivity</span>
+                <span class="setting-desc">Mouse look sensitivity</span>
               </div>
               <div class="setting-control">
                 <div class="slider-with-val">
                   <input type="range" class="settings-range" id="set-fp-look" min="0.5" max="2.0" step="0.1" value="${cameraSettings.fpLookSensitivity ?? 1.0}">
                   <span class="range-val" id="val-fp-look">${cameraSettings.fpLookSensitivity ?? 1.0}x</span>
-                  <button type="button" class="btn-range-reset" data-target="set-fp-look" data-val-target="val-fp-look" data-default="1.0" data-suffix="x" title=" Item 1.0x" aria-label=" Item">
+                  <button type="button" class="btn-range-reset" data-target="set-fp-look" data-val-target="val-fp-look" data-default="1.0" data-suffix="x" title="Reset to 1.0x" aria-label="Reset">
                     <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
                   </button>
                 </div>
@@ -881,14 +881,14 @@ export function showSettingsModal(appContext = {}) {
 
             <div class="setting-item">
               <div class="setting-info">
-                <span class="setting-label"> Item</span>
-                <span class="setting-desc"> Item (FOV)</span>
+                <span class="setting-label">Field of view</span>
+                <span class="setting-desc">First-person viewing angle (FOV)</span>
               </div>
               <div class="setting-control">
                 <div class="slider-with-val">
                   <input type="range" class="settings-range" id="set-fp-fov" min="60" max="110" step="5" value="${cameraSettings.fpFov ?? 75}">
                   <span class="range-val" id="val-fp-fov">${cameraSettings.fpFov ?? 75}°</span>
-                  <button type="button" class="btn-range-reset" data-target="set-fp-fov" data-val-target="val-fp-fov" data-default="75" data-suffix="°" title=" Item 75°" aria-label=" Item">
+                  <button type="button" class="btn-range-reset" data-target="set-fp-fov" data-val-target="val-fp-fov" data-default="75" data-suffix="°" title="Reset to 75°" aria-label="Reset">
                     <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
                   </button>
                 </div>
@@ -898,45 +898,45 @@ export function showSettingsModal(appContext = {}) {
 
           <!-- 4.  Item -->
           <div class="settings-panel" id="tab-simulation">
-            <h4 class="panel-section-title"> ItemSave</h4>
+            <h4 class="panel-section-title">Mode and saving</h4>
             <div class="setting-item disabled">
               <div class="setting-info">
-                <span class="setting-label"> Item</span>
-                <span class="setting-desc"> ItemDesign、 Item（ Item）</span>
+                <span class="setting-label">Mode</span>
+                <span class="setting-desc">Design, management or tour (coming soon)</span>
               </div>
               <div class="setting-control">
                 <select class="settings-select" id="set-game-mode" disabled>
-                  <option value="architect" selected> ItemDesign Item</option>
-                  <option value="management"> Item</option>
-                  <option value="tour"> Item</option>
+                  <option value="architect" selected>Design</option>
+                  <option value="management">Management</option>
+                  <option value="tour">Tour</option>
                 </select>
               </div>
             </div>
 
             <div class="setting-item disabled">
               <div class="setting-info">
-                <span class="setting-label"> ItemSave Item</span>
-                <span class="setting-desc"> Item（ Item）</span>
+                <span class="setting-label">Autosave</span>
+                <span class="setting-desc">Save automatically (coming soon)</span>
               </div>
               <div class="setting-control">
                 <select class="settings-select" id="set-autosave" disabled>
-                  <option value="0"> ItemSave</option>
-                  <option value="5" selected> Item 5  Item</option>
-                  <option value="10"> Item 10  Item</option>
-                  <option value="30"> Item 30  Item</option>
+                  <option value="0">Off</option>
+                  <option value="5" selected>Every 5 minutes</option>
+                  <option value="10">Every 10 minutes</option>
+                  <option value="30">Every 30 minutes</option>
                 </select>
               </div>
             </div>
 
-            <h4 class="panel-section-title"> Item</h4>
+            <h4 class="panel-section-title">Preferences</h4>
             <div class="setting-item disabled">
               <div class="setting-info">
-                <span class="setting-label"> Item</span>
-                <span class="setting-desc">Select Item（ Item）</span>
+                <span class="setting-label">Language</span>
+                <span class="setting-desc">Interface language (coming soon)</span>
               </div>
               <div class="setting-control">
                 <select class="settings-select" id="set-language" disabled>
-                  <option value="zh-CN" selected> Item (zh-CN)</option>
+                  <option value="zh-CN" selected>Chinese (zh-CN)</option>
                   <option value="en-US">English (en-US)</option>
                 </select>
               </div>
@@ -944,28 +944,28 @@ export function showSettingsModal(appContext = {}) {
 
             <div class="setting-item disabled">
               <div class="setting-info">
-                <span class="setting-label"> Item</span>
-                <span class="setting-desc"> ItemDisplay Mode（ Item）</span>
+                <span class="setting-label">Theme</span>
+                <span class="setting-desc">Display mode (coming soon)</span>
               </div>
               <div class="setting-control">
                 <select class="settings-select" id="set-theme" disabled>
-                  <option value="light" selected> Item (Light)</option>
-                  <option value="dark"> Item (Dark)</option>
-                  <option value="system"> Item</option>
+                  <option value="light" selected>Light</option>
+                  <option value="dark">Dark</option>
+                  <option value="system">Follow system</option>
                 </select>
               </div>
             </div>
 
             <div class="setting-item disabled">
               <div class="setting-info">
-                <span class="setting-label"> Item</span>
-                <span class="setting-desc">Select Item（ Item m）</span>
+                <span class="setting-label">Units</span>
+                <span class="setting-desc">Measurement units (default m)</span>
               </div>
               <div class="setting-control">
                 <select class="settings-select" id="set-unit" disabled>
-                  <option value="m" selected> Item (m)</option>
-                  <option value="cm"> Item (cm)</option>
-                  <option value="in"> Item (in)</option>
+                  <option value="m" selected>Meters (m)</option>
+                  <option value="cm">Centimeters (cm)</option>
+                  <option value="in">Inches (in)</option>
                 </select>
               </div>
             </div>
@@ -978,22 +978,22 @@ export function showSettingsModal(appContext = {}) {
               <div class="ai-card-header">
                 <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/></svg>
                 <div>
-                  <strong class="ai-card-title">AI  Item 3D  Item</strong>
+                  <strong class="ai-card-title">Generate 3D buildings with AI</strong>
                   <div class="ai-card-desc">
-                    <p style="margin: 0 0 4px 0;"> Item AI  Item， ItemFloorplan Item <code>blueprint3d-babylon.building.v1</code>  Item <code>.b3dbuilding.json</code>  Item。 Item“ Item” Item。</p>
-                    <p style="margin: 0; font-size: 11.5px; color: #64748b;"> Item： Item AI  Item JSON  Item。</p>
+                    <p style="margin: 0 0 4px 0;">Ask an AI assistant to describe your floor plan in the <code>blueprint3d-babylon.building.v1</code> format, save it as a <code>.b3dbuilding.json</code> file, then click "Import building".</p>
+                    <p style="margin: 0; font-size: 11.5px; color: #64748b;">Tip: give the AI skill file to the assistant so it writes valid JSON.</p>
                   </div>
                 </div>
               </div>
               <div class="ai-card-actions-row">
                 <button type="button" class="custom-modal-btn btn-secondary btn-sm" id="btn-settings-download-building-example">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M12 18v-6"/><path d="m9 15 3 3 3-3"/></svg> 
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M12 18v-6"/><path d="m9 15 3 3 3-3"/></svg> Download example
                 </button>
                 <button type="button" class="custom-modal-btn btn-secondary btn-sm" id="btn-settings-download-building-skill">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275Z"/><path d="m5 3 1 2.5L8.5 6 6 7 5 9.5 4 7 1.5 6 4 5Z"/><path d="m19 17 1 2.5 2.5.5-2.5 1-1 2.5-1-2.5-2.5-1 2.5-1Z"/></svg>  AI  
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275Z"/><path d="m5 3 1 2.5L8.5 6 6 7 5 9.5 4 7 1.5 6 4 5Z"/><path d="m19 17 1 2.5 2.5.5-2.5 1-1 2.5-1-2.5-2.5-1 2.5-1Z"/></svg> Download AI skill
                 </button>
                 <button type="button" class="custom-modal-btn btn-primary btn-sm" id="btn-settings-import-building">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> 
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Import building
                 </button>
               </div>
             </div>
@@ -1002,22 +1002,22 @@ export function showSettingsModal(appContext = {}) {
               <div class="ai-card-header">
                 <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 9V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v3"/><path d="M2 11v5a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-5"/><path d="M2 9a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v4H2Z"/><path d="M6 18v2"/><path d="M18 18v2"/></svg>
                 <div>
-                  <strong class="ai-card-title">AI  ItemFurniture</strong>
+                  <strong class="ai-card-title">Create furniture with AI</strong>
                   <div class="ai-card-desc">
-                    <p style="margin: 0 0 4px 0;"> Item AI  ItemCustom 3D Furniture Item (<code>.js</code>  Item <code>.mjs</code>)  Item， Item“ ItemFurniture”Select ItemCustomFurniture Item。</p>
-                    <p style="margin: 0; font-size: 11.5px; color: #64748b;"> Item： Item， Item。</p>
+                    <p style="margin: 0 0 4px 0;">Ask an AI assistant to write a custom 3D furniture script (<code>.js</code> or <code>.mjs</code>), then click "Upload furniture" and select the file to add it.</p>
+                    <p style="margin: 0; font-size: 11.5px; color: #64748b;">Tip: start from the example file and the AI skill.</p>
                   </div>
                 </div>
               </div>
               <div class="ai-card-actions-row">
                 <button type="button" class="custom-modal-btn btn-secondary btn-sm" id="btn-settings-download-furniture-example">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M12 18v-6"/><path d="m9 15 3 3 3-3"/></svg> Furniture 
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M12 18v-6"/><path d="m9 15 3 3 3-3"/></svg> Download example
                 </button>
                 <button type="button" class="custom-modal-btn btn-secondary btn-sm" id="btn-settings-download-furniture-skill">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275Z"/><path d="m5 3 1 2.5L8.5 6 6 7 5 9.5 4 7 1.5 6 4 5Z"/><path d="m19 17 1 2.5 2.5.5-2.5 1-1 2.5-1-2.5-2.5-1 2.5-1Z"/></svg>  AI  
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275Z"/><path d="m5 3 1 2.5L8.5 6 6 7 5 9.5 4 7 1.5 6 4 5Z"/><path d="m19 17 1 2.5 2.5.5-2.5 1-1 2.5-1-2.5-2.5-1 2.5-1Z"/></svg> Download AI skill
                 </button>
                 <button type="button" class="custom-modal-btn btn-primary btn-sm" id="btn-settings-upload-furniture">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Furniture
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 4px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> Upload furniture
                 </button>
               </div>
             </div>
@@ -1027,10 +1027,10 @@ export function showSettingsModal(appContext = {}) {
         </div>
       </div>
       <div class="settings-modal-footer">
-        <button type="button" class="custom-modal-btn btn-secondary" id="btn-reset-settings"> Item</button>
+        <button type="button" class="custom-modal-btn btn-secondary" id="btn-reset-settings">Reset to defaults</button>
         <div class="footer-actions-right">
-          <button type="button" class="custom-modal-btn btn-secondary" id="btn-cancel-settings"> Item</button>
-          <button type="button" class="custom-modal-btn btn-primary" id="btn-apply-settings"> Item</button>
+          <button type="button" class="custom-modal-btn btn-secondary" id="btn-cancel-settings">Cancel</button>
+          <button type="button" class="custom-modal-btn btn-primary" id="btn-apply-settings">Apply</button>
         </div>
       </div>
     </div>
@@ -1081,7 +1081,7 @@ export function showSettingsModal(appContext = {}) {
 
   // 2.  
   const ranges = [
-    { rangeId: 'set-undo-steps', valId: 'val-undo-steps', suffix: '  Item' },
+    { rangeId: 'set-undo-steps', valId: 'val-undo-steps', suffix: ' steps' },
     { rangeId: 'set-2d-speed', valId: 'val-2d-speed', suffix: 'x' },
     { rangeId: 'set-3d-rotate', valId: 'val-3d-rotate', suffix: 'x' },
     { rangeId: 'set-3d-pan', valId: 'val-3d-pan', suffix: 'x' },
@@ -1301,7 +1301,7 @@ export function showSettingsModal(appContext = {}) {
   };
 
   backdrop.querySelector('#btn-reset-settings')?.addEventListener('click', async () => {
-    const ok = await showCustomConfirm(' Item？', ' Item、 Item？');
+    const ok = await showCustomConfirm('Reset settings?', 'Restore camera, rendering and history settings to their defaults?');
     if (!ok) return;
 
     //  All 

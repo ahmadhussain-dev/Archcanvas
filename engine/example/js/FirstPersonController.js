@@ -480,21 +480,21 @@ function getPuppetFloorY(Context, x, z) {
 
 //  ： （ ：Square 、 、Circle ）
 function getOpeningDisplayName(opening) {
-  if (!opening) return ' Item';
+  if (!opening) return 'Opening';
   if (opening.name && opening.name !== ' Item' && opening.name !== ' Item' && opening.name !== ' Item') {
     return opening.name;
   }
   const isDoor = opening.type === 'door';
-  const typeName = isDoor ? ' Item' : ' Item';
+  const typeName = isDoor ? ' door' : ' window';
   const shapeMap = {
     'square': 'Square',
-    'round-arch': ' Item',
-    'pointed-arch': ' Item',
+    'round-arch': 'Round arch',
+    'pointed-arch': 'Pointed arch',
     'circle': 'Circle',
     'semicircle': 'Semicircle',
-    'diamond': ' Item',
+    'diamond': 'Diamond',
     'quarter-sector': 'Sector',
-    'right-triangle': ' Item'
+    'right-triangle': 'Right triangle'
   };
   const shapeName = shapeMap[opening.shape] || 'Square';
   return `${shapeName}${typeName}`;
@@ -502,36 +502,36 @@ function getOpeningDisplayName(opening) {
 
 //  ： （ ： 、 、Glass ）
 function getFenceDisplayName(fence) {
-  if (!fence) return ' Item';
+  if (!fence) return 'Fence';
   if (fence.name && fence.name !== ' Item') return fence.name;
   const subtypeMap = {
-    'picket_wood': ' Item',
-    'iron_ornamental': ' Item',
-    'wire_mesh': 'Metal Item',
-    'stone_masonry': ' Item',
-    'bamboo': ' Item',
-    'glass_rail': 'Glass Item',
-    'concrete': ' Item',
-    'rope': ' Item'
+    'picket_wood': 'Wooden picket fence',
+    'iron_ornamental': 'Ornamental iron fence',
+    'wire_mesh': 'Wire mesh fence',
+    'stone_masonry': 'Stone fence',
+    'bamboo': 'Bamboo fence',
+    'glass_rail': 'Glass railing',
+    'concrete': 'Concrete fence',
+    'rope': 'Rope fence'
   };
-  return subtypeMap[fence.subtype] || ' Item';
+  return subtypeMap[fence.subtype] || 'Fence';
 }
 
 //  ： （ ： 、 ）
 function getFenceGateDisplayName(gate) {
-  if (!gate) return ' Item';
+  if (!gate) return 'Gate';
   if (gate.name && gate.name !== ' Item') return gate.name;
   const subtypeMap = {
-    'picket_wood': ' Item',
-    'iron_ornamental': ' Item',
-    'wire_mesh': 'Metal Item',
-    'stone_masonry': ' Item',
-    'bamboo': ' Item',
-    'glass_rail': 'Glass Item',
-    'concrete': ' Item',
-    'rope': ' Item'
+    'picket_wood': 'Wooden picket gate',
+    'iron_ornamental': 'Ornamental iron gate',
+    'wire_mesh': 'Wire mesh gate',
+    'stone_masonry': 'Stone gate',
+    'bamboo': 'Bamboo gate',
+    'glass_rail': 'Glass gate',
+    'concrete': 'Concrete gate',
+    'rope': 'Rope gate'
   };
-  return subtypeMap[gate.subtype] || ' Item';
+  return subtypeMap[gate.subtype] || 'Gate';
 }
 
 //  ： （Furniture、 、 、 ）  ID  
@@ -613,7 +613,7 @@ function updateInteractionTargetButton(Context) {
   if (!btnSpan) return;
 
   if (currentPose !== 'stand') {
-    btnSpan.textContent = ' Item';
+    btnSpan.textContent = 'Stand up';
     btnInteract.classList.remove('locked');
     btnInteract.classList.add('detected');
     return;
@@ -700,7 +700,7 @@ function updateInteractionTargetButton(Context) {
     }
   }
 
-  btnSpan.textContent = ' Item';
+  btnSpan.textContent = 'Interact';
   btnInteract.classList.remove('detected');
   btnInteract.classList.remove('locked');
 }
@@ -741,13 +741,13 @@ function executeInteraction(Context) {
   if (hit && hit.pickedMesh) {
     const interInfo = findInteractionParent(hit.pickedMesh, puppetItemId);
     if (!interInfo) {
-      showInteractToast(" ItemFurniture Item");
+      showInteractToast("Nothing to interact with");
       return;
     }
 
     //  ， Appliances  2.5  
     if (hit.distance > 2.5) {
-      showInteractToast(" Item， Item");
+      showInteractToast("Too far away, move closer");
       return;
     }
 
@@ -755,7 +755,7 @@ function executeInteraction(Context) {
     let itemName = '';
 
     const showLockedWarning = (name) => {
-      showInteractToast(`${name} ItemLock`);
+      showInteractToast(`${name} is locked`);
       if (rootMesh) {
         const highlightMeshes = rootMesh.getChildMeshes ? rootMesh.getChildMeshes() : [rootMesh];
         highlightMeshes.forEach(m => {
@@ -812,7 +812,7 @@ function executeInteraction(Context) {
               Context.testMap.executeCommand('updateItem', { itemId: id, patch: { isOn: targetState } });
             }
           }
-          showInteractToast(targetState ? ` Item：${itemName}` : ` Item：${itemName}`);
+          showInteractToast(targetState ? `On: ${itemName}` : `Off: ${itemName}`);
         } else if (hasInteraction) {
           //  、 / Furniture： / 
           interactSitOnSeat(Context, id);
@@ -822,7 +822,7 @@ function executeInteraction(Context) {
             Context.entityManager.toggleItemWater(id);
           }
           const waterOn = item.waterEnabled !== false;
-          showInteractToast(!waterOn ? ` Item：${itemName}` : ` Item：${itemName}`);
+          showInteractToast(!waterOn ? `Water on: ${itemName}` : `Water off: ${itemName}`);
         } else {
           //  、 、 ： ， 
           showInteractToast(itemName);
@@ -844,7 +844,7 @@ function executeInteraction(Context) {
         });
         if (typeof Context.refreshShadows === 'function') Context.refreshShadows();
         if (typeof Context.renderPlan === 'function') Context.renderPlan();
-        showInteractToast(targetState ? ` Item：${itemName}` : ` Item：${itemName}`);
+        showInteractToast(targetState ? `Opened: ${itemName}` : `Closed: ${itemName}`);
       }
     } else if (type === 'fence_gate' && id) {
       const gate = Context.testMap.getEntity('fence_gate', id);
@@ -862,7 +862,7 @@ function executeInteraction(Context) {
         });
         if (typeof Context.refreshShadows === 'function') Context.refreshShadows();
         if (typeof Context.renderPlan === 'function') Context.renderPlan();
-        showInteractToast(targetState ? ` Item：${itemName}` : ` Item：${itemName}`);
+        showInteractToast(targetState ? `Opened: ${itemName}` : `Closed: ${itemName}`);
       }
     } else if (type === 'fence' && id) {
       const fence = Context.testMap.getEntity('fence', id);
@@ -890,7 +890,7 @@ function executeInteraction(Context) {
       });
     }
   } else {
-    showInteractToast(" ItemFurniture Item");
+    showInteractToast("Nothing to interact with");
   }
 }
 
@@ -1017,7 +1017,7 @@ function enterFirstPerson(Context, targetPuppetId = null) {
       }
       if (++checkCount > 100) {
         clearInterval(checkInterval);
-        console.warn(" Item3D Item");
+        console.warn("Timed out waiting for the 3D puppet model");
       }
     }, 50);
   }
@@ -1358,7 +1358,7 @@ function checkRayCollision(scene, posX, posY, posZ, dirX, dirZ, stepDist, puppet
     }
   });
 
-  showInteractToast(" Item (F11 Item)");
+  showInteractToast("First-person view (F11 to exit)");
 }
 
 //  
@@ -1478,7 +1478,7 @@ export function exitFirstPerson(Context, { expandPanels = false } = {}) {
   //  
   setTimeout(() => Context.engine?.resize(), 300);
 
-  showInteractToast(" Item");
+  showInteractToast("Exited first-person view");
 }
 
 //  
@@ -1513,13 +1513,13 @@ function createTouchControls(Context) {
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="10"/><path d="M12 8v8M8 12h8"/>
         </svg>
-        <span> Item</span>
+        <span>Interact</span>
       </button>
       <button class="fp-action-btn jump-btn" id="fp-btn-jump" type="button">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="m18 15-6-6-6 6"/>
         </svg>
-        <span> Item</span>
+        <span>Jump</span>
       </button>
     </div>
   `;
@@ -1693,7 +1693,7 @@ function interactSitOnSeat(Context, seatItemId) {
   isGrounded = true;
   velocityY = 0;
 
-  showInteractToast(interactionType === 'lie' ? " Item" : " Item");
+  showInteractToast(interactionType === 'lie' ? "Lying down" : "Sitting down");
 }
 
 //  ， 
@@ -1720,6 +1720,6 @@ function checkStandUp(Context) {
     isGrounded = true;
     velocityY = 0;
 
-    showInteractToast(" Item");
+    showInteractToast("Standing up");
   }
 }
