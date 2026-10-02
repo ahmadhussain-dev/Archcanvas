@@ -14,6 +14,7 @@ import { FloorplanDocument, stringifyBuildingFile } from '../../src/index.js';
 import { initDisplayUnits } from './Units.js';
 import { initSplitView, setEmbedView } from './SplitView.js';
 import { initStatusBar } from './StatusBar.js';
+import { enablePlanDrawing } from './PlanDrawing.js';
 
 export const EMBEDDED = typeof window !== 'undefined'
   && new URLSearchParams(window.location.search).has('embed')
@@ -72,6 +73,7 @@ export function initEmbedBridge({ testMap, store, loadBuildingText }) {
   if (!EMBEDDED) return;
   document.documentElement.classList.add('archcanvas-embed');
   initDisplayUnits();
+  enablePlanDrawing();
   initSplitView(window.appState, store);
   initStatusBar(window.appState, store);
   let listening = false;

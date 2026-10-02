@@ -263,6 +263,29 @@ html.archcanvas-embed {
   pointer-events: none;
 }
 
+/* Drawn plan (PlanDrawing.js): walls at real thickness, door and window
+   symbols, dimension lines; opening lines stay as invisible hit areas. */
+.archcanvas-embed .plan-drawing .wall-line { stroke: var(--ac-navy); stroke-linecap: square; }
+.archcanvas-embed .plan-drawing .wall-line:hover,
+.archcanvas-embed .plan-drawing .wall-line.selected { stroke: var(--ac-blue); }
+.archcanvas-embed .plan-drawing .room-rect { fill: #ffffff; stroke: none; }
+.archcanvas-embed .plan-drawing .room-rect.selected { fill: rgba(30, 90, 168, 0.06); }
+.archcanvas-embed .plan-drawing .opening-line { stroke: transparent; stroke-width: 10px; }
+.archcanvas-embed .plan-drawing .opening-line:hover,
+.archcanvas-embed .plan-drawing .opening-line.selected { stroke: rgba(30, 90, 168, 0.35); }
+.archcanvas-embed .plan-drawing .grid-line { stroke-opacity: 0.45; }
+.archcanvas-embed .plan-drawing .room-name-label { font-size: 10px; font-weight: 600; }
+.archcanvas-embed .plan-drawing .room-size-label { font-size: 9px; fill: var(--ac-ink-2); }
+.archcanvas-embed .plan-dimension-label {
+  font-family: var(--ac-mono);
+  font-size: 10px;
+  fill: var(--ac-navy);
+  paint-order: stroke;
+  stroke: #ffffff;
+  stroke-width: 4px;
+  stroke-linejoin: round;
+}
+
 /* Furniture library: one-line labels, full name on hover (title). */
 .archcanvas-embed .furniture-item-btn { padding: 4px !important; }
 .archcanvas-embed .furniture-item-btn span {
