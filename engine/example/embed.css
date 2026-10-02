@@ -158,8 +158,6 @@ html.archcanvas-embed {
 .archcanvas-embed [data-mode$="-octagon"],
 .archcanvas-embed [data-mode="add-room-sector"],
 .archcanvas-embed [data-mode="add-door-circle"],
-.archcanvas-embed #btn-first-person,
-.archcanvas-embed #btn-control-mannequin,
 .archcanvas-embed #btn-upload-furniture,
 .archcanvas-embed #btn-furniture-upload-help,
 .archcanvas-embed #btn-export-3mf,
@@ -235,10 +233,45 @@ html.archcanvas-embed {
 .archcanvas-embed .roof-resize-handle { stroke: var(--ac-blue); filter: none; }
 .archcanvas-embed .window-line { stroke: #8fb3e0; }
 
-/* Furniture library: whole words in card labels. */
+/* Material library: bigger tiles with a one-line name (full name on hover). */
+.material-swatch-name { display: none; }
+.archcanvas-embed .material-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px 10px;
+}
+.archcanvas-embed .material-swatch {
+  position: relative;
+  margin-bottom: 16px;
+  overflow: visible;
+}
+.archcanvas-embed #current-material-grid { grid-template-columns: 40px; }
+.archcanvas-embed #current-material-grid .material-swatch { margin-bottom: 0; }
+.archcanvas-embed #current-material-grid .material-swatch-name { display: none; }
+.archcanvas-embed .material-swatch-name {
+  display: block;
+  position: absolute;
+  top: calc(100% + 3px);
+  left: 0;
+  right: 0;
+  font-size: 10.5px;
+  line-height: 1.2;
+  color: var(--ac-ink-2);
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+
+/* Furniture library: one-line labels, full name on hover (title). */
+.archcanvas-embed .furniture-item-btn { padding: 4px !important; }
 .archcanvas-embed .furniture-item-btn span {
+  display: block !important;
+  width: 100%;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
   word-break: normal !important;
-  overflow-wrap: anywhere;
   color: var(--ac-ink-2) !important;
 }
 .archcanvas-embed .editor strong { word-break: normal; }
