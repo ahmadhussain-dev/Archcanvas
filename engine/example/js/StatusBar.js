@@ -1,6 +1,7 @@
 // Bottom status bar for ArchCanvas (embed mode only): current floor, snapping,
 // units and the pointer position on the plan, measured from the plot corner.
 import { svgToWorld } from './Render2D.js';
+import { itemsOnPlan, setItemsOnPlan } from './PlanDrawing.js';
 
 const M_PER_FT = 0.3048;
 
@@ -27,9 +28,12 @@ export function initStatusBar(ctx, store) {
   const snap = el('button', 'ac-status-item ac-status-toggle');
   snap.type = 'button';
   snap.title = 'Snap to grid and wall ends';
+  const items = el('button', 'ac-status-item ac-status-toggle');
+  items.type = 'button';
+  items.title = 'Show furniture and other items on the 2D plan';
   const units = el('span', 'ac-status-item', 'Units: ft-in');
   const pointer = el('span', 'ac-status-item ac-status-pointer');
-  bar.append(floor, snap, units, pointer);
+  bar.append(floor, snap, items, units, pointer);
   stage.appendChild(bar);
 
   function refresh() {
@@ -38,7 +42,15 @@ export function initStatusBar(ctx, store) {
     floor.textContent = /floor/i.test(name) ? name : `${name} floor`;
     snap.textContent = `Snap ${ctx.snapEnabled ? 'on' : 'off'}`;
     snap.setAttribute('aria-pressed', String(Boolean(ctx.snapEnabled)));
+    items.textContent = `Furniture on plan: ${itemsOnPlan() ? 'on' : 'off'}`;
+    items.setAttribute('aria-pressed', String(itemsOnPlan()));
   }
+
+  items.addEventListener('click', () => {
+    setItemsOnPlan(!itemsOnPlan());
+    ctx.renderPlan();
+    refresh();
+  });
 
   snap.addEventListener('click', () => {
     document.getElementById('btn-snap-toggle')?.click();

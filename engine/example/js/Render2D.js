@@ -3,6 +3,7 @@ import { getRoomVertices, isItemSnappedToBookshelfOrMannequin } from '../../src/
 import { createStoreProxy } from '../store/proxyHelper.js';
 import { render2DFurniturePlacementPreview } from './FurniturePlacementController.js';
 import { formatRoomSize } from './Units.js';
+import { isPlanDrawing, itemsOnPlan, wallStrokeStyle, renderOpeningSymbols, renderDimensions, roomClearSize } from './PlanDrawing.js';
 
 let rawCtx = null;
 const ctx = createStoreProxy(() => rawCtx);
@@ -100,7 +101,13 @@ export function renderPlan() {
   ctx.referenceFloorWalls().forEach((wall) => renderReferenceWall(wall));
   ctx.currentWalls().forEach((wall) => renderWall(wall));
   ctx.currentRooms().forEach((room) => renderRoomInteraction(room));
+  // ArchCanvas: door swings, window symbols and dimensions, under the
+  // (then invisible) opening hit lines so openings stay selectable.
+  const planApi = { ctx, worldToSvg, createSvgElement };
+  ctx.svg.classList.toggle('plan-drawing', isPlanDrawing());
+  if (isPlanDrawing()) renderOpeningSymbols(planApi);
   ctx.currentOpenings().forEach((opening) => renderOpening(opening));
+  if (isPlanDrawing()) renderDimensions(planApi);
 
   // 2D  ， Room 
   // ctx.currentRoofs().forEach((roof) => renderRoof(roof));
@@ -143,7 +150,7 @@ export function renderPlan() {
     if (!aIsRug && bIsRug) return 1;
     return 0;
   });
-  sortedItems.forEach((item) => renderPlanItem(item));
+  if (itemsOnPlan()) sortedItems.forEach((item) => renderPlanItem(item));
   render2DFurniturePlacementPreview();
   const selectedRoom = ctx.selectedRoomId ? ctx.testMap.getEntity('room', ctx.selectedRoomId) : null;
   if (selectedRoom) renderSelectedRoomHandles(selectedRoom);
@@ -221,12 +228,26 @@ export function renderRoom(room) {
     'text-anchor': 'middle',
     'dominant-baseline': 'middle'
   });
-  areaNode.textContent = formatRoomSize(room, formattedArea);
+  // ArchCanvas: the clear inside size, between the wall faces.
+  areaNode.textContent = (isPlanDrawing() && roomClearSize({ ctx }, room)) || formatRoomSize(room, formattedArea);
 
   labelGroup.appendChild(nameNode);
   // ArchCanvas: leave the size line off rooms too narrow to hold it.
   const roomWidthPx = Math.abs(worldToSvg(room.width || 0, 0).x - worldToSvg(0, 0).x);
-  if (areaNode.textContent.length * 6.2 <= roomWidthPx - 8) labelGroup.appendChild(areaNode);
+  const sizeText = areaNode.textContent;
+  if (sizeText.length * 6.2 <= roomWidthPx - 8) {
+    labelGroup.appendChild(areaNode);
+  } else if (isPlanDrawing() && sizeText.includes(' × ') && sizeText.length * 3.4 <= roomWidthPx - 8) {
+    // A narrow room gets its clear size on two lines: width ×, then depth.
+    const [first, second] = sizeText.split(' × ');
+    areaNode.textContent = '';
+    [`${first} ×`, second].forEach((part, index) => {
+      const tspan = createSvgElement('tspan', { x: svgCenter.x, dy: index === 0 ? 0 : 11 });
+      tspan.textContent = part;
+      areaNode.appendChild(tspan);
+    });
+    labelGroup.appendChild(areaNode);
+  }
   ctx.svg.appendChild(labelGroup);
 }
 
@@ -389,6 +410,7 @@ export function renderWall(wall) {
     stroke: wall.color || '#f9fbff',
     'data-wall-id': wall.id
   });
+  if (isPlanDrawing()) line.setAttribute('style', wallStrokeStyle({ ctx, worldToSvg }, wall));
   line.addEventListener('pointerdown', (event) => {
     ctx.beginWallDrag(event, wall.id);
   });

@@ -51,6 +51,12 @@ export function formatRoomSize(room, squareMetres) {
   return `${feetInches(room.width)} × ${feetInches(room.depth)}`;
 }
 
+/** A length in feet and inches (12'-6"), or metres outside ArchCanvas. */
+export function formatLength(metres) {
+  if (!useFeet) return `${round(Number(metres) || 0, 2)} m`;
+  return feetInches(metres);
+}
+
 function feetInches(metres) {
   const inches = Math.round((Number(metres) || 0) / M_PER_FT * 12);
   return `${Math.floor(inches / 12)}'-${inches % 12}"`;
