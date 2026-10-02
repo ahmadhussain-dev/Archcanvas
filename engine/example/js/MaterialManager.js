@@ -342,6 +342,11 @@ export function renderMaterialLibrary(isSwitchingCategory = false) {
     button.className = `material-swatch ${editor.activeMaterialDescriptor?.id === material.id ? 'active' : ''}`;
     button.title = material.name;
     applySwatchStyle(button, material);
+    // Caption under the swatch; only shown in the ArchCanvas embed (embed.css).
+    const caption = document.createElement('span');
+    caption.className = 'material-swatch-name';
+    caption.textContent = material.name;
+    button.appendChild(caption);
     button.addEventListener('click', () => {
       editor.activeMaterialDescriptor = material;
       editor.activeMaterialArray = null; //  

@@ -82,6 +82,26 @@ export function initSplitView(appContext, store) {
   canvasCard.addEventListener('pointerenter', () => {
     if (mode === 'split' && ctx.currentView !== '3d') activate('3d');
   });
+  // Walk mode (first person) takes the whole stage, then returns to the
+  // view the page had chosen. The engine marks the walk button active.
+  const walkButton = document.getElementById('btn-first-person');
+  let viewBeforeWalk = null;
+  if (walkButton) {
+    new MutationObserver(() => {
+      const walking = walkButton.classList.contains('active');
+      if (walking && viewBeforeWalk === null) {
+        viewBeforeWalk = mode;
+        if (mode === 'split') {
+          stage.dataset.split = 'false';
+          requestAnimationFrame(() => ctx.engine.resize());
+        }
+      } else if (!walking && viewBeforeWalk !== null) {
+        const previous = viewBeforeWalk;
+        viewBeforeWalk = null;
+        if (previous !== '3d') setEmbedView(previous);
+      }
+    }).observe(walkButton, { attributes: true, attributeFilter: ['class'] });
+  }
   // Edits made in the 3D pane show up on the plan straight away.
   store.on('historyChanged', () => {
     if (mode === 'split' && ctx.currentView === '3d') requestAnimationFrame(() => ctx.renderPlan());
