@@ -224,7 +224,9 @@ export function renderRoom(room) {
   areaNode.textContent = formatRoomSize(room, formattedArea);
 
   labelGroup.appendChild(nameNode);
-  labelGroup.appendChild(areaNode);
+  // ArchCanvas: leave the size line off rooms too narrow to hold it.
+  const roomWidthPx = Math.abs(worldToSvg(room.width || 0, 0).x - worldToSvg(0, 0).x);
+  if (areaNode.textContent.length * 6.2 <= roomWidthPx - 8) labelGroup.appendChild(areaNode);
   ctx.svg.appendChild(labelGroup);
 }
 

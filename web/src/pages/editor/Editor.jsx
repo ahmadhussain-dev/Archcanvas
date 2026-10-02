@@ -34,6 +34,34 @@ function SaveStatus({ state, savedAt, error }) {
   return null
 }
 
+const VIEWS = [
+  { id: '2d', label: '2D', icon: 'grid' },
+  { id: '3d', label: '3D', icon: 'orbit' },
+  { id: 'split', label: 'Split', icon: 'split', wide: true }
+]
+
+function ViewSwitch({ view, onChange, disabled }) {
+  return (
+    <div role="group" aria-label="View" className="flex rounded-control bg-paper p-0.5">
+      {VIEWS.map((v) => (
+        <button
+          key={v.id}
+          type="button"
+          aria-pressed={view === v.id}
+          disabled={disabled}
+          onClick={() => onChange(v.id)}
+          className={`${v.wide ? 'hidden lg:flex' : 'flex'} h-8 items-center gap-1.5 rounded-[6px] px-2.5 text-[13px] font-semibold disabled:opacity-50 sm:px-3 ${
+            view === v.id ? 'bg-navy text-white' : 'text-navy hover:bg-white'
+          }`}
+        >
+          <Icon name={v.icon} size={15} />
+          {v.label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
 export default function Editor() {
   const { id } = useParams()
   const iframe = useRef(null)
@@ -43,6 +71,8 @@ export default function Editor() {
   const [loadError, setLoadError] = useState(null)
   const [editorState, setEditorState] = useState('starting') // starting | ready | failed
   const [save, setSave] = useState({ state: 'clean', savedAt: null, error: '' })
+  const [view, setView] = useState('2d')
+  const viewRef = useRef('2d')
   const [, tick] = useState(0)
   const saving = useRef(false)
   const dirty = save.state === 'dirty' || save.state === 'error'
@@ -85,7 +115,11 @@ export default function Editor() {
     if (!project || floorplan === undefined || !iframe.current) return undefined
     const b = createEditorBridge(iframe.current, {
       ready: () => sendLoad(floorplan),
-      loaded: () => setEditorState('ready'),
+      loaded: () => {
+        setEditorState('ready')
+        // A restored version reloads the editor; keep the view the user picked.
+        if (viewRef.current !== '2d') b.setView(viewRef.current)
+      },
       changed: () => setSave((s) => (saving.current ? s : { ...s, state: 'dirty' })),
       error: (msg) => {
         setEditorState('failed')
@@ -138,6 +172,12 @@ export default function Editor() {
     return () => window.removeEventListener('beforeunload', warn)
   }, [dirty])
 
+  function changeView(next) {
+    setView(next)
+    viewRef.current = next
+    bridge.current?.setView(next)
+  }
+
   async function restored(version) {
     const { version: full } = await api.get(`/projects/${id}/versions/${version.number}`)
     sendLoad(full.floorplan)
@@ -178,6 +218,7 @@ export default function Editor() {
             </span>
           </div>
         </div>
+        <ViewSwitch view={view} onChange={changeView} disabled={editorState !== 'ready'} />
         <div className="flex items-center gap-2 sm:gap-3">
           <span className="hidden md:block" aria-live="polite">
             <SaveStatus {...save} />

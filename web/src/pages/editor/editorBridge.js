@@ -28,6 +28,10 @@ export function createEditorBridge(iframe, handlers) {
     load(data) {
       post('load', data)
     },
+    // '2d', '3d' or 'split'
+    setView(view) {
+      post('view', { view })
+    },
     // Resolves with the current building file (a JSON string).
     snapshot(name, timeoutMs = 15000) {
       const requestId = nextId++

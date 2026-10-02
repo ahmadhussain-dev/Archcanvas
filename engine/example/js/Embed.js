@@ -8,10 +8,12 @@
  *
  * Messages (same origin only), all tagged with source 'archcanvas':
  *   editor -> app : ready | loaded | changed | snapshot {requestId, building} | error {message}
- *   app -> editor : load {building, plot, name} | snapshot {requestId}
+ *   app -> editor : load {building, plot, name} | snapshot {requestId} | view {view: '2d'|'3d'|'split'}
  */
 import { FloorplanDocument, stringifyBuildingFile } from '../../src/index.js';
 import { initDisplayUnits } from './Units.js';
+import { initSplitView, setEmbedView } from './SplitView.js';
+import { initStatusBar } from './StatusBar.js';
 
 export const EMBEDDED = typeof window !== 'undefined'
   && new URLSearchParams(window.location.search).has('embed')
@@ -70,6 +72,8 @@ export function initEmbedBridge({ testMap, store, loadBuildingText }) {
   if (!EMBEDDED) return;
   document.documentElement.classList.add('archcanvas-embed');
   initDisplayUnits();
+  initSplitView(window.appState, store);
+  initStatusBar(window.appState, store);
   let listening = false;
 
   const post = (type, data = {}) => window.parent.postMessage({ source: SOURCE, type, ...data }, window.location.origin);
@@ -102,6 +106,8 @@ export function initEmbedBridge({ testMap, store, loadBuildingText }) {
         listening = true;
       }
     }
+
+    if (msg.type === 'view') setEmbedView(msg.view);
 
     if (msg.type === 'snapshot') {
       try {
