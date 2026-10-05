@@ -71,7 +71,20 @@ async function ownProject(req) {
 
 // Adds a version and points the project at it. The counter is bumped atomically
 // so two saves at once cannot get the same number.
+// Autosaves don't pile up: while the newest version is itself an autosave, the
+// next autosave overwrites it, so history keeps one draft after each real save.
 async function addVersion(project, { floorplan, source, note }, userId) {
+  if (source === 'autosave' && project.currentVersion) {
+    const draft = await ProjectVersion.findOneAndUpdate(
+      { _id: project.currentVersion, project: project._id, source: 'autosave' },
+      { $set: { floorplan, createdBy: userId } },
+      { new: true }
+    )
+    if (draft) {
+      await Project.updateOne({ _id: project._id }, { $currentDate: { updatedAt: true } })
+      return draft
+    }
+  }
   const bumped = await Project.findByIdAndUpdate(project._id, { $inc: { versionCount: 1 } }, { new: true })
   const version = await ProjectVersion.create({
     project: project._id,

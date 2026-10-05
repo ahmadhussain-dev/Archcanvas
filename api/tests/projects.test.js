@@ -84,15 +84,25 @@ describe('projects', { skip: !hasDb }, () => {
     assert.equal(v1.body.version.floorplan, undefined)
 
     const saves = await Promise.all(
-      ['a', 'b', 'c'].map((n) =>
-        request(app).post(`/api/projects/${projectId}/versions`).set(me).send({ floorplan: plan(n), source: 'autosave' })
+      ['a', 'b'].map((n) =>
+        request(app).post(`/api/projects/${projectId}/versions`).set(me).send({ floorplan: plan(n), source: 'manual' })
       )
     )
-    assert.deepEqual(saves.map((r) => r.body.version.number).sort(), [2, 3, 4])
+    assert.deepEqual(saves.map((r) => r.body.version.number).sort(), [2, 3])
+
+    // Autosaves after a Save share one draft version, the newest replacing it.
+    for (const n of ['draft1', 'draft2', 'c']) {
+      const auto = await request(app).post(`/api/projects/${projectId}/versions`).set(me).send({ floorplan: plan(n), source: 'autosave' })
+      assert.equal(auto.status, 201)
+      assert.equal(auto.body.version.number, 4)
+    }
 
     const list = await request(app).get(`/api/projects/${projectId}/versions`).set(me)
     assert.deepEqual(list.body.versions.map((v) => v.number), [4, 3, 2, 1])
     assert.equal(list.body.versions[0].floorplan, undefined)
+    assert.equal(list.body.versions[0].source, 'autosave')
+    const draft = await request(app).get(`/api/projects/${projectId}/versions/4`).set(me)
+    assert.equal(draft.body.version.floorplan.floors[0].name, 'c')
 
     const one = await request(app).get(`/api/projects/${projectId}/versions/1`).set(me)
     assert.equal(one.body.version.floorplan.floors[0].name, 'first')
@@ -106,6 +116,10 @@ describe('projects', { skip: !hasDb }, () => {
     assert.equal(open.body.version, 5)
     assert.equal(open.body.floorplan.floors[0].name, 'first')
     assert.equal(open.body.project.versionCount, 5)
+
+    // After the restore, the next autosave starts a new draft.
+    const after = await request(app).post(`/api/projects/${projectId}/versions`).set(me).send({ floorplan: plan('d'), source: 'autosave' })
+    assert.equal(after.body.version.number, 6)
 
     assert.equal((await request(app).get(`/api/projects/${projectId}/versions/99`).set(me)).status, 404)
     const restoreSource = await request(app)

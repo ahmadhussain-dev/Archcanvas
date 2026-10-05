@@ -13,7 +13,8 @@ const projectVersionSchema = new mongoose.Schema(
     floorplan: { type: mongoose.Schema.Types.Mixed, required: true },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }
   },
-  { timestamps: { createdAt: true, updatedAt: false } }
+  // updatedAt moves when a newer autosave replaces an autosave draft.
+  { timestamps: true }
 )
 
 projectVersionSchema.index({ project: 1, number: -1 }, { unique: true })
