@@ -37,6 +37,8 @@ npm run seed -w @archcanvas/api                            # adds the default ma
 npm run make-admin -w @archcanvas/api -- you@example.com   # after signing up, makes you an admin
 ```
 
+Ask ArchCanvas (the AI panel in the editor) uses Google's free Gemini API. Get a key at https://aistudio.google.com/apikey, put it in `api/.env` as `AI_API_KEY=...` and restart the API. Without a key you can try the panel with `AI_PROVIDER=mock`, which gives fixed demo answers.
+
 ## API
 
 | Route | Who | What |
@@ -46,6 +48,7 @@ npm run make-admin -w @archcanvas/api -- you@example.com   # after signing up, m
 | `GET /api/auth/me` | logged in | The current user. |
 | `GET/POST /api/projects`, `GET/PATCH/DELETE /api/projects/:id` | owner | Projects with plot size, floors, roof height and requirements. |
 | `GET/POST /api/projects/:id/versions`, `GET .../versions/:n`, `POST .../versions/:n/restore` | owner | Saved plans (engine building JSON). Restoring copies an old version forward. |
+| `POST /api/projects/:id/ai` | owner | Ask ArchCanvas: `{ prompt, floorplan }` returns the AI's message and the checked changes (rooms inside the plot, no overlaps, minimum room sizes). Nothing is saved until the person applies them. |
 | `GET /api/projects/:id/estimate` | owner | Grey structure cost for the project. |
 | `GET /api/plots/presets`, `GET /api/rates`, `POST /api/estimate` | anyone | Marla presets, current prices and a quick estimate. |
 | `GET /api/admin/rates`, `PATCH /api/admin/rates/:id` | admin | Edit and verify material prices. |

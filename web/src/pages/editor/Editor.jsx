@@ -6,6 +6,7 @@ import { Monogram } from '../../components/Logo.jsx'
 import StatePanel from '../../components/StatePanel.jsx'
 import FullPageSpinner from '../../components/FullPageSpinner.jsx'
 import VersionsMenu from './VersionsMenu.jsx'
+import AskPanel from './AskPanel.jsx'
 import { api } from '../../lib/api.js'
 import { ftin, marla, timeAgo } from '../../lib/format.js'
 import { createEditorBridge } from './editorBridge.js'
@@ -75,6 +76,9 @@ export default function Editor() {
   const viewRef = useRef('2d')
   const [, tick] = useState(0)
   const saving = useRef(false)
+  const [askOpen, setAskOpen] = useState(false)
+  // While an AI change is shown but not yet applied, nothing is saved.
+  const [aiPreview, setAiPreview] = useState(false)
   const dirty = save.state === 'dirty' || save.state === 'error'
 
   useEffect(() => {
@@ -152,10 +156,10 @@ export default function Editor() {
 
   // Autosave once a minute while there are changes.
   useEffect(() => {
-    if (save.state !== 'dirty') return undefined
+    if (save.state !== 'dirty' || aiPreview) return undefined
     const t = setTimeout(() => saveNow('autosave'), AUTOSAVE_MS)
     return () => clearTimeout(t)
-  }, [save.state, saveNow])
+  }, [save.state, aiPreview, saveNow])
 
   // Keep "Saved 2 min ago" fresh, and warn before leaving with unsaved changes.
   useEffect(() => {
@@ -223,11 +227,22 @@ export default function Editor() {
           <span className="hidden md:block" aria-live="polite">
             <SaveStatus {...save} />
           </span>
-          <VersionsMenu projectId={id} disabled={editorState !== 'ready' || save.state === 'saving'} hasUnsaved={dirty} onRestored={restored} />
+          <Button
+            size="sm"
+            variant="ai"
+            icon="sparkle"
+            aria-expanded={askOpen}
+            aria-label="Ask ArchCanvas"
+            onClick={() => setAskOpen((open) => !open)}
+            disabled={editorState !== 'ready' || (askOpen && aiPreview)}
+          >
+            <span className="hidden lg:inline">Ask ArchCanvas</span>
+          </Button>
+          <VersionsMenu projectId={id} disabled={editorState !== 'ready' || save.state === 'saving' || aiPreview} hasUnsaved={dirty} onRestored={restored} />
           <Button as={Link} to={`/projects/${id}/estimate`} size="sm" icon="calc" className="hidden sm:inline-flex">
             Estimate
           </Button>
-          <Button size="sm" variant="navy" onClick={() => saveNow('manual')} disabled={editorState !== 'ready' || save.state === 'saving'}>
+          <Button size="sm" variant="navy" onClick={() => saveNow('manual')} disabled={editorState !== 'ready' || save.state === 'saving' || aiPreview}>
             {save.state === 'saving' ? 'Saving…' : 'Save'}
           </Button>
         </div>
@@ -240,6 +255,18 @@ export default function Editor() {
           className="absolute inset-0 size-full border-0"
           allow="fullscreen"
         />
+        {askOpen && editorState === 'ready' && (
+          <AskPanel
+            projectId={id}
+            bridge={bridge.current}
+            onClose={() => {
+              setAskOpen(false)
+              setAiPreview(false)
+            }}
+            onPreviewChange={setAiPreview}
+            onApplied={() => saveNow('ai')}
+          />
+        )}
         {editorState === 'starting' && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-white">
             <span className="size-8 animate-spin rounded-full border-[3px] border-line border-t-blueprint" />

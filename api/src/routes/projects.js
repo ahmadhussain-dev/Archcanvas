@@ -61,7 +61,7 @@ const listQuery = z.object({
 })
 
 // Loads a project that belongs to the logged-in user. Someone else's project is a 404, not a 403.
-async function ownProject(req) {
+export async function ownProject(req) {
   const { id } = req.params
   if (!mongoose.isValidObjectId(id)) throw notFoundError('Project not found')
   const project = await Project.findOne({ _id: id, owner: req.auth.userId })
