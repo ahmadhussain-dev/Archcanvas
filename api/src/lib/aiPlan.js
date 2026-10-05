@@ -77,6 +77,7 @@ Rules:
   It replaces the room's old furniture. When asked to furnish or style the whole house, furnish every room. Use add_furniture only for extra single pieces.
 - Order the operations: rooms first, then doors and windows, then furnish_room, then floors and paint.
 - Do not put rooms or furniture over the stairs ("stairs" in the plan).
+- On an upper floor ("floorBelow" is in the plan), build over the floor below: keep rooms inside floorBelow.outline (a balcony may stick out a little at the front), put this floor's staircase room exactly over floorBelow.stairs, and put bathrooms over bathrooms below where you can. Leave a car porch's roof open or make it a terrace.
 - If a request cannot fit (for example 5 bedrooms on a 2 Marla plot), do not squeeze rooms below the minimums. Refuse, or do the best fit and say what you left out and why.
 - Only use the operations, floor ids and furniture types listed here. Refer to existing rooms by their id; refer to rooms you add in this answer by their name.
 - Keep "message" short and friendly (1 to 3 sentences, plain English).
