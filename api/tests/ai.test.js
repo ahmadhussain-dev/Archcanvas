@@ -55,6 +55,30 @@ describe('plan summary', () => {
     assert.equal(kitchen.kind, 'kitchen')
   })
 
+  test('a plot smaller than the house still frames the whole house', () => {
+    const plan = building()
+    const plot = plan.floorplan.floor.rooms[0]
+    Object.assign(plot, { width: 3, depth: 3 })
+    const summary = summarizePlan(plan)
+    assert.ok(summary.plot.width >= 15 && summary.plot.depth >= 15)
+    const { operations, skipped } = checkOperations(plan, [{ op: 'add_room', name: 'Bedroom 1', x: 0, y: 0, width: 11, depth: 12 }])
+    assert.equal(operations.length, 0)
+    assert.match(skipped[0].reason, /overlap Lounge/)
+  })
+
+  test('an upper floor sees the outline and stairs of the floor below', () => {
+    const plan = building()
+    plan.floorplan.floors.push({ id: 'floor_2', name: 'First', level: 1 })
+    plan.floorplan.currentFloorId = 'floor_2'
+    plan.floorplan.stairs = [{ id: 's1', x: r3(-12.5 * FT + 2 * FT), z: r3(22.5 * FT - 6 * FT), width: r3(3 * FT), depth: r3(10 * FT), rotation: 0, floorId: 'floor_1' }]
+    const summary = summarizePlan(plan)
+    assert.deepEqual(summary.rooms, [])
+    assert.deepEqual(summary.plot, { width: 25, depth: 45 })
+    assert.deepEqual(summary.floorBelow.outline, { x: 0, y: 0, width: 15, depth: 15 })
+    assert.deepEqual(summary.floorBelow.stairs, [{ x: 0.5, y: 1, width: 3, depth: 10 }])
+    assert.equal(summarizePlan(building()).floorBelow, undefined)
+  })
+
   test('feet to metres puts the room centre in the right place', () => {
     const frame = planFrame(building().floorplan)
     const world = toWorld(frame, { x: 15, y: 0, width: 10, depth: 12 })

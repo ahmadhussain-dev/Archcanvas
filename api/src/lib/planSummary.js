@@ -50,13 +50,15 @@ function worldBox(room) {
 }
 
 /**
- * The frame that maps plan feet to editor metres: the plot's box, or the box
- * around all rooms when there is no plot.
+ * The frame that maps plan feet to editor metres: the plot's box, grown to
+ * take in any room (on any floor) that sticks out of it, or the box around
+ * all rooms when there is no plot. A plot that was shrunk by mistake must not
+ * make every room look like it is outside.
  */
 export function planFrame(floorplan) {
   const rooms = floorplan.floor?.rooms ?? []
   const plot = rooms.find((room) => room.id === 'plot')
-  const boxes = plot ? [worldBox(plot)] : rooms.filter(isRect).map(worldBox)
+  const boxes = rooms.filter((room) => room === plot || isRect(room)).map(worldBox)
   if (!boxes.length) return { minX: 0, maxZ: 0, widthFt: null, depthFt: null, hasPlot: false }
   const minX = Math.min(...boxes.map((b) => b.minX))
   const maxX = Math.max(...boxes.map((b) => b.maxX))
@@ -120,16 +122,38 @@ export function summarizePlan(building) {
   const walls = new Map((floorplan.walls ?? []).map((wall) => [wall.id, wall]))
   const rooms = (floorplan.floor?.rooms ?? []).filter((room) => room.id !== 'plot' && onFloor(room))
   const items = (floorplan.items ?? []).filter(onFloor)
+  const stairsOf = (entities) => entities.map((stairs) => {
+    const turned = Math.round((Number(stairs.rotation) || 0) / (Math.PI / 2)) % 2 !== 0
+    return fromWorld(frame, turned ? { ...stairs, width: stairs.depth, depth: stairs.width } : stairs)
+  })
+
+  // On an upper floor the rooms go over the floor below, so the AI sees its outline and stairs.
+  const levels = [...(floorplan.floors ?? [])].sort((a, b) => Number(a.level || 0) - Number(b.level || 0))
+  const below = levels[levels.findIndex((f) => f.id === floorId) - 1]
+  let floorBelow = null
+  if (below) {
+    const onBelow = (entity) => (entity.floorId ?? 'floor_1') === below.id
+    const belowRooms = (floorplan.floor?.rooms ?? []).filter((room) => room.id !== 'plot' && onBelow(room) && isRect(room))
+    if (belowRooms.length) {
+      const rects = belowRooms.map((room) => fromWorld(frame, room))
+      const x = Math.min(...rects.map((r) => r.x))
+      const y = Math.min(...rects.map((r) => r.y))
+      floorBelow = {
+        name: below.name ?? 'Ground',
+        outline: { x, y, width: round1(Math.max(...rects.map((r) => r.x + r.width)) - x), depth: round1(Math.max(...rects.map((r) => r.y + r.depth)) - y) },
+        rooms: belowRooms.map((room, i) => ({ name: room.name || 'Room', ...rects[i] })),
+        stairs: stairsOf((floorplan.stairs ?? []).filter(onBelow))
+      }
+    }
+  }
 
   return {
     units: 'feet',
     floor: floor?.name ?? 'Ground',
     plot: frame.hasPlot ? { width: frame.widthFt, depth: frame.depthFt } : null,
     wallThicknessFt: Math.round((Number(floorplan.wallThickness) || 0.23) / FT * 100) / 100,
-    stairs: (floorplan.stairs ?? []).filter(onFloor).map((stairs) => {
-      const turned = Math.round((Number(stairs.rotation) || 0) / (Math.PI / 2)) % 2 !== 0
-      return fromWorld(frame, turned ? { ...stairs, width: stairs.depth, depth: stairs.width } : stairs)
-    }),
+    stairs: stairsOf((floorplan.stairs ?? []).filter(onFloor)),
+    ...(floorBelow ? { floorBelow } : {}),
     rooms: rooms.map((room) => {
       const roomWalls = Object.values(room.wallIds ?? {}).map((id) => walls.get(id)).filter(Boolean)
       const openings = (floorplan.openings ?? [])
