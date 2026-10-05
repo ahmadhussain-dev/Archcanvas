@@ -128,6 +128,18 @@ export function mockProvider() {
         operations: rooms.map((room) => ({ op: 'furnish_room', room: room.id }))
       })
     }
+    if (/terrace|balcony/.test(request) && summary.floorBelow) {
+      const below = summary.floorBelow.outline
+      const name = 'Front Terrace'
+      return JSON.stringify({
+        message: `Added a 5 ft front terrace over the street, with a door from the house and a waist-high parapet. This is the demo AI; add AI_API_KEY for real answers.`,
+        operations: [
+          { op: 'add_room', name, x: below.x, y: below.y + below.depth, width: below.width, depth: 5 },
+          { op: 'add_door', room: name, side: 'top' },
+          { op: 'furnish_room', room: name }
+        ]
+      })
+    }
     if (/\b(floor|house|layout|design|plan)\b/.test(request)) {
       const upstairs = !!summary.floorBelow
       const rooms = upstairs

@@ -55,6 +55,8 @@ export const FURNITURE = {
 
 const SIDES = ['top', 'right', 'bottom', 'left']
 const TOLERANCE = 0.05 // feet
+// How far an upstairs terrace or balcony may stick out past the front of the plot.
+export const MAX_OVERHANG_FT = 5
 
 // Room kinds (planSummary.js) whose minimum is another kind's.
 const RULE_FOR_KIND = { lounge: 'drawing room', dining: 'dining room', laundry: 'store' }
@@ -85,7 +87,8 @@ Rules:
   It replaces the room's old furniture. When asked to furnish or style the whole house, furnish every room. Use add_furniture only for extra single pieces.
 - Order the operations: rooms first, then doors and windows, then furnish_room, then floors and paint.
 - Do not put rooms or furniture over the stairs ("stairs" in the plan).
-- On an upper floor ("floorBelow" is in the plan), build over the floor below: keep rooms inside floorBelow.outline (a balcony may stick out a little at the front), put this floor's staircase room exactly over floorBelow.stairs, and put bathrooms over bathrooms below where you can. Leave a car porch's roof open or make it a terrace.
+- A room named Terrace or Balcony is open to the sky: it gets no roof and a waist-high parapet instead of full walls (a wall it shares with an indoor room stays full height, so give that wall a door).
+- On an upper floor ("floorBelow" is in the plan), build over the floor below: keep rooms inside floorBelow.outline (a terrace or balcony may stick out up to ${MAX_OVERHANG_FT} ft past the front of the plot, over the street), put this floor's staircase room exactly over floorBelow.stairs, and put bathrooms over bathrooms below where you can. Leave a car porch's roof open or make it a terrace.
 - If a request cannot fit (for example 5 bedrooms on a 2 Marla plot), do not squeeze rooms below the minimums. Refuse, or do the best fit and say what you left out and why.
 - Only use the operations, floor ids and furniture types listed here. Refer to existing rooms by their id; refer to rooms you add in this answer by their name.
 - Keep "message" short and friendly (1 to 3 sentences, plain English).
@@ -190,9 +193,15 @@ export function checkOperations(building, rawOperations, { idPrefix = `ai${Date.
   }
 
   // Why a room rectangle is not allowed, or null.
+  // Upstairs, a terrace or balcony may stick out over the street at the front.
+  const levels = [...(floorplan.floors ?? [])].sort((a, b) => Number(a.level || 0) - Number(b.level || 0))
+  const upstairs = levels.findIndex((f) => f.id === floorId) > 0
+  const overhang = (name) => (upstairs && roomKind(name) === 'terrace' ? MAX_OVERHANG_FT : 0)
+
   const problem = (name, rect, selfId) => {
     if (frame.hasPlot && (rect.x < -TOLERANCE || rect.y < -TOLERANCE ||
-        rect.x + rect.width > frame.widthFt + TOLERANCE || rect.y + rect.depth > frame.depthFt + TOLERANCE)) {
+        rect.x + rect.width > frame.widthFt + TOLERANCE || rect.y + rect.depth > frame.depthFt + overhang(name) + TOLERANCE)) {
+      if (overhang(name)) return `${name} would stick out more than ${MAX_OVERHANG_FT} ft past the front of the plot, or past its sides.`
       return `${name} would go outside the ${fmt(frame.widthFt)} x ${fmt(frame.depthFt)} ft plot.`
     }
     const rule = minSizeFor(name)

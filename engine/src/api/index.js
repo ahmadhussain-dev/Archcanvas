@@ -209,7 +209,9 @@ export {
 
 export {
   BabylonSceneRenderer,
-  isNoCeilingRoom
+  isNoCeilingRoom,
+  isParapetWall,
+  PARAPET_HEIGHT
 } from '../runtime/BabylonSceneRenderer.js';
 
 export {

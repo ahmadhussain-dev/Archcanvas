@@ -49,6 +49,23 @@ export function isNoCeilingRoom(room) {
   return false;
 }
 
+// Height of the low wall round a terrace or balcony.
+export const PARAPET_HEIGHT = 1.0;
+
+/**
+ * A wall that only bounds open-air rooms (terrace, balcony) and has no door or
+ * window is a parapet: waist high, so the terrace is open to the sky and the
+ * view. A wall shared with an indoor room stays full height.
+ */
+export function isParapetWall(floorplan, wall) {
+  const floorId = wall.floorId ?? DEFAULT_FLOOR_ID;
+  const rooms = (floorplan.floor?.rooms || []).filter((room) => room.id !== 'plot'
+    && (room.floorId ?? DEFAULT_FLOOR_ID) === floorId
+    && Object.values(room.wallIds || {}).includes(wall.id));
+  if (!rooms.length || !rooms.every(isNoCeilingRoom)) return false;
+  return !(floorplan.openings || []).some((opening) => opening.wallId === wall.id);
+}
+
 function getWallSurfaceFields(side, component = 'main') {
   return MaterialResolver.getWallSurfaceFields(side, component);
 }
@@ -1477,6 +1494,8 @@ export class BabylonSceneRenderer {
       let H = this.document.getFloorWallRenderHeight(wall.floorId);
       if (wallFloor && wallFloor.hideWall) {
         H = 0.2;
+      } else if (isParapetWall(this.floorplan, wall)) {
+        H = Math.min(H, PARAPET_HEIGHT);
       }
       const floorY = this.document.getFloorElevation(wall.floorId);
       const wallBaseY = floorY + this.document.getWallElevationOffset(wall.id);

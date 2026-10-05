@@ -196,6 +196,23 @@ describe('checking AI changes', () => {
     assert.equal(minSizeFor('Master Bath').kind, 'bathroom')
   })
 
+  test('an upstairs terrace may stick out up to 5 ft past the front of the plot', () => {
+    const plan = building()
+    plan.floorplan.floors.push({ id: 'floor_2', name: 'First', level: 1 })
+    plan.floorplan.currentFloorId = 'floor_2'
+    const { operations, skipped } = checkOperations(plan, [
+      { op: 'add_room', name: 'Front Terrace', x: 0, y: 45, width: 25, depth: 5 },
+      { op: 'add_room', name: 'Balcony', x: 0, y: 45, width: 10, depth: 7 },
+      { op: 'add_room', name: 'Bedroom 2', x: 10, y: 45, width: 12, depth: 5 }
+    ])
+    assert.deepEqual(operations.map((o) => o.name), ['Front Terrace'])
+    assert.match(skipped[0].reason, /more than 5 ft past the front/)
+    assert.match(skipped[1].reason, /outside the 25 x 45 ft plot/)
+    // Not on the ground floor.
+    const ground = checkOperations(building(), [{ op: 'add_room', name: 'Terrace', x: 0, y: 45, width: 25, depth: 5 }])
+    assert.equal(ground.operations.length, 0)
+  })
+
   test('a door can be put at a set spot', () => {
     const { operations } = checkOperations(building(), [{ op: 'add_door', room: 'room_1', side: 'bottom', at: 4 }])
     assert.equal(operations[0].at, r3(-12.5 * FT + 4 * FT))
