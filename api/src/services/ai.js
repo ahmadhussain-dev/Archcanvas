@@ -31,17 +31,34 @@ export function aiError(status, message, model) {
     const suggested = message.match(/use (?:models\/)?([\w.-]+)/i)?.[1] ?? DEFAULT_MODEL
     return new HttpError(502, `The AI model "${model}" is not available. Set AI_MODEL=${suggested} in api/.env and restart the API.`)
   }
+  if (status >= 500) {
+    return new HttpError(503, 'The AI is busy right now (Google reports high demand). Wait a minute and try again.')
+  }
   return new HttpError(502, `The AI service did not answer properly${message ? ` (${message.slice(0, 200)})` : ''}. Try again.`)
 }
 
-export function openAiCompatibleProvider({ apiKey, baseUrl = DEFAULT_BASE_URL, model = DEFAULT_MODEL, timeoutMs = 60_000 }) {
-  return async function ask(messages) {
+// Busy or failing servers (5xx) usually recover within seconds, so those
+// are retried, then each fallback model is tried in turn.
+const RETRY_DELAYS_MS = [1500, 4000]
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
+
+export function openAiCompatibleProvider({
+  apiKey,
+  baseUrl = DEFAULT_BASE_URL,
+  model = DEFAULT_MODEL,
+  fallbackModels = [],
+  timeoutMs = 60_000,
+  retryDelaysMs = RETRY_DELAYS_MS
+}) {
+  const url = new URL('chat/completions', baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`)
+
+  async function call(messages, modelName) {
     let res
     try {
-      res = await fetch(new URL('chat/completions', baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`), {
+      res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-        body: JSON.stringify({ model, messages, temperature: 0.3, response_format: { type: 'json_object' } }),
+        body: JSON.stringify({ model: modelName, messages, temperature: 0.3, response_format: { type: 'json_object' } }),
         signal: AbortSignal.timeout(timeoutMs)
       })
     } catch (err) {
@@ -50,11 +67,29 @@ export function openAiCompatibleProvider({ apiKey, baseUrl = DEFAULT_BASE_URL, m
     }
     if (!res.ok) {
       const detail = await res.text().catch(() => '')
-      console.error(`AI request failed (${res.status}): ${detail.slice(0, 500)}`)
-      throw aiError(res.status, providerMessage(detail), model)
+      console.error(`AI request failed (${res.status}, ${modelName}): ${detail.slice(0, 500)}`)
+      const error = aiError(res.status, providerMessage(detail), modelName)
+      error.retryable = res.status >= 500
+      throw error
     }
     const data = await res.json()
     return data?.choices?.[0]?.message?.content ?? ''
+  }
+
+  return async function ask(messages) {
+    let lastError
+    for (const modelName of [model, ...fallbackModels]) {
+      for (let attempt = 0; attempt <= retryDelaysMs.length; attempt += 1) {
+        try {
+          return await call(messages, modelName)
+        } catch (err) {
+          lastError = err
+          if (!err.retryable) throw err
+          if (attempt < retryDelaysMs.length) await sleep(retryDelaysMs[attempt])
+        }
+      }
+    }
+    throw lastError
   }
 }
 
@@ -100,6 +135,7 @@ export function providerFromEnv(env = process.env) {
   return openAiCompatibleProvider({
     apiKey: env.AI_API_KEY,
     baseUrl: env.AI_BASE_URL || DEFAULT_BASE_URL,
-    model: env.AI_MODEL || DEFAULT_MODEL
+    model: env.AI_MODEL || DEFAULT_MODEL,
+    fallbackModels: (env.AI_FALLBACK_MODELS || '').split(',').map((name) => name.trim()).filter(Boolean)
   })
 }
