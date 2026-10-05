@@ -10,11 +10,12 @@ export function createEditorBridge(iframe, handlers) {
     if (event.origin !== window.location.origin || event.source !== iframe.contentWindow) return
     const msg = event.data
     if (!msg || msg.source !== SOURCE) return
-    if (msg.type === 'snapshot' || (msg.type === 'error' && msg.requestId)) {
+    if (msg.type === 'snapshot' || msg.type === 'aiPreviewed' || (msg.type === 'error' && msg.requestId)) {
       const p = pending.get(msg.requestId)
       if (!p) return
       pending.delete(msg.requestId)
       if (msg.type === 'snapshot') p.resolve(msg.building)
+      else if (msg.type === 'aiPreviewed') p.resolve({ applied: msg.applied, skipped: msg.skipped })
       else p.reject(new Error(msg.message))
       return
     }
@@ -23,6 +24,17 @@ export function createEditorBridge(iframe, handlers) {
   window.addEventListener('message', onMessage)
 
   const post = (type, data = {}) => iframe.contentWindow?.postMessage({ source: SOURCE, type, ...data }, window.location.origin)
+
+  function request(type, data, timeoutMs, timeoutMessage) {
+    const requestId = nextId++
+    return new Promise((resolve, reject) => {
+      pending.set(requestId, { resolve, reject })
+      post(type, { requestId, ...data })
+      setTimeout(() => {
+        if (pending.delete(requestId)) reject(new Error(timeoutMessage))
+      }, timeoutMs)
+    })
+  }
 
   return {
     load(data) {
@@ -34,14 +46,22 @@ export function createEditorBridge(iframe, handlers) {
     },
     // Resolves with the current building file (a JSON string).
     snapshot(name, timeoutMs = 15000) {
-      const requestId = nextId++
-      return new Promise((resolve, reject) => {
-        pending.set(requestId, { resolve, reject })
-        post('snapshot', { requestId, name })
-        setTimeout(() => {
-          if (pending.delete(requestId)) reject(new Error('The editor did not answer. Try saving again.'))
-        }, timeoutMs)
-      })
+      return request('snapshot', { name }, timeoutMs, 'The editor did not answer. Try saving again.')
+    },
+    // Ask ArchCanvas: show AI changes in the editor as one undoable step.
+    // Resolves with { applied, skipped } (each { label, reason? }).
+    aiPreview(operations, timeoutMs = 30000) {
+      return request('aiPreview', { operations }, timeoutMs, 'The editor did not answer. Try again.')
+    },
+    // 'before' or 'after', while a preview is open
+    aiShow(which) {
+      post('aiShow', { which })
+    },
+    aiAccept() {
+      post('aiAccept')
+    },
+    aiReject() {
+      post('aiReject')
     },
     dispose() {
       window.removeEventListener('message', onMessage)

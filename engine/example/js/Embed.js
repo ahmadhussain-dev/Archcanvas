@@ -9,8 +9,13 @@
  * Messages (same origin only), all tagged with source 'archcanvas':
  *   editor -> app : ready | loaded | changed | snapshot {requestId, building} | error {message}
  *   app -> editor : load {building, plot, name} | snapshot {requestId} | view {view: '2d'|'3d'|'split'}
+ *
+ * Ask ArchCanvas (AI changes, see src/ai/applyAiPlan.js):
+ *   app -> editor : aiPreview {requestId, operations} | aiShow {which: 'before'|'after'} | aiAccept | aiReject
+ *   editor -> app : aiPreviewed {requestId, applied, skipped} | error {requestId, message}
+ * A preview is one undo step. Rejecting it puts the plan back as it was.
  */
-import { FloorplanDocument, stringifyBuildingFile } from '../../src/index.js';
+import { FloorplanDocument, stringifyBuildingFile, applyAiOperations } from '../../src/index.js';
 import { initDisplayUnits } from './Units.js';
 import { initSplitView, setEmbedView } from './SplitView.js';
 import { initStatusBar } from './StatusBar.js';
@@ -77,6 +82,8 @@ export function initEmbedBridge({ testMap, store, loadBuildingText }) {
   initSplitView(window.appState, store);
   initStatusBar(window.appState, store);
   let listening = false;
+  // The AI change being previewed: plans before and after, and its undo entry.
+  let aiPreview = null;
 
   const post = (type, data = {}) => window.parent.postMessage({ source: SOURCE, type, ...data }, window.location.origin);
 
@@ -91,6 +98,7 @@ export function initEmbedBridge({ testMap, store, loadBuildingText }) {
 
     if (msg.type === 'load') {
       listening = false;
+      aiPreview = null;
       try {
         const text = msg.building
           ? (typeof msg.building === 'string' ? msg.building : JSON.stringify(msg.building))
@@ -110,6 +118,40 @@ export function initEmbedBridge({ testMap, store, loadBuildingText }) {
     }
 
     if (msg.type === 'view') setEmbedView(msg.view);
+
+    if (msg.type === 'aiPreview') {
+      try {
+        const before = store.snapshot();
+        const { floorplan, applied, skipped } = applyAiOperations(before, msg.operations || []);
+        if (applied.length) {
+          store.pushHistory();
+          store.restoreSnapshot(floorplan);
+          aiPreview = { before, after: store.snapshot(), entry: store.undoStack[store.undoStack.length - 1], showing: 'after' };
+        }
+        post('aiPreviewed', { requestId: msg.requestId, applied, skipped });
+      } catch (error) {
+        console.error(error);
+        post('error', { requestId: msg.requestId, message: 'The editor could not apply these changes.' });
+      }
+    }
+
+    if (msg.type === 'aiShow' && aiPreview && msg.which !== aiPreview.showing) {
+      aiPreview.showing = msg.which === 'before' ? 'before' : 'after';
+      store.restoreSnapshot(aiPreview[aiPreview.showing]);
+    }
+
+    if ((msg.type === 'aiAccept' || msg.type === 'aiReject') && aiPreview) {
+      const preview = aiPreview;
+      aiPreview = null;
+      if (msg.type === 'aiAccept') {
+        if (preview.showing !== 'after') store.restoreSnapshot(preview.after);
+      } else {
+        store.restoreSnapshot(preview.before);
+        // Drop the preview's undo step if nothing was done on top of it.
+        if (store.undoStack[store.undoStack.length - 1] === preview.entry) store.undoStack.pop();
+        store.emit('historyChanged');
+      }
+    }
 
     if (msg.type === 'snapshot') {
       try {

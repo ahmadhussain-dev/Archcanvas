@@ -74,6 +74,10 @@ export {
 } from '../domain/MaterialResolver.js';
 
 export {
+  applyAiOperations
+} from '../ai/applyAiPlan.js';
+
+export {
   createFlatMaterial,
   createBlueprintMaterial,
   createMaterialPalette
