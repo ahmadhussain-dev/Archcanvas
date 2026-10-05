@@ -64,51 +64,64 @@ function buildSolidStairsBaseMesh(registry, group, stairs, sideMaterial, width, 
   const halfW = width / 2;
   const halfD = depth / 2;
 
-  // 1.  ：  (X = +halfW)     (X = -halfW)
+  // The flight sits on a sloping concrete waist slab, like a real staircase:
+  // the sides are saw-toothed above a straight underside, so the space under
+  // the stairs stays open and people can walk below.
+  const slope = height / depth;
+  const waist = Math.max(treadThickness + 0.05, 0.15 * Math.hypot(1, slope));
+  const under = (z) => Math.max(0, slope * (z + halfD) - waist);
+
+  // 1. Sides (X = +halfW and X = -halfW), one piece per step.
   for (let i = 0; i < steps; i++) {
     const z0 = -halfD + i * stepDepth;
     const z1 = -halfD + (i + 1) * stepDepth;
-    const y0 = 0;
-    const y1 = (i + 1) * stepHeight - treadThickness;
-    if (y1 <= 0.0001) continue;
+    const top = (i + 1) * stepHeight - treadThickness;
+    const b0 = under(z0);
+    const b1 = under(z1);
+    if (top <= Math.max(b0, b1) + 0.0001) continue;
 
-    //   (X = +halfW,   +X)
     addQuad(
-      [halfW, y0, z0],
-      [halfW, y0, z1],
-      [halfW, y1, z1],
-      [halfW, y1, z0],
-      [z0, y0], [z1, y0], [z1, y1], [z0, y1]
+      [halfW, b0, z0],
+      [halfW, b1, z1],
+      [halfW, top, z1],
+      [halfW, top, z0],
+      [z0, b0], [z1, b1], [z1, top], [z0, top]
     );
-
-    //   (X = -halfW,   -X)
     addQuad(
-      [-halfW, y0, z1],
-      [-halfW, y0, z0],
-      [-halfW, y1, z0],
-      [-halfW, y1, z1],
-      [z1, y0], [z0, y0], [z0, y1], [z1, y1]
+      [-halfW, b1, z1],
+      [-halfW, b0, z0],
+      [-halfW, top, z0],
+      [-halfW, top, z1],
+      [z1, b1], [z0, b0], [z0, top], [z1, top]
     );
   }
 
-  // 2.   (Y = 0,   -Y)
-  addQuad(
-    [-halfW, 0, -halfD],
-    [halfW, 0, -halfD],
-    [halfW, 0, halfD],
-    [-halfW, 0, halfD],
-    [0, 0], [width, 0], [width, depth], [0, depth]
-  );
-
-  // 3.   (Z = +halfD,   +Z)
-  const maxH = height - treadThickness;
-  if (maxH > 0.0001) {
+  // 2. Underside: flat on the floor at the start, then the sloping soffit.
+  const zKink = Math.min(halfD, -halfD + waist / slope);
+  const soffit = [[-halfD, 0], [zKink, 0], [halfD, under(halfD)]];
+  for (let k = 0; k < soffit.length - 1; k++) {
+    const [za, ya] = soffit[k];
+    const [zb, yb] = soffit[k + 1];
+    if (zb - za < 0.0001) continue;
     addQuad(
-      [halfW, 0, halfD],
-      [-halfW, 0, halfD],
+      [-halfW, ya, za],
+      [halfW, ya, za],
+      [halfW, yb, zb],
+      [-halfW, yb, zb],
+      [0, za], [width, za], [width, zb], [0, zb]
+    );
+  }
+
+  // 3. Top end (Z = +halfD), from the soffit up to the last step.
+  const maxH = height - treadThickness;
+  const endBottom = under(halfD);
+  if (maxH > endBottom + 0.0001) {
+    addQuad(
+      [halfW, endBottom, halfD],
+      [-halfW, endBottom, halfD],
       [-halfW, maxH, halfD],
       [halfW, maxH, halfD],
-      [0, 0], [width, 0], [width, maxH], [0, maxH]
+      [0, endBottom], [width, endBottom], [width, maxH], [0, maxH]
     );
   }
 
