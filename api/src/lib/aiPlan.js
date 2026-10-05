@@ -7,7 +7,7 @@
 // read. What passes is converted to editor operations in metres
 // (engine/src/ai/applyAiPlan.js).
 import { z } from 'zod'
-import { planFrame, floorplanOf, fromWorld, toWorld } from './planSummary.js'
+import { planFrame, floorplanOf, fromWorld, toWorld, ROOM_KINDS, roomKind } from './planSummary.js'
 
 // Smallest clear inside size (between wall faces) for each kind of room, in
 // feet as [short side, long side]. Pakistani house planning rules of thumb.
@@ -70,7 +70,13 @@ Neighbouring rooms share an edge (one room's x + width equals the next room's x)
 Rules:
 - Rooms must stay inside the plot and must never overlap other rooms. Leave the plot boundary itself alone.
 - Respect minimum clear inside sizes (feet): ${MIN_ROOM_SIZES.map((r) => `${r.kind} ${r.min[0]}x${r.min[1]}`).join(', ')}.
-- Use the space sensibly: a car porch at the front (bottom of the plan) when asked, bathrooms next to bedrooms, kitchen near dining.
+- Use the space sensibly: the front of the house is the bottom of the plan. Car porch at the front with the main gate, the main entrance door from the porch or front into the lounge or drawing room, bathrooms next to bedrooms (attached baths open from the bedroom), kitchen next to the dining area or lounge.
+- Every room needs a door. Each room's "openings" says where its doors lead ("door bottom to TV Lounge", "door right to outside"). A bedroom, kitchen or bathroom door should lead into the lounge, a corridor or its bedroom, not outside. Add missing doors before furnishing.
+- To furnish, decorate, style or "complete" a room, use furnish_room. It installs the complete, properly arranged set for the room's kind, sized to the room and kept clear of its doors, windows and stairs:
+  kitchen: counter with sink (under the window), cooking range, cabinets, fridge, microwave, cooker hood; bathroom: shower, commode, wash basin with mirror, towel rail; bedroom: bed with two side tables, wardrobe, dressing table, AC (and a study desk when large); lounge: sofas facing a TV unit with TV, centre table, rug, AC; drawing room: sofa set, centre table, showcase; dining: table with chairs, sideboard; car porch: kept clear for the car, planters, shoe rack.
+  It replaces the room's old furniture. When asked to furnish or style the whole house, furnish every room. Use add_furniture only for extra single pieces.
+- Order the operations: rooms first, then doors and windows, then furnish_room, then floors and paint.
+- Do not put rooms or furniture over the stairs ("stairs" in the plan).
 - If a request cannot fit (for example 5 bedrooms on a 2 Marla plot), do not squeeze rooms below the minimums. Refuse, or do the best fit and say what you left out and why.
 - Only use the operations, floor ids and furniture types listed here. Refer to existing rooms by their id; refer to rooms you add in this answer by their name.
 - Keep "message" short and friendly (1 to 3 sentences, plain English).
@@ -82,6 +88,7 @@ Operations:
 {"op":"set_floor","room":"<id>","material":"<floor id>"}
 {"op":"paint_walls","room":"<id>","color":"#rrggbb"}
 {"op":"add_furniture","room":"<id>","type":"<furniture type>","count":1}   (placed automatically along the walls)
+{"op":"furnish_room","room":"<id>"}   (add "as":"<kind>" when the name does not say the kind; kinds: ${ROOM_KINDS.map(([kind]) => kind).join(', ')})
 {"op":"remove_furniture","room":"<id>","type":"<furniture type, or omit for all>"}
 {"op":"add_door","room":"<id>","side":"top|right|bottom|left"}
 {"op":"add_window","room":"<id>","side":"top|right|bottom|left"}
@@ -127,6 +134,7 @@ const opSchemas = {
   set_floor: z.object({ room: z.string(), material: z.enum(Object.keys(FLOOR_MATERIALS)) }),
   paint_walls: z.object({ room: z.string(), color: z.string().regex(/^#[0-9a-fA-F]{6}$/) }),
   add_furniture: z.object({ room: z.string(), type: z.enum(Object.keys(FURNITURE)), count: z.coerce.number().int().min(1).max(8).optional() }),
+  furnish_room: z.object({ room: z.string(), as: z.enum(ROOM_KINDS.map(([kind]) => kind)).optional() }),
   remove_furniture: z.object({ room: z.string(), type: z.enum(Object.keys(FURNITURE)).optional() }),
   add_door: z.object({ room: z.string(), side: z.enum(SIDES) }),
   add_window: z.object({ room: z.string(), side: z.enum(SIDES) })
@@ -249,6 +257,15 @@ export function checkOperations(building, rawOperations, { idPrefix = `ai${Date.
       case 'add_furniture': {
         const count = op.count ?? 1
         operations.push({ op: 'add_furniture', room: room.id, type: op.type, count, label: `Add ${count > 1 ? `${count} x ` : ''}${FURNITURE[op.type]} to ${room.name}` })
+        break
+      }
+      case 'furnish_room': {
+        const kind = op.as ?? roomKind(room.name)
+        if (!kind) {
+          skipped.push({ label: `Furnish ${room.name}`, reason: `ArchCanvas does not know what kind of room "${room.name}" is. Rename it (for example Bedroom 2 or Kitchen) and ask again.` })
+          break
+        }
+        operations.push({ op: 'furnish_room', room: room.id, kind, label: `Furnish ${room.name} as a ${kind}` })
         break
       }
       case 'remove_furniture':

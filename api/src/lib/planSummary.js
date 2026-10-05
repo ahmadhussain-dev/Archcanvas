@@ -18,6 +18,26 @@ export function floorplanOf(building) {
   throw new Error('Not a building file')
 }
 
+// Kinds of room ArchCanvas can furnish with a full set (engine/src/ai/roomKits.js).
+export const ROOM_KINDS = [
+  ['staircase', /stair/i],
+  ['bathroom', /bath|wash\s*room|toilet|\bwc\b|powder|rest\s*room/i],
+  ['kitchen', /kitchen/i],
+  ['dining', /dining/i],
+  ['car porch', /porch|garage|parking|\bcar\b/i],
+  ['servant room', /servant|maid|driver/i],
+  ['laundry', /laundry/i],
+  ['store', /store|pantry/i],
+  ['study', /study|office|library/i],
+  ['lounge', /\btv\b|lounge|living|family|sitting/i],
+  ['drawing room', /drawing|baithak/i],
+  ['bedroom', /bed\s*room|master|guest|kids?\b|children|nursery/i]
+]
+
+export function roomKind(name) {
+  return ROOM_KINDS.find(([, match]) => match.test(String(name || '')))?.[0] ?? null
+}
+
 const isRect = (room) => (room.shape ?? 'square') === 'square' && !Number(room.rotation)
 
 function worldBox(room) {
@@ -77,6 +97,19 @@ const inRoom = (room, x, z) => {
   return x >= b.minX && x <= b.maxX && z >= b.minZ && z <= b.maxZ
 }
 
+// Where an opening leads: the room on the other side of its wall, or outside.
+function leadsTo(room, wall, opening, others) {
+  const [x1, z1] = wall.from
+  const [x2, z2] = wall.to
+  const x = x1 + (x2 - x1) * opening.t
+  const z = z1 + (z2 - z1) * opening.t
+  const horizontal = Math.abs(z2 - z1) < Math.abs(x2 - x1)
+  const out = horizontal ? [0, z > room.z ? 1 : -1] : [x > room.x ? 1 : -1, 0]
+  const probe = { x: x + out[0] * 0.6, z: z + out[1] * 0.6 }
+  const other = others.find((candidate) => candidate.id !== room.id && isRect(candidate) && inRoom(candidate, probe.x, probe.z))
+  return other ? other.name || 'Room' : 'outside'
+}
+
 /** The current floor as the AI sees it. */
 export function summarizePlan(building) {
   const floorplan = floorplanOf(building)
@@ -93,17 +126,27 @@ export function summarizePlan(building) {
     floor: floor?.name ?? 'Ground',
     plot: frame.hasPlot ? { width: frame.widthFt, depth: frame.depthFt } : null,
     wallThicknessFt: Math.round((Number(floorplan.wallThickness) || 0.23) / FT * 100) / 100,
+    stairs: (floorplan.stairs ?? []).filter(onFloor).map((stairs) => {
+      const turned = Math.round((Number(stairs.rotation) || 0) / (Math.PI / 2)) % 2 !== 0
+      return fromWorld(frame, turned ? { ...stairs, width: stairs.depth, depth: stairs.width } : stairs)
+    }),
     rooms: rooms.map((room) => {
       const roomWalls = Object.values(room.wallIds ?? {}).map((id) => walls.get(id)).filter(Boolean)
       const openings = (floorplan.openings ?? [])
         .filter((o) => roomWalls.some((w) => w.id === o.wallId))
-        .map((o) => `${o.type === 'door' ? 'door' : 'window'} ${sideOf(room, walls.get(o.wallId))}`)
+        .map((o) => {
+          const wall = walls.get(o.wallId)
+          const kind = o.type === 'door' ? 'door' : 'window'
+          return `${kind} ${sideOf(room, wall)}${kind === 'door' ? ` to ${leadsTo(room, wall, o, rooms)}` : ''}`
+        })
       const furniture = items
         .filter((item) => item.roomId === room.id || inRoom(room, item.x, item.z))
         .map((item) => item.type)
+      const kind = roomKind(room.name)
       return {
         id: room.id,
         name: room.name || 'Room',
+        ...(kind ? { kind } : {}),
         ...(isRect(room) ? fromWorld(frame, room) : { shape: room.shape ?? 'custom' }),
         openings,
         furniture
