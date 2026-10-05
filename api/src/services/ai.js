@@ -20,9 +20,20 @@ function providerMessage(text) {
   }
 }
 
-// A failed AI call as an error that says what to fix.
-export function aiError(status, message, model) {
-  if (status === 429) return new HttpError(429, 'The free AI limit was reached. Wait a minute and try again.')
+// Google's 429 says which free quota ran out (its details name a quota id
+// such as GenerateRequestsPerDayPerProjectPerModel-FreeTier) and when to retry.
+function limitError(detail, model) {
+  if (/PerDay/i.test(detail)) {
+    return new HttpError(429, `The free daily AI limit for ${model} is used up. It resets at midnight Pacific time (around noon in Pakistan). Add backup models as AI_FALLBACK_MODELS in api/.env, or try again after the reset.`)
+  }
+  const seconds = Math.ceil(Number(detail.match(/retry in ([\d.]+)\s*s/i)?.[1] ?? detail.match(/"retryDelay":\s*"(\d+)s"/)?.[1]))
+  const wait = seconds > 0 ? `${seconds} seconds` : 'a minute'
+  return new HttpError(429, `The free per-minute AI limit was reached. Wait ${wait} and try again.`)
+}
+
+// A failed AI call as an error that says what to fix. `detail` is the raw error body.
+export function aiError(status, message, model, detail = message) {
+  if (status === 429) return limitError(detail, model)
   if (status === 401 || status === 403 || /api key/i.test(message)) {
     return new HttpError(502, 'The AI key was refused. Check AI_API_KEY in api/.env (a Gemini key starts with AIza) and restart the API.')
   }
@@ -42,8 +53,10 @@ export function aiError(status, message, model) {
 }
 
 // Busy or failing servers (5xx) usually recover within seconds, so those
-// are retried, then each fallback model is tried in turn.
-const RETRY_DELAYS_MS = [1500, 4000]
+// are retried once, then each fallback model is tried in turn. A used-up
+// limit (429) is per model, so it goes straight to the next model. Retries
+// count against the free per-minute limit, which is why there is only one.
+const RETRY_DELAYS_MS = [2000]
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
 export function openAiCompatibleProvider({
@@ -72,8 +85,9 @@ export function openAiCompatibleProvider({
     if (!res.ok) {
       const detail = await res.text().catch(() => '')
       console.error(`AI request failed (${res.status}, ${modelName}): ${detail.slice(0, 500)}`)
-      const error = aiError(res.status, providerMessage(detail), modelName)
+      const error = aiError(res.status, providerMessage(detail), modelName, detail)
       error.retryable = res.status >= 500
+      error.nextModel = res.status === 429
       throw error
     }
     const data = await res.json()
@@ -81,19 +95,20 @@ export function openAiCompatibleProvider({
   }
 
   return async function ask(messages) {
-    let lastError
+    let firstError // the main model's error says the most about the setup
     for (const modelName of [model, ...fallbackModels]) {
       for (let attempt = 0; attempt <= retryDelaysMs.length; attempt += 1) {
         try {
           return await call(messages, modelName)
         } catch (err) {
-          lastError = err
+          firstError ??= err
+          if (err.nextModel) break
           if (!err.retryable) throw err
           if (attempt < retryDelaysMs.length) await sleep(retryDelaysMs[attempt])
         }
       }
     }
-    throw lastError
+    throw firstError
   }
 }
 

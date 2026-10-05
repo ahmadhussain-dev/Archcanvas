@@ -208,6 +208,12 @@ describe('AI service errors', () => {
     const retired = 'This model models/gemini-2.5-flash is no longer available to new users. Please update your code to use models/gemini-3.8-flash for the latest features.'
     assert.match(aiError(404, retired, 'gemini-2.5-flash').message, /AI_MODEL=gemini-3\.8-flash in api/)
     assert.equal(aiError(429, '', 'x').status, 429)
+    assert.match(aiError(429, '', 'x').message, /per-minute.*a minute/)
+    const perMinute = 'Quota exceeded for metric: generate_content_free_tier_requests, limit: 10\nPlease retry in 38.2s.'
+    assert.match(aiError(429, perMinute, 'gemini-3.8-flash').message, /Wait 39 seconds/)
+    const perDay = JSON.stringify([{ error: { code: 429, message: 'You exceeded your current quota.', details: [{ violations: [{ quotaId: 'GenerateRequestsPerDayPerProjectPerModel-FreeTier' }] }] } }])
+    const daily = aiError(429, 'You exceeded your current quota.', 'gemini-3.8-flash', perDay)
+    assert.match(daily.message, /daily AI limit for gemini-3\.8-flash.*AI_FALLBACK_MODELS/)
     assert.match(aiError(503, 'high demand', 'x').message, /busy/)
     // Gemini's busy message mentions "model"; it must not read as a missing model.
     const busy = aiError(503, 'This model is currently experiencing high demand. Please try again later.', 'gemini-3.8-flash')
@@ -240,6 +246,32 @@ describe('AI provider retries', () => {
       const alone = openAiCompatibleProvider({ apiKey: 'k', model: 'main', retryDelaysMs: [0] })
       await assert.rejects(alone([]), (err) => err.status === 503 && /busy/.test(err.message))
       assert.deepEqual(calls, ['main', 'main'])
+    } finally {
+      globalThis.fetch = realFetch
+    }
+  })
+
+  test('moves to the next model when a limit is used up', async () => {
+    const { openAiCompatibleProvider } = await import('../src/services/ai.js')
+    const realFetch = globalThis.fetch
+    const calls = []
+    const limited = () => new Response(JSON.stringify([{ error: { code: 429, message: 'Quota exceeded. Please retry in 20s.' } }]), { status: 429 })
+    globalThis.fetch = async (url, init) => {
+      const { model } = JSON.parse(init.body)
+      calls.push(model)
+      if (model === 'spare') return new Response(JSON.stringify({ choices: [{ message: { content: 'ok' } }] }), { status: 200 })
+      return limited()
+    }
+    try {
+      const ask = openAiCompatibleProvider({ apiKey: 'k', model: 'main', fallbackModels: ['spare'], retryDelaysMs: [0] })
+      assert.equal(await ask([]), 'ok')
+      assert.deepEqual(calls, ['main', 'spare'])
+
+      // When every model fails, the main model's error is the one shown.
+      calls.length = 0
+      const both = openAiCompatibleProvider({ apiKey: 'k', model: 'main', fallbackModels: ['other'], retryDelaysMs: [0] })
+      await assert.rejects(both([]), (err) => err.status === 429 && /Wait 20 seconds/.test(err.message))
+      assert.deepEqual(calls, ['main', 'other'])
     } finally {
       globalThis.fetch = realFetch
     }
