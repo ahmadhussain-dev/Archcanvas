@@ -14,7 +14,8 @@
 //   add_furniture  { room, type, count? }       placed along the walls or centred
 //   furnish_room   { room, kind? }              a full set for the room's kind (roomKits.js)
 //   remove_furniture { room, type? }
-//   add_opening    { room, kind, side }         kind door|window, side top|right|bottom|left (as on the 2D plan)
+//   add_opening    { room, kind, side, at?, width? }  kind door|window, side top|right|bottom|left (as on the 2D plan),
+//                                               at: where along the wall (world x, or z on a left/right wall), width in metres
 // Every operation may carry a `label` that is reported back as is.
 import { FloorplanDocument } from '../domain/FloorplanDocument.js';
 import { hasFurnitureDefinition } from '../domain/FurnitureCatalog.js';
@@ -128,7 +129,7 @@ function findSpot(doc, room, type) {
  * and clear of the openings already on it. Doors go near a corner, windows in
  * the middle.
  */
-function freeT(doc, room, wall, kind, width) {
+function freeT(doc, room, wall, kind, width, near = null) {
   const [x1, z1] = wall.from;
   const [x2, z2] = wall.to;
   const length = Math.hypot(x2 - x1, z2 - z1);
@@ -151,6 +152,11 @@ function freeT(doc, room, wall, kind, width) {
   const candidates = kind === 'door' ? [lo, hi, mid] : [mid];
   for (let d = 0.1; d <= (hi - lo) / 2 + EPS; d += 0.1) {
     if (kind === 'door') candidates.push(lo + d, hi - d); else candidates.push(mid - d, mid + d);
+  }
+  // Asked for a spot (a world x on a wall running along x, else a z): closest first.
+  if (Number.isFinite(near)) {
+    const target = Math.abs(ux) > Math.abs(uz) ? along(near, z1) : along(x1, near);
+    candidates.sort((a, b) => Math.abs(a - target) - Math.abs(b - target));
   }
   const a = candidates.find((value) => value >= lo - EPS && value <= hi + EPS && fits(value));
   return a === undefined ? null : round3(a / length);
@@ -264,10 +270,10 @@ export function applyAiOperations(floorplan, operations = []) {
           break;
         }
         const name = room.name || 'Room';
-        if (result.placed.length) {
+        if (kind === 'staircase') {
+          applied.push({ op: op.op, label: result.placed.length ? `Stairs up in ${name}` : `${name} kept clear` });
+        } else if (result.placed.length) {
           applied.push({ op: op.op, label: `Furnish ${name} (${result.placed.length} items): ${describeItems(result.placed)}` });
-        } else if (kind === 'staircase') {
-          applied.push({ op: op.op, label: `${name} kept clear` });
         }
         if (result.missing.length) {
           skip(op, 'There was no free space left for it.');
@@ -290,8 +296,8 @@ export function applyAiOperations(floorplan, operations = []) {
         const kind = op.kind === 'window' ? 'window' : 'door';
         const wall = roomWalls(doc, room).find((candidate) => wallSide(room, candidate) === op.side);
         if (!wall) { skip(op, `${room.name} has no wall on that side.`); break; }
-        const width = kind === 'door' ? 0.9 : 1.25;
-        const t = freeT(doc, room, wall, kind, width);
+        const width = Number(op.width) > 0 ? Number(op.width) : kind === 'door' ? 0.9 : 1.25;
+        const t = freeT(doc, room, wall, kind, width, op.at === undefined ? null : Number(op.at));
         if (t === null) { skip(op, `That wall of ${room.name} has no room for another ${kind}.`); break; }
         doc.addOpening({ wallId: wall.id, type: kind, t, width });
         done(op);

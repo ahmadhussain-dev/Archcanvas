@@ -112,8 +112,9 @@ export function openAiCompatibleProvider({
   }
 }
 
-// Offline stand-in: adds a bedroom with furniture and a door in the first free
-// spot, or paints the first room when asked to paint. Only for demos and tests.
+// Offline stand-in: furnishes rooms, lays out a whole floor, paints the first
+// room, or adds a bedroom with furniture and a door in the first free spot.
+// Only for demos and tests.
 export function mockProvider() {
   return async function ask(messages) {
     const user = messages.at(-1)?.content ?? ''
@@ -125,6 +126,24 @@ export function mockProvider() {
       return JSON.stringify({
         message: `Furnished ${rooms.length} room${rooms.length === 1 ? '' : 's'} with full sets for each kind of room. This is the demo AI; add AI_API_KEY for real answers.`,
         operations: rooms.map((room) => ({ op: 'furnish_room', room: room.id }))
+      })
+    }
+    if (/\b(floor|house|layout|design|plan)\b/.test(request)) {
+      const upstairs = !!summary.floorBelow
+      const rooms = upstairs
+        ? [
+            { name: 'Back Bedroom', zone: 'back' }, { name: 'Back Bath', attached_to: 'Back Bedroom' },
+            { name: 'TV Lounge', zone: 'middle' }, { name: 'Staircase', zone: 'middle' }, { name: 'Kitchen', zone: 'middle', size: 'small' },
+            { name: 'Front Bedroom', zone: 'front' }, { name: 'Front Bath', attached_to: 'Front Bedroom' }, { name: 'Terrace', zone: 'front' }
+          ]
+        : [
+            { name: 'Master Bedroom', zone: 'back' }, { name: 'Master Bath', attached_to: 'Master Bedroom' },
+            { name: 'TV Lounge', zone: 'middle' }, { name: 'Staircase', zone: 'middle' }, { name: 'Kitchen', zone: 'middle' },
+            { name: 'Car Porch', zone: 'front' }, { name: 'Drawing Room', zone: 'front' }
+          ]
+      return JSON.stringify({
+        message: `Laid out the ${summary.floor} floor with ${rooms.length} rooms, doors, windows and furniture. This is the demo AI; add AI_API_KEY for real answers.`,
+        operations: [{ op: 'layout_floor', rooms }]
       })
     }
     if (/paint|colou?r/.test(request) && first) {

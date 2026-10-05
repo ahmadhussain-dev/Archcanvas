@@ -21,6 +21,7 @@ export function floorplanOf(building) {
 // Kinds of room ArchCanvas can furnish with a full set (engine/src/ai/roomKits.js).
 export const ROOM_KINDS = [
   ['staircase', /stair/i],
+  ['terrace', /terrace|balcony|lawn|garden|veranda/i],
   ['bathroom', /bath|wash\s*room|toilet|\bwc\b|powder|rest\s*room/i],
   ['kitchen', /kitchen/i],
   ['dining', /dining/i],

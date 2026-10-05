@@ -7,7 +7,8 @@
 // read. What passes is converted to editor operations in metres
 // (engine/src/ai/applyAiPlan.js).
 import { z } from 'zod'
-import { planFrame, floorplanOf, fromWorld, toWorld, ROOM_KINDS, roomKind } from './planSummary.js'
+import { planFrame, floorplanOf, fromWorld, toWorld, summarizePlan, ROOM_KINDS, roomKind, FT } from './planSummary.js'
+import { layoutFloor, ZONES } from './layoutFloor.js'
 
 // Smallest clear inside size (between wall faces) for each kind of room, in
 // feet as [short side, long side]. Pakistani house planning rules of thumb.
@@ -55,7 +56,13 @@ export const FURNITURE = {
 const SIDES = ['top', 'right', 'bottom', 'left']
 const TOLERANCE = 0.05 // feet
 
+// Room kinds (planSummary.js) whose minimum is another kind's.
+const RULE_FOR_KIND = { lounge: 'drawing room', dining: 'dining room', laundry: 'store' }
+
 export function minSizeFor(name) {
+  // By kind first, so "Master Bath" is a bathroom, not a bedroom.
+  const kind = roomKind(name)
+  if (kind) return MIN_ROOM_SIZES.find((rule) => rule.kind === (RULE_FOR_KIND[kind] ?? kind)) ?? null
   return MIN_ROOM_SIZES.find((rule) => rule.match.test(String(name))) ?? null
 }
 
@@ -72,6 +79,7 @@ Rules:
 - Respect minimum clear inside sizes (feet): ${MIN_ROOM_SIZES.map((r) => `${r.kind} ${r.min[0]}x${r.min[1]}`).join(', ')}.
 - Use the space sensibly: the front of the house is the bottom of the plan. Car porch at the front with the main gate, the main entrance door from the porch or front into the lounge or drawing room, bathrooms next to bedrooms (attached baths open from the bedroom), kitchen next to the dining area or lounge.
 - Every room needs a door. Each room's "openings" says where its doors lead ("door bottom to TV Lounge", "door right to outside"). A bedroom, kitchen or bathroom door should lead into the lounge, a corridor or its bedroom, not outside. Add missing doors before furnishing.
+- To plan, design or redo a whole floor (or a whole house), use one layout_floor listing the rooms you want, each with a zone: back (top of the plan), middle, or front (the street side). ArchCanvas works out the sizes and positions with no gaps and nothing undersized, then adds the doors, windows, stairs and furniture itself, replacing the rooms already on the floor. Do not add rooms one by one for a whole floor, and do not send doors or furnish_room for the rooms it creates. Give attached baths "attached_to" their bedroom. Every floor of a house with more than one floor needs a Staircase; upstairs, put a Terrace at the front over the car porch.
 - To furnish, decorate, style or "complete" a room, use furnish_room. It installs the complete, properly arranged set for the room's kind, sized to the room and kept clear of its doors, windows and stairs:
   kitchen: counter with sink (under the window), cooking range, cabinets, fridge, microwave, cooker hood; bathroom: shower, commode, wash basin with mirror, towel rail; bedroom: bed with two side tables, wardrobe, dressing table, AC (and a study desk when large); lounge: sofas facing a TV unit with TV, centre table, rug, AC; drawing room: sofa set, centre table, showcase; dining: table with chairs, sideboard; car porch: kept clear for the car, planters, shoe rack.
   It replaces the room's old furniture. When asked to furnish or style the whole house, furnish every room. Use add_furniture only for extra single pieces.
@@ -83,6 +91,7 @@ Rules:
 - Keep "message" short and friendly (1 to 3 sentences, plain English).
 
 Operations:
+{"op":"layout_floor","rooms":[{"name":"Car Porch","zone":"front"},{"name":"Drawing Room","zone":"front"},{"name":"TV Lounge","zone":"middle"},{"name":"Staircase","zone":"middle"},{"name":"Kitchen","zone":"middle"},{"name":"Master Bedroom","zone":"back","size":"large"},{"name":"Master Bath","attached_to":"Master Bedroom"}]}   (size small|normal|large is optional)
 {"op":"add_room","name":"Bedroom 2","x":0,"y":0,"width":12,"depth":13}
 {"op":"update_room","room":"<id>","name":"...","x":0,"y":0,"width":12,"depth":13}  (give only what changes)
 {"op":"delete_room","room":"<id>"}
@@ -91,7 +100,7 @@ Operations:
 {"op":"add_furniture","room":"<id>","type":"<furniture type>","count":1}   (placed automatically along the walls)
 {"op":"furnish_room","room":"<id>"}   (add "as":"<kind>" when the name does not say the kind; kinds: ${ROOM_KINDS.map(([kind]) => kind).join(', ')})
 {"op":"remove_furniture","room":"<id>","type":"<furniture type, or omit for all>"}
-{"op":"add_door","room":"<id>","side":"top|right|bottom|left"}
+{"op":"add_door","room":"<id>","side":"top|right|bottom|left","at":12}   ("at" is optional: plan x on a top/bottom wall, plan y on a left/right wall)
 {"op":"add_window","room":"<id>","side":"top|right|bottom|left"}
 
 Floor ids: ${Object.entries(FLOOR_MATERIALS).map(([id, name]) => `${id} (${name})`).join(', ')}.
@@ -137,8 +146,16 @@ const opSchemas = {
   add_furniture: z.object({ room: z.string(), type: z.enum(Object.keys(FURNITURE)), count: z.coerce.number().int().min(1).max(8).optional() }),
   furnish_room: z.object({ room: z.string(), as: z.enum(ROOM_KINDS.map(([kind]) => kind)).optional() }),
   remove_furniture: z.object({ room: z.string(), type: z.enum(Object.keys(FURNITURE)).optional() }),
-  add_door: z.object({ room: z.string(), side: z.enum(SIDES) }),
-  add_window: z.object({ room: z.string(), side: z.enum(SIDES) })
+  add_door: z.object({ room: z.string(), side: z.enum(SIDES), at: num.optional() }),
+  add_window: z.object({ room: z.string(), side: z.enum(SIDES), at: num.optional() }),
+  layout_floor: z.object({
+    rooms: z.array(z.object({
+      name: z.string().trim().min(1).max(40),
+      zone: z.enum(ZONES).optional(),
+      attached_to: z.string().trim().max(40).optional(),
+      size: z.enum(['small', 'normal', 'large']).optional()
+    })).min(1).max(16)
+  })
 }
 
 const fmt = (value) => `${Math.round(value * 10) / 10}`
@@ -190,7 +207,7 @@ export function checkOperations(building, rawOperations, { idPrefix = `ai${Date.
     return null
   }
 
-  for (const raw of rawOperations) {
+  for (const raw of expandLayouts(building, floorplan, frame, wallFt, rawOperations, skipped)) {
     const kind = String(raw?.op ?? '')
     const schema = opSchemas[kind]
     const parsed = schema?.safeParse(raw)
@@ -199,6 +216,12 @@ export function checkOperations(building, rawOperations, { idPrefix = `ai${Date.
       continue
     }
     const op = parsed.data
+
+    if (kind === 'delete_room' && planned.has(raw) && raw.wholeFloor) {
+      for (const room of rooms.values()) operations.push({ op: 'delete_room', room: room.id, label: `Remove ${room.name}` })
+      rooms.clear()
+      continue
+    }
 
     if (kind === 'add_room') {
       const rect = { x: op.x, y: op.y, width: op.width, depth: op.depth }
@@ -266,7 +289,7 @@ export function checkOperations(building, rawOperations, { idPrefix = `ai${Date.
           skipped.push({ label: `Furnish ${room.name}`, reason: `ArchCanvas does not know what kind of room "${room.name}" is. Rename it (for example Bedroom 2 or Kitchen) and ask again.` })
           break
         }
-        operations.push({ op: 'furnish_room', room: room.id, kind, label: `Furnish ${room.name} as a ${kind}` })
+        operations.push({ op: 'furnish_room', room: room.id, kind, label: (planned.has(raw) && raw.label) || `Furnish ${room.name} as a ${kind}` })
         break
       }
       case 'remove_furniture':
@@ -275,10 +298,65 @@ export function checkOperations(building, rawOperations, { idPrefix = `ai${Date.
       case 'add_door':
       case 'add_window': {
         const opening = kind === 'add_door' ? 'door' : 'window'
-        operations.push({ op: 'add_opening', room: room.id, kind: opening, side: op.side, label: `Add a ${opening} on the ${op.side} wall of ${room.name}` })
+        const out = { op: 'add_opening', room: room.id, kind: opening, side: op.side, label: (planned.has(raw) && raw.label) || `Add a ${opening} on the ${op.side} wall of ${room.name}` }
+        // Plan feet to the editor's world x (top/bottom walls) or z (left/right walls).
+        if (planned.has(raw) && raw.widthFt) out.width = Math.round(raw.widthFt * FT * 1000) / 1000
+        if (op.at !== undefined) out.at = Math.round((['top', 'bottom'].includes(op.side) ? frame.minX + op.at * FT : frame.maxZ - op.at * FT) * 1000) / 1000
+        operations.push(out)
         break
       }
     }
   }
   return { operations, skipped }
+}
+
+// Operations made by layout_floor (not by the AI), which may carry extra fields.
+const planned = new WeakSet()
+
+/**
+ * Turns each layout_floor into the plain operations it stands for: remove the
+ * rooms on the floor, add the computed rooms, their doors and windows, then
+ * furnish them. Everything else passes through unchanged.
+ */
+function expandLayouts(building, floorplan, frame, wallFt, rawOperations, skipped) {
+  const out = []
+  const push = (op) => { planned.add(op); out.push(op) }
+  for (const raw of rawOperations) {
+    if (raw?.op !== 'layout_floor') { out.push(raw); continue }
+    const parsed = opSchemas.layout_floor.safeParse(raw)
+    if (!parsed.success) { out.push(raw); continue }
+    const summary = summarizePlan(building)
+    const below = summary.floorBelow
+    const plot = (floorplan.floor?.rooms ?? []).find((room) => room.id === 'plot')
+    const area = below?.outline ?? (plot ? fromWorld(frame, plot) : null)
+    if (!area) {
+      skipped.push({ label: 'Lay out the floor', reason: 'This plan has no plot, so ArchCanvas does not know the space to fill. Start a new project with a plot size.' })
+      continue
+    }
+    const stairsBelow = below
+      ? below.stairs[0] ?? below.rooms.find((room) => roomKind(room.name) === 'staircase') ?? null
+      : null
+    const layout = layoutFloor({ area, wallFt, rooms: parsed.data.rooms, stairsBelow, ground: !below, minSizeFor })
+    skipped.push(...layout.skipped)
+    if (!layout.rooms.length) continue
+    push({ op: 'delete_room', room: '*', wholeFloor: true })
+    for (const room of layout.rooms) push({ op: 'add_room', name: room.name, x: room.x, y: room.y, width: room.width, depth: room.depth })
+    for (const opening of layout.openings) {
+      push({
+        op: opening.kind === 'door' ? 'add_door' : 'add_window',
+        room: opening.room,
+        side: opening.side,
+        ...(opening.at !== undefined ? { at: opening.at } : {}),
+        ...(opening.width ? { widthFt: opening.width } : {}),
+        label: opening.width
+          ? `${fmt(opening.width)} ft gate on the ${opening.side} wall of ${opening.room}`
+          : `${opening.kind === 'door' ? 'Door' : 'Window'} on the ${opening.side} wall of ${opening.room}`
+      })
+    }
+    for (const room of layout.rooms) {
+      if (room.kind === 'room') continue
+      push({ op: 'furnish_room', room: room.name, as: room.kind, label: room.kind === 'staircase' ? `Stairs in ${room.name}` : `Furnish ${room.name} as a ${room.kind}` })
+    }
+  }
+  return out
 }

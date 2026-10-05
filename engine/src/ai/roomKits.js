@@ -12,11 +12,12 @@ import { getFurnitureDefinition } from '../domain/FurnitureCatalog.js';
 import { pointInRoom } from '../rooms/roomShapes.js';
 import {
   EPS, round3, itemSize, footprint, overlaps, inside, opposite,
-  roomLayout, pointOn, againstWall
+  roomLayout, pointOn, againstWall, facing
 } from './layout.js';
 
 export const ROOM_KINDS = [
   ['staircase', /stair/i],
+  ['terrace', /terrace|balcony|lawn|garden|veranda/i],
   ['bathroom', /bath|wash\s*room|toilet|\bwc\b|powder|rest\s*room/i],
   ['kitchen', /kitchen/i],
   ['dining', /dining/i],
@@ -45,7 +46,7 @@ const NAMES = {
   armchair: 'armchair', coffee_table: 'centre table', side_table: 'side table', console: 'TV unit', tv: 'TV',
   rug: 'rug', plant: 'plant', terracotta_flower_urn: 'planter', display_cabinet: 'showcase', sideboard: 'sideboard',
   dining_table_long: 'dining table', round_table: 'round dining table', table: 'small table', shoerack: 'shoe rack',
-  bookshelf: 'shelf', washing_machine: 'washing machine', water_dispenser: 'water dispenser'
+  bookshelf: 'shelf', washing_machine: 'washing machine', water_dispenser: 'water dispenser', bistro_table: 'tea table', stairs: 'stairs'
 };
 // Front direction for a rotation. Rotations are stored to 3 decimals, so
 // quarter turns are snapped back to exact ones to keep pieces flush.
@@ -448,6 +449,20 @@ function laundry(p) {
   p.place('cabinet_kitchen', { onSides: p.byLength(p.allSides), pref: 'far', front: 0.6 });
 }
 
+function terrace(p) {
+  // Plants in the corners and a small sitting set, the rest left open.
+  p.place('terracotta_flower_urn', { onSides: p.byLength(p.allSides), pref: 'corner' });
+  p.place('terracotta_flower_urn', { onSides: p.byLength(p.allSides), pref: 'corner', optional: true });
+  if (p.shortSide >= 2) {
+    const { clear } = p.layout;
+    const table = p.placeAt('bistro_table', (clear.minX + clear.maxX) / 2, (clear.minZ + clear.maxZ) / 2, 0, { quiet: true });
+    if (table) {
+      p.placeAt('chair', table.x - 0.6, table.z, Math.PI / 2, { quiet: true });
+      p.placeAt('chair', table.x + 0.6, table.z, -Math.PI / 2, { quiet: true });
+    }
+  }
+}
+
 const KITS = {
   bedroom: (p, room) => bedroom(p, { kids: /kids?\b|children|nursery/i.test(room.name || '') }),
   'servant room': (p) => bedroom(p, { servant: true }),
@@ -460,8 +475,46 @@ const KITS = {
   study,
   store,
   laundry,
-  staircase: () => {}
+  terrace,
+  staircase: (p, room, doc) => flight(p, room, doc)
 };
+
+// A straight flight up the long side of an empty stair hall, starting at the
+// door end so there is a landing to step onto.
+function flight(p, room, doc) {
+  const { clear, entry, wallHeight } = p.layout;
+  const has = (doc.floorplan.stairs || []).some((s) => (s.floorId ?? room.floorId) === room.floorId
+    && pointInRoom(room, s.x, s.z));
+  if (has) return;
+  const along = clear.maxX - clear.minX > clear.maxZ - clear.minZ ? 'x' : 'z';
+  const long = along === 'x' ? clear.maxX - clear.minX : clear.maxZ - clear.minZ;
+  const short = along === 'x' ? clear.maxZ - clear.minZ : clear.maxX - clear.minX;
+  const run = Math.min(4.5, long - 0.9);
+  if (run < 2 || short < 0.8) return;
+  const width = Math.min(1.1, short - 0.05);
+  const floor = (doc.floorplan.floors || []).find((f) => f.id === room.floorId);
+  const height = wallHeight + Number(floor?.floorHeight ?? 0.15);
+  // Up, away from the door: the flight sits against the far end.
+  const lo = along === 'x' ? clear.minX : clear.minZ;
+  const hi = along === 'x' ? clear.maxX : clear.maxZ;
+  const door = along === 'x' ? entry.x : entry.z;
+  const up = door - lo < hi - door ? 1 : -1;
+  const mid = up > 0 ? hi - run / 2 : lo + run / 2;
+  const cross = along === 'x' ? (clear.minZ + clear.maxZ) / 2 : (clear.minX + clear.maxX) / 2;
+  doc.addStairs({
+    id: `stairs_${room.id}`,
+    floorId: room.floorId,
+    x: round3(along === 'x' ? mid : cross),
+    z: round3(along === 'x' ? cross : mid),
+    width: round3(width),
+    depth: round3(run),
+    height: round3(height),
+    steps: Math.max(8, Math.round(height / 0.175)),
+    subtype: 'straight',
+    rotation: round3(along === 'x' ? facing(up, 0) : facing(0, up))
+  });
+  p.placed.push({ type: 'stairs' });
+}
 
 export const FURNISHABLE_KINDS = Object.keys(KITS);
 
@@ -479,6 +532,6 @@ export function furnishRoom(doc, room, kind = roomKind(room.name)) {
     || !(item.roomId === room.id || pointInRoom(room, item.x, item.z)));
   const removed = before - doc.floorplan.items.length;
   const p = planner(doc, room);
-  kit(p, room);
+  kit(p, room, doc);
   return { kind, placed: p.placed.map((item) => item.type), missing: p.missing, removed };
 }
