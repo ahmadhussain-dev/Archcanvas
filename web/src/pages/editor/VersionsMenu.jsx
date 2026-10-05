@@ -55,7 +55,7 @@ export default function VersionsMenu({ projectId, disabled, hasUnsaved, onRestor
         <div className="absolute top-10 right-0 z-30 flex max-h-[420px] w-[300px] flex-col overflow-hidden rounded-card border border-line bg-white shadow-[0_10px_28px_rgba(19,32,44,0.12)]">
           <div className="border-b border-line px-4 py-3">
             <b className="text-sm">Versions</b>
-            <p className="m-0 text-xs text-muted">Every save is kept. Restoring copies an old version forward.</p>
+            <p className="m-0 text-xs text-muted">Every Save is kept. Autosave keeps one draft since your last Save.</p>
           </div>
           <div className="overflow-auto">
             {error && <p className="m-0 px-4 py-3 text-sm text-red">{error}</p>}
@@ -69,7 +69,7 @@ export default function VersionsMenu({ projectId, disabled, hasUnsaved, onRestor
                     {i === 0 && <Chip tone="green">Current</Chip>}
                   </span>
                   <span className="truncate text-xs text-muted">
-                    {SOURCE[v.source] ?? v.source} · {timeAgo(v.createdAt)}
+                    {SOURCE[v.source] ?? v.source} · {timeAgo(v.updatedAt ?? v.createdAt)}
                     {v.note ? ` · ${v.note}` : ''}
                   </span>
                 </div>
