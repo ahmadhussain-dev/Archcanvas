@@ -39,6 +39,8 @@ npm run make-admin -w @archcanvas/api -- you@example.com   # after signing up, m
 
 Ask ArchCanvas (the AI panel in the editor) uses Google's free Gemini API. Get a key at https://aistudio.google.com/apikey, put it in `api/.env` as `AI_API_KEY=...` and restart the API. Without a key you can try the panel with `AI_PROVIDER=mock`, which gives fixed demo answers.
 
+Asked to furnish, style or complete rooms, the AI uses one change per room (`furnish_room`), and the editor lays out the full set for that kind of room: kitchen counter with sink, cooking range, cabinets and fridge; bathroom shower, commode and basin; bedroom bed with side tables, wardrobe and dressing table; lounge sofas facing the TV; dining table with chairs; a clear car porch. Pieces go against the walls, out of door swings, off the stairs, and tall ones never cover a window (`engine/src/ai/roomKits.js`).
+
 ## API
 
 | Route | Who | What |

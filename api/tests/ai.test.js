@@ -39,8 +39,20 @@ describe('plan summary', () => {
     assert.equal(summary.rooms.length, 1)
     const [lounge] = summary.rooms
     assert.deepEqual({ x: lounge.x, y: lounge.y, width: lounge.width, depth: lounge.depth }, { x: 0, y: 0, width: 15, depth: 15 })
-    assert.deepEqual(lounge.openings, ['door bottom'])
+    assert.equal(lounge.kind, 'lounge')
+    assert.deepEqual(lounge.openings, ['door bottom to outside'])
     assert.deepEqual(lounge.furniture, ['sofa'])
+    assert.deepEqual(summary.stairs, [])
+  })
+
+  test('a door says which room it leads to', () => {
+    const plan = building()
+    // A 15 x 12 ft kitchen right below the lounge, sharing its bottom wall.
+    plan.floorplan.floor.rooms.push({ id: 'room_2', name: 'Kitchen', x: r3(-12.5 * FT + 7.5 * FT), z: r3(22.5 * FT - 21 * FT), width: r3(15 * FT), depth: r3(12 * FT), shape: 'square', floorId: 'floor_1', wallIds: { north: 'w1' } })
+    const [lounge, kitchen] = summarizePlan(plan).rooms
+    assert.deepEqual(lounge.openings, ['door bottom to Kitchen'])
+    assert.deepEqual(kitchen.openings, ['door top to Lounge'])
+    assert.equal(kitchen.kind, 'kitchen')
   })
 
   test('feet to metres puts the room centre in the right place', () => {
@@ -106,6 +118,32 @@ describe('checking AI changes', () => {
     ])
     assert.deepEqual(operations.map((o) => o.op), ['delete_room', 'add_room'])
     assert.equal(skipped.length, 3)
+  })
+
+  test('furnishes rooms by their kind', () => {
+    const { operations, skipped } = checkOperations(building(), [
+      { op: 'add_room', name: 'Bedroom 1', x: 0, y: 15, width: 11, depth: 12 },
+      { op: 'furnish_room', room: 'Bedroom 1' },
+      { op: 'furnish_room', room: 'room_1' },
+      { op: 'update_room', room: 'room_1', name: 'Hall' },
+      { op: 'furnish_room', room: 'room_1' },
+      { op: 'furnish_room', room: 'room_1', as: 'drawing room' },
+      { op: 'furnish_room', room: 'room_1', as: 'spaceship' }
+    ], { idPrefix: 'ai' })
+    assert.deepEqual(operations.filter((o) => o.op === 'furnish_room').map((o) => [o.room, o.kind]), [['ai_1', 'bedroom'], ['room_1', 'lounge'], ['room_1', 'drawing room']])
+    assert.equal(skipped.length, 2)
+    assert.match(skipped[0].reason, /what kind of room "Hall" is/)
+  })
+
+  test('the prompt explains furnishing and doors', () => {
+    const [system] = buildMessages({
+      summary: summarizePlan(building()),
+      prompt: 'furnish the house',
+      project: { name: 'Ghar', city: 'Faisalabad', plot: { widthFt: 25, depthFt: 45 }, floors: 1 }
+    })
+    assert.match(system.content, /"op":"furnish_room"/)
+    assert.match(system.content, /kitchen: counter with sink/)
+    assert.match(system.content, /Every room needs a door/)
   })
 
   test('reads JSON wrapped in a code fence', () => {
@@ -179,12 +217,14 @@ describe('POST /projects/:id/ai', { skip: !hasDb }, () => {
     assert.match(res.body.error, /could not be understood/)
   })
 
-  test('the demo AI adds a bedroom in free space', async () => {
+  test('the demo AI adds a bedroom in free space and furnishes rooms', async () => {
     const demo = createApp({ rateLimited: false, aiProvider: mockProvider() })
     const res = await request(demo).post(`/api/projects/${projectId}/ai`).set(me).send({ prompt: 'add a bedroom', floorplan: building() })
     assert.equal(res.status, 200)
     assert.deepEqual(res.body.skipped, [])
-    assert.deepEqual(res.body.operations.map((o) => o.op), ['add_room', 'add_opening', 'add_opening', 'add_furniture', 'add_furniture'])
+    assert.deepEqual(res.body.operations.map((o) => o.op), ['add_room', 'add_opening', 'add_opening', 'furnish_room'])
+    const styled = await request(demo).post(`/api/projects/${projectId}/ai`).set(me).send({ prompt: 'furnish every room', floorplan: building() })
+    assert.deepEqual(styled.body.operations.map((o) => [o.op, o.kind]), [['furnish_room', 'lounge']])
   })
 
   test('without a key the API says how to set it up', async () => {

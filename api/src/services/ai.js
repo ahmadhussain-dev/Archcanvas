@@ -120,6 +120,13 @@ export function mockProvider() {
     const summary = JSON.parse(user.slice(user.indexOf('{'), user.lastIndexOf('\nRequest:')))
     const request = user.slice(user.lastIndexOf('\nRequest:') + 9).toLowerCase()
     const first = summary.rooms.find((room) => room.width)
+    if (/furnish|style|decorate|furniture|complete/.test(request) && first) {
+      const rooms = summary.rooms.filter((room) => room.width && room.kind)
+      return JSON.stringify({
+        message: `Furnished ${rooms.length} room${rooms.length === 1 ? '' : 's'} with full sets for each kind of room. This is the demo AI; add AI_API_KEY for real answers.`,
+        operations: rooms.map((room) => ({ op: 'furnish_room', room: room.id }))
+      })
+    }
     if (/paint|colou?r/.test(request) && first) {
       return JSON.stringify({ message: `Painted ${first.name} in a soft blue.`, operations: [{ op: 'paint_walls', room: first.id, color: '#8ba3b5' }] })
     }
@@ -132,13 +139,12 @@ export function mockProvider() {
         if (!free(x, y)) continue
         const name = `Bedroom ${taken.filter((room) => minSizeFor(room.name)?.kind === 'bedroom').length + 1}`
         return JSON.stringify({
-          message: `Added ${name} (12 x 12 ft) with a double bed, wardrobe and a door. This is the demo AI; add AI_API_KEY for real answers.`,
+          message: `Added ${name} (12 x 12 ft) with a door, a window and a full bedroom set. This is the demo AI; add AI_API_KEY for real answers.`,
           operations: [
             { op: 'add_room', name, x, y, width: size, depth: size },
             { op: 'add_door', room: name, side: 'bottom' },
             { op: 'add_window', room: name, side: 'top' },
-            { op: 'add_furniture', room: name, type: 'bed_double' },
-            { op: 'add_furniture', room: name, type: 'wardrobe' }
+            { op: 'furnish_room', room: name }
           ]
         })
       }

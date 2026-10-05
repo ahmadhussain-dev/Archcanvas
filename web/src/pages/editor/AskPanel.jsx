@@ -5,7 +5,7 @@ import { api } from '../../lib/api.js'
 
 const IDEAS = [
   'Add a 12 x 14 ft bedroom with an attached bath',
-  'Furnish the bedroom with a double bed and wardrobe',
+  'Furnish every room with proper furniture',
   'Paint the lounge walls a light warm grey',
   'Put white marble tiles in the drawing room'
 ]

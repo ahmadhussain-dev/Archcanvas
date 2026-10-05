@@ -12,49 +12,27 @@
 //   set_floor      { room, material }           material id from the catalog
 //   paint_walls    { room, color }              '#rrggbb', inside faces only
 //   add_furniture  { room, type, count? }       placed along the walls or centred
+//   furnish_room   { room, kind? }              a full set for the room's kind (roomKits.js)
 //   remove_furniture { room, type? }
 //   add_opening    { room, kind, side }         kind door|window, side top|right|bottom|left (as on the 2D plan)
 // Every operation may carry a `label` that is reported back as is.
 import { FloorplanDocument } from '../domain/FloorplanDocument.js';
-import { hasFurnitureDefinition, getFurnitureDefinition } from '../domain/FurnitureCatalog.js';
+import { hasFurnitureDefinition } from '../domain/FurnitureCatalog.js';
 import { pointInRoom, normalizeRoomShape } from '../rooms/roomShapes.js';
 import { DEFAULT_MATERIAL_PACKS } from '../core/materialCatalog.js';
+import {
+  EPS, round3, rectOf, wallSide, roomWalls, itemSize, footprint, overlaps, inside, facing, roomLayout
+} from './layout.js';
+import { furnishRoom, describeItems, roomKind } from './roomKits.js';
 
-const EPS = 1e-3;
 // Items that stand in the middle of a room rather than against a wall.
 const CENTRE_TYPES = new Set([
   'coffee_table', 'dining_table_long', 'oval_table', 'round_table', 'table',
   'rattan_coffee_table', 'triangular_round_coffee_table', 'bistro_table', 'picnic_table', 'patio_dining_table'
 ]);
-// Space kept clear inside a door, in metres.
-const DOOR_CLEARANCE = 0.9;
-const WALL_GAP = 0.02;
-
-const round3 = (value) => Number(Number(value).toFixed(3));
-
-function rectOf(room) {
-  return {
-    minX: room.x - room.width / 2,
-    maxX: room.x + room.width / 2,
-    minZ: room.z - room.depth / 2,
-    maxZ: room.z + room.depth / 2
-  };
-}
 
 function isPlainRect(room) {
   return normalizeRoomShape(room.shape) === 'square' && !Number(room.rotation);
-}
-
-/** Which side of the room a wall is on, as seen on the 2D plan (top is +z). */
-function wallSide(room, wall) {
-  const [x1, z1] = wall.from;
-  const [x2, z2] = wall.to;
-  if (Math.abs(z2 - z1) < Math.abs(x2 - x1)) return (z1 + z2) / 2 > room.z ? 'top' : 'bottom';
-  return (x1 + x2) / 2 > room.x ? 'right' : 'left';
-}
-
-function roomWalls(doc, room) {
-  return Object.values(room.wallIds || {}).map((id) => doc.getWall(id)).filter(Boolean);
 }
 
 /** The face of a wall ('front' or 'back') that looks into the room. */
@@ -74,62 +52,11 @@ function paintDescriptor(color) {
   return { id: `paint-${color.slice(1)}`, name: `Custom color (${color})`, category: 'paint', kind: 'paint', color };
 }
 
-function itemSize(type) {
-  const definition = getFurnitureDefinition(type);
-  const divisor = definition.unit === 'm' ? 1 : 39.37;
-  return {
-    width: Number(definition.defaultSize?.width || 0.5) / divisor,
-    depth: Number(definition.defaultSize?.depth || 0.5) / divisor
-  };
-}
-
-function footprint(item) {
-  // Items are turned in quarter turns here, so a 90 degree turn swaps width and depth.
-  const quarter = Math.round(((Number(item.rotation) || 0) / (Math.PI / 2))) % 2 !== 0;
-  const w = quarter ? item.depth : item.width;
-  const d = quarter ? item.width : item.depth;
-  return { minX: item.x - w / 2, maxX: item.x + w / 2, minZ: item.z - d / 2, maxZ: item.z + d / 2 };
-}
-
-const overlaps = (a, b) => a.minX < b.maxX - EPS && b.minX < a.maxX - EPS && a.minZ < b.maxZ - EPS && b.minZ < a.maxZ - EPS;
-const inside = (a, box) => a.minX >= box.minX - EPS && a.maxX <= box.maxX + EPS && a.minZ >= box.minZ - EPS && a.maxZ <= box.maxZ + EPS;
-
-// Clear zone inside each door of the room, so furniture never blocks a door.
-function doorZones(doc, room) {
-  const zones = [];
-  for (const wall of roomWalls(doc, room)) {
-    const doors = (doc.floorplan.openings || []).filter((o) => o.wallId === wall.id && o.type === 'door');
-    if (!doors.length) continue;
-    const [x1, z1] = wall.from;
-    const [x2, z2] = wall.to;
-    for (const door of doors) {
-      const cx = x1 + (x2 - x1) * door.t;
-      const cz = z1 + (z2 - z1) * door.t;
-      const half = Math.max(Number(door.width) || 0.9, DOOR_CLEARANCE) / 2 + 0.1;
-      const horizontal = Math.abs(z2 - z1) < Math.abs(x2 - x1);
-      zones.push(horizontal
-        ? { minX: cx - half, maxX: cx + half, minZ: cz - DOOR_CLEARANCE, maxZ: cz + DOOR_CLEARANCE }
-        : { minX: cx - DOOR_CLEARANCE, maxX: cx + DOOR_CLEARANCE, minZ: cz - half, maxZ: cz + half });
-    }
-  }
-  return zones;
-}
-
-// Rotation that turns an item's front (+z at rotation 0) to face (fx, fz).
-const facing = (fx, fz) => round3(Math.atan2(fx, fz));
-
 /** Finds a free spot for a new item in a rectangular room, or null. */
-function findSpot(doc, room, type, wallThickness) {
+function findSpot(doc, room, type) {
   const size = itemSize(type);
-  const box = rectOf(room);
-  const inset = wallThickness / 2 + WALL_GAP;
-  const clear = { minX: box.minX + inset, maxX: box.maxX - inset, minZ: box.minZ + inset, maxZ: box.maxZ - inset };
-  const taken = [
-    ...(doc.floorplan.items || [])
-      .filter((item) => item.floorId === room.floorId && pointInRoom(room, item.x, item.z))
-      .map(footprint),
-    ...doorZones(doc, room)
-  ];
+  const { clear, floorTaken } = roomLayout(doc, room);
+  const taken = floorTaken();
   const free = (candidate) => inside(footprint(candidate), clear) && !taken.some((zone) => overlaps(footprint(candidate), zone));
   const base = { type, width: size.width, depth: size.depth };
 
@@ -246,7 +173,6 @@ const materialById = (id) => DEFAULT_MATERIAL_PACKS.find((material) => material.
  */
 export function applyAiOperations(floorplan, operations = []) {
   const doc = new FloorplanDocument(JSON.parse(JSON.stringify(floorplan)));
-  const wallThickness = Number(doc.floorplan.wallThickness) || 0.23;
   const applied = [];
   const skipped = [];
   const done = (op) => applied.push({ op: op.op, label: op.label || op.op });
@@ -317,7 +243,7 @@ export function applyAiOperations(floorplan, operations = []) {
         const count = Math.max(1, Math.min(8, Math.round(Number(op.count) || 1)));
         let placed = 0;
         for (let i = 0; i < count; i += 1) {
-          const spot = findSpot(doc, room, op.type, wallThickness);
+          const spot = findSpot(doc, room, op.type);
           if (!spot) break;
           doc.addItem({ type: op.type, x: round3(spot.x), z: round3(spot.z), rotation: spot.rotation, roomId: room.id, floorId: room.floorId });
           placed += 1;
@@ -327,6 +253,28 @@ export function applyAiOperations(floorplan, operations = []) {
           done(op);
           skip(op, `Only ${placed} of ${count} fit in ${room.name}.`);
         } else skip(op, `There is no free space for it in ${room.name}.`);
+        break;
+      }
+      case 'furnish_room': {
+        if (!isPlainRect(room)) { skip(op, 'Furniture is only placed automatically in rectangular rooms.'); break; }
+        const kind = op.kind || roomKind(room.name);
+        const result = furnishRoom(doc, room, kind);
+        if (!result) {
+          skip(op, `ArchCanvas does not know what kind of room "${room.name}" is. Rename it (for example Bedroom 2 or Kitchen) or ask for furniture piece by piece.`);
+          break;
+        }
+        const name = room.name || 'Room';
+        if (result.placed.length) {
+          applied.push({ op: op.op, label: `Furnish ${name} (${result.placed.length} items): ${describeItems(result.placed)}` });
+        } else if (kind === 'staircase') {
+          applied.push({ op: op.op, label: `${name} kept clear` });
+        }
+        if (result.missing.length) {
+          skip(op, 'There was no free space left for it.');
+          skipped[skipped.length - 1].label = `${name}: ${describeItems(result.missing)}`;
+        } else if (!result.placed.length && kind !== 'staircase') {
+          skip(op, `There is no free space in ${name}.`);
+        }
         break;
       }
       case 'remove_furniture': {
