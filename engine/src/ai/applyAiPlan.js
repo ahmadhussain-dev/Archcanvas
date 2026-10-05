@@ -162,6 +162,30 @@ function freeT(doc, room, wall, kind, width, near = null) {
   return a === undefined ? null : round3(a / length);
 }
 
+// The walls along one side of a room: its own, then any other wall on the same
+// floor lying along that edge (a room built against a longer house front shares
+// several walls of the rooms behind it).
+function sideWalls(doc, room, side) {
+  const own = roomWalls(doc, room).filter((wall) => wallSide(room, wall) === side);
+  const box = rectOf(room);
+  const horizontal = side === 'top' || side === 'bottom';
+  const edge = { top: box.maxZ, bottom: box.minZ, right: box.maxX, left: box.minX }[side];
+  const overlap = (wall) => {
+    const [x1, z1] = wall.from;
+    const [x2, z2] = wall.to;
+    if (horizontal) {
+      if (Math.abs(z1 - edge) > 0.05 || Math.abs(z2 - edge) > 0.05) return 0;
+      return Math.min(box.maxX, Math.max(x1, x2)) - Math.max(box.minX, Math.min(x1, x2));
+    }
+    if (Math.abs(x1 - edge) > 0.05 || Math.abs(x2 - edge) > 0.05) return 0;
+    return Math.min(box.maxZ, Math.max(z1, z2)) - Math.max(box.minZ, Math.min(z1, z2));
+  };
+  const others = (doc.floorplan.walls || [])
+    .filter((wall) => !own.includes(wall) && (wall.floorId ?? room.floorId) === room.floorId && overlap(wall) > 0.5)
+    .sort((a, b) => overlap(b) - overlap(a));
+  return [...own, ...others];
+}
+
 function resolveRoom(doc, ref) {
   if (!ref) return null;
   const rooms = doc.floorplan.floor.rooms || [];
@@ -294,12 +318,17 @@ export function applyAiOperations(floorplan, operations = []) {
       }
       case 'add_opening': {
         const kind = op.kind === 'window' ? 'window' : 'door';
-        const wall = roomWalls(doc, room).find((candidate) => wallSide(room, candidate) === op.side);
-        if (!wall) { skip(op, `${room.name} has no wall on that side.`); break; }
+        const walls = sideWalls(doc, room, op.side);
+        if (!walls.length) { skip(op, `${room.name} has no wall on that side.`); break; }
         const width = Number(op.width) > 0 ? Number(op.width) : kind === 'door' ? 0.9 : 1.25;
-        const t = freeT(doc, room, wall, kind, width, op.at === undefined ? null : Number(op.at));
-        if (t === null) { skip(op, `That wall of ${room.name} has no room for another ${kind}.`); break; }
-        doc.addOpening({ wallId: wall.id, type: kind, t, width });
+        const near = op.at === undefined ? null : Number(op.at);
+        let spot = null;
+        for (const wall of walls) {
+          const t = freeT(doc, room, wall, kind, width, near);
+          if (t !== null) { spot = { wall, t }; break; }
+        }
+        if (!spot) { skip(op, `That wall of ${room.name} has no room for another ${kind}.`); break; }
+        doc.addOpening({ wallId: spot.wall.id, type: kind, t: spot.t, width });
         done(op);
         break;
       }
