@@ -4,6 +4,7 @@ import Icon from '../../components/Icon.jsx'
 import { api } from '../../lib/api.js'
 
 const IDEAS = [
+  'Design this floor: 2 bedrooms with attached baths, TV lounge, kitchen, car porch',
   'Add a 12 x 14 ft bedroom with an attached bath',
   'Furnish every room with proper furniture',
   'Paint the lounge walls a light warm grey',

@@ -168,3 +168,31 @@ test('an unknown kind of room is reported, not guessed', () => {
   assert.equal(asked.skipped.length, 0);
   assert.match(asked.applied[0].label, /^Furnish Hall/);
 });
+
+test('a door goes where it is asked for', () => {
+  const plan = oneRoom('Lounge', 6, 4);
+  const { floorplan } = applyAiOperations(plan, [{ op: 'add_opening', room: 'r', kind: 'door', side: 'bottom', at: 2 }]);
+  const door = floorplan.openings.find((o) => o.type === 'door');
+  const wall = floorplan.walls.find((w) => w.id === door.wallId);
+  const x = wall.from[0] + (wall.to[0] - wall.from[0]) * door.t;
+  assert.ok(Math.abs(x - 2) < 0.15, `door at x ${x}`);
+});
+
+test('a stair hall gets a flight of stairs up from its door', () => {
+  const plan = oneRoom('Staircase', 1.4, 4, [['door', 'bottom']]);
+  const { floorplan, applied } = furnish(plan);
+  assert.equal(floorplan.stairs.length, 1);
+  const stairs = floorplan.stairs[0];
+  assert.ok(stairs.depth >= 2.5 && stairs.width <= 1.2);
+  assert.ok(stairs.z > 0, 'the landing is by the door at the bottom');
+  assert.match(applied[0].label, /^Stairs up in Staircase/);
+  // Asking again does not add a second flight.
+  assert.equal(furnish(floorplan).floorplan.stairs.length, 1);
+});
+
+test('a terrace gets planters and a small sitting set', () => {
+  const { floorplan } = furnish(oneRoom('Terrace', 3, 4, [['door', 'top']]));
+  assert.equal(roomKind('Front Balcony'), 'terrace');
+  assert.ok(count(floorplan, 'terracotta_flower_urn') >= 1 && count(floorplan, 'bistro_table') === 1);
+  assertTidy(floorplan);
+});

@@ -4,7 +4,7 @@ import request from 'supertest'
 import { createApp } from '../src/app.js'
 import { connectTestDatabase, closeTestDatabase } from './helpers/db.js'
 import { summarizePlan, toWorld, planFrame } from '../src/lib/planSummary.js'
-import { checkOperations, parseReply, buildMessages } from '../src/lib/aiPlan.js'
+import { checkOperations, parseReply, buildMessages, minSizeFor } from '../src/lib/aiPlan.js'
 import { mockProvider } from '../src/services/ai.js'
 
 const FT = 0.3048
@@ -159,6 +159,48 @@ describe('checking AI changes', () => {
     assert.match(skipped[0].reason, /what kind of room "Hall" is/)
   })
 
+  test('layout_floor replaces the floor with a computed layout, doors, windows and furniture', () => {
+    const { operations, skipped } = checkOperations(building(), [
+      { op: 'layout_floor', rooms: [
+        { name: 'Master Bedroom', zone: 'back' }, { name: 'Master Bath', attached_to: 'Master Bedroom' },
+        { name: 'TV Lounge', zone: 'middle' }, { name: 'Staircase' }, { name: 'Kitchen' },
+        { name: 'Car Porch' }, { name: 'Drawing Room' }
+      ] },
+      { op: 'set_floor', room: 'Kitchen', material: 'brick-square' }
+    ], { idPrefix: 'ai' })
+    assert.deepEqual(skipped, [])
+    assert.deepEqual(operations[0], { op: 'delete_room', room: 'room_1', label: 'Remove Lounge' })
+    const added = operations.filter((o) => o.op === 'add_room')
+    assert.equal(added.length, 7)
+    const area = added.reduce((sum, room) => sum + room.width * room.depth, 0)
+    assert.ok(Math.abs(area - 25 * 45 * FT * FT) < 0.05, 'the rooms fill the plot')
+    const gate = operations.find((o) => o.op === 'add_opening' && o.room === added.find((r) => r.name === 'Car Porch').id && o.side === 'bottom')
+    assert.ok(gate && Number.isFinite(gate.at), 'the car porch has a gate at a set spot')
+    assert.ok(operations.some((o) => o.op === 'add_opening' && o.kind === 'window'))
+    assert.deepEqual(operations.filter((o) => o.op === 'furnish_room').map((o) => o.kind).sort(),
+      ['bathroom', 'bedroom', 'car porch', 'drawing room', 'kitchen', 'lounge', 'staircase'])
+    assert.equal(operations.at(-1).op, 'set_floor')
+  })
+
+  test('layout_floor upstairs builds over the floor below; an attached bath is a bathroom', () => {
+    const plan = building()
+    plan.floorplan.floors.push({ id: 'floor_2', name: 'First', level: 1 })
+    plan.floorplan.currentFloorId = 'floor_2'
+    const { operations, skipped } = checkOperations(plan, [{ op: 'layout_floor', rooms: [{ name: 'Bedroom', zone: 'back' }, { name: 'Master Bath', attached_to: 'Bedroom' }] }], { idPrefix: 'ai' })
+    const added = operations.filter((o) => o.op === 'add_room')
+    const minX = Math.min(...added.map((r) => r.x - r.width / 2))
+    const maxX = Math.max(...added.map((r) => r.x + r.width / 2))
+    assert.ok(Math.abs(maxX - minX - 15 * FT) < 0.01, 'as wide as the lounge below')
+    // 15 ft is too narrow for a 10 ft bedroom and a 5 ft bath side by side.
+    assert.deepEqual(skipped.map((s) => s.label), ['Add Master Bath'])
+    assert.equal(minSizeFor('Master Bath').kind, 'bathroom')
+  })
+
+  test('a door can be put at a set spot', () => {
+    const { operations } = checkOperations(building(), [{ op: 'add_door', room: 'room_1', side: 'bottom', at: 4 }])
+    assert.equal(operations[0].at, r3(-12.5 * FT + 4 * FT))
+  })
+
   test('the prompt explains furnishing and doors', () => {
     const [system] = buildMessages({
       summary: summarizePlan(building()),
@@ -249,6 +291,9 @@ describe('POST /projects/:id/ai', { skip: !hasDb }, () => {
     assert.deepEqual(res.body.operations.map((o) => o.op), ['add_room', 'add_opening', 'add_opening', 'furnish_room'])
     const styled = await request(demo).post(`/api/projects/${projectId}/ai`).set(me).send({ prompt: 'furnish every room', floorplan: building() })
     assert.deepEqual(styled.body.operations.map((o) => [o.op, o.kind]), [['furnish_room', 'lounge']])
+    const floor = await request(demo).post(`/api/projects/${projectId}/ai`).set(me).send({ prompt: 'design the ground floor', floorplan: building() })
+    assert.deepEqual(floor.body.skipped, [])
+    assert.equal(floor.body.operations.filter((o) => o.op === 'add_room').length, 7)
   })
 
   test('without a key the API says how to set it up', async () => {
