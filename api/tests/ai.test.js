@@ -209,6 +209,12 @@ describe('AI service errors', () => {
     assert.match(aiError(404, retired, 'gemini-2.5-flash').message, /AI_MODEL=gemini-3\.8-flash in api/)
     assert.equal(aiError(429, '', 'x').status, 429)
     assert.match(aiError(503, 'high demand', 'x').message, /busy/)
+    // Gemini's busy message mentions "model"; it must not read as a missing model.
+    const busy = aiError(503, 'This model is currently experiencing high demand. Please try again later.', 'gemini-3.8-flash')
+    assert.equal(busy.status, 503)
+    assert.match(busy.message, /busy/)
+    // Never tell people to set the model they already have.
+    assert.match(aiError(404, 'models/gemini-3.8-flash is not found', 'gemini-3.8-flash').message, /a model listed in Google AI Studio/)
     assert.match(aiError(400, 'Bad request field', 'x').message, /\(Bad request field\)/)
   })
 })

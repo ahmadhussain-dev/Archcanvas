@@ -26,13 +26,17 @@ export function aiError(status, message, model) {
   if (status === 401 || status === 403 || /api key/i.test(message)) {
     return new HttpError(502, 'The AI key was refused. Check AI_API_KEY in api/.env (a Gemini key starts with AIza) and restart the API.')
   }
-  if (status === 404 || /model/i.test(message)) {
-    // Google retires models for new keys and names the replacement, e.g. "use models/gemini-3.8-flash".
-    const suggested = message.match(/use (?:models\/)?([\w.-]+)/i)?.[1] ?? DEFAULT_MODEL
-    return new HttpError(502, `The AI model "${model}" is not available. Set AI_MODEL=${suggested} in api/.env and restart the API.`)
-  }
+  // Checked before the model rule: Gemini's "This model is currently experiencing high demand" is a 503.
   if (status >= 500) {
     return new HttpError(503, 'The AI is busy right now (Google reports high demand). Wait a minute and try again.')
+  }
+  if (status === 404 || /not found|no longer available|not supported/i.test(message)) {
+    // Google retires models for new keys and names the replacement, e.g. "use models/gemini-3.8-flash".
+    const suggested = message.match(/use (?:models\/)?([\w.-]+)/i)?.[1] ?? DEFAULT_MODEL
+    const fix = suggested && suggested !== model
+      ? `Set AI_MODEL=${suggested} in api/.env`
+      : 'Set AI_MODEL in api/.env to a model listed in Google AI Studio'
+    return new HttpError(502, `The AI model "${model}" is not available. ${fix} and restart the API.`)
   }
   return new HttpError(502, `The AI service did not answer properly${message ? ` (${message.slice(0, 200)})` : ''}. Try again.`)
 }
