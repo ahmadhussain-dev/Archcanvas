@@ -208,6 +208,50 @@ describe('AI service errors', () => {
     const retired = 'This model models/gemini-2.5-flash is no longer available to new users. Please update your code to use models/gemini-3.8-flash for the latest features.'
     assert.match(aiError(404, retired, 'gemini-2.5-flash').message, /AI_MODEL=gemini-3\.8-flash in api/)
     assert.equal(aiError(429, '', 'x').status, 429)
-    assert.match(aiError(500, 'Internal error', 'x').message, /\(Internal error\)/)
+    assert.match(aiError(503, 'high demand', 'x').message, /busy/)
+    assert.match(aiError(400, 'Bad request field', 'x').message, /\(Bad request field\)/)
+  })
+})
+
+describe('AI provider retries', () => {
+  test('retries a busy model, then tries the fallback', async () => {
+    const { openAiCompatibleProvider } = await import('../src/services/ai.js')
+    const realFetch = globalThis.fetch
+    const calls = []
+    const busy = () => new Response(JSON.stringify([{ error: { code: 503, message: 'high demand' } }]), { status: 503 })
+    globalThis.fetch = async (url, init) => {
+      const { model } = JSON.parse(init.body)
+      calls.push(model)
+      if (model === 'main') return busy()
+      return new Response(JSON.stringify({ choices: [{ message: { content: '{"message":"ok"}' } }] }), { status: 200 })
+    }
+    try {
+      const ask = openAiCompatibleProvider({ apiKey: 'k', model: 'main', fallbackModels: ['spare'], retryDelaysMs: [0, 0] })
+      assert.equal(await ask([]), '{"message":"ok"}')
+      assert.deepEqual(calls, ['main', 'main', 'main', 'spare'])
+
+      calls.length = 0
+      const alone = openAiCompatibleProvider({ apiKey: 'k', model: 'main', retryDelaysMs: [0] })
+      await assert.rejects(alone([]), (err) => err.status === 503 && /busy/.test(err.message))
+      assert.deepEqual(calls, ['main', 'main'])
+    } finally {
+      globalThis.fetch = realFetch
+    }
+  })
+
+  test('does not retry a bad key', async () => {
+    const { openAiCompatibleProvider } = await import('../src/services/ai.js')
+    const realFetch = globalThis.fetch
+    let count = 0
+    globalThis.fetch = async () => {
+      count += 1
+      return new Response(JSON.stringify([{ error: { message: 'Please pass a valid API key' } }]), { status: 400 })
+    }
+    try {
+      await assert.rejects(openAiCompatibleProvider({ apiKey: 'k', retryDelaysMs: [0, 0] })([]), /AI_API_KEY/)
+      assert.equal(count, 1)
+    } finally {
+      globalThis.fetch = realFetch
+    }
   })
 })
