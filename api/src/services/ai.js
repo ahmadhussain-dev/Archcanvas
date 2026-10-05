@@ -8,7 +8,31 @@ import { HttpError } from '../lib/httpError.js'
 import { minSizeFor } from '../lib/aiPlan.js'
 
 export const DEFAULT_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/openai/'
-export const DEFAULT_MODEL = 'gemini-2.5-flash'
+export const DEFAULT_MODEL = 'gemini-3.8-flash'
+
+// The provider's own error text. Gemini wraps it as [{ error: { message } }].
+function providerMessage(text) {
+  try {
+    const data = JSON.parse(text)
+    return String((Array.isArray(data) ? data[0] : data)?.error?.message ?? '')
+  } catch {
+    return ''
+  }
+}
+
+// A failed AI call as an error that says what to fix.
+export function aiError(status, message, model) {
+  if (status === 429) return new HttpError(429, 'The free AI limit was reached. Wait a minute and try again.')
+  if (status === 401 || status === 403 || /api key/i.test(message)) {
+    return new HttpError(502, 'The AI key was refused. Check AI_API_KEY in api/.env (a Gemini key starts with AIza) and restart the API.')
+  }
+  if (status === 404 || /model/i.test(message)) {
+    // Google retires models for new keys and names the replacement, e.g. "use models/gemini-3.8-flash".
+    const suggested = message.match(/use (?:models\/)?([\w.-]+)/i)?.[1] ?? DEFAULT_MODEL
+    return new HttpError(502, `The AI model "${model}" is not available. Set AI_MODEL=${suggested} in api/.env and restart the API.`)
+  }
+  return new HttpError(502, `The AI service did not answer properly${message ? ` (${message.slice(0, 200)})` : ''}. Try again.`)
+}
 
 export function openAiCompatibleProvider({ apiKey, baseUrl = DEFAULT_BASE_URL, model = DEFAULT_MODEL, timeoutMs = 60_000 }) {
   return async function ask(messages) {
@@ -24,12 +48,10 @@ export function openAiCompatibleProvider({ apiKey, baseUrl = DEFAULT_BASE_URL, m
       if (err.name === 'TimeoutError') throw new HttpError(504, 'The AI took too long to answer. Try a smaller request.')
       throw new HttpError(502, 'The AI service could not be reached. Check the internet connection and try again.')
     }
-    if (res.status === 429) throw new HttpError(429, 'The free AI limit was reached. Wait a minute and try again.')
-    if (res.status === 401 || res.status === 403) throw new HttpError(502, 'The AI key was refused. Check AI_API_KEY in api/.env.')
     if (!res.ok) {
       const detail = await res.text().catch(() => '')
       console.error(`AI request failed (${res.status}): ${detail.slice(0, 500)}`)
-      throw new HttpError(502, 'The AI service did not answer properly. Try again.')
+      throw aiError(res.status, providerMessage(detail), model)
     }
     const data = await res.json()
     return data?.choices?.[0]?.message?.content ?? ''
