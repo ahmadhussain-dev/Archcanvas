@@ -8,7 +8,7 @@ import { HttpError } from '../lib/httpError.js'
 import { minSizeFor } from '../lib/aiPlan.js'
 
 export const DEFAULT_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/openai/'
-export const DEFAULT_MODEL = 'gemini-2.5-flash'
+export const DEFAULT_MODEL = 'gemini-3.8-flash'
 
 // The provider's own error text. Gemini wraps it as [{ error: { message } }].
 function providerMessage(text) {
@@ -27,7 +27,9 @@ export function aiError(status, message, model) {
     return new HttpError(502, 'The AI key was refused. Check AI_API_KEY in api/.env (a Gemini key starts with AIza) and restart the API.')
   }
   if (status === 404 || /model/i.test(message)) {
-    return new HttpError(502, `The AI model "${model}" was not found. Set AI_MODEL=${DEFAULT_MODEL} in api/.env and restart the API.`)
+    // Google retires models for new keys and names the replacement, e.g. "use models/gemini-3.8-flash".
+    const suggested = message.match(/use (?:models\/)?([\w.-]+)/i)?.[1] ?? DEFAULT_MODEL
+    return new HttpError(502, `The AI model "${model}" is not available. Set AI_MODEL=${suggested} in api/.env and restart the API.`)
   }
   return new HttpError(502, `The AI service did not answer properly${message ? ` (${message.slice(0, 200)})` : ''}. Try again.`)
 }

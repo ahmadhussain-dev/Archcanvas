@@ -203,8 +203,10 @@ describe('POST /projects/:id/ai', { skip: !hasDb }, () => {
 describe('AI service errors', () => {
   test('say what to fix', async () => {
     const { aiError } = await import('../src/services/ai.js')
-    assert.match(aiError(400, 'Please pass a valid API key', 'gemini-2.5-flash').message, /AI_API_KEY/)
-    assert.match(aiError(404, 'models/DefaultTextModel is not found', 'DefaultTextModel').message, /"DefaultTextModel" was not found.*AI_MODEL=gemini-2.5-flash/)
+    assert.match(aiError(400, 'Please pass a valid API key', 'gemini-3.8-flash').message, /AI_API_KEY/)
+    assert.match(aiError(404, 'models/DefaultTextModel is not found', 'DefaultTextModel').message, /"DefaultTextModel" is not available.*AI_MODEL=gemini-3.8-flash/)
+    const retired = 'This model models/gemini-2.5-flash is no longer available to new users. Please update your code to use models/gemini-3.8-flash for the latest features.'
+    assert.match(aiError(404, retired, 'gemini-2.5-flash').message, /AI_MODEL=gemini-3\.8-flash in api/)
     assert.equal(aiError(429, '', 'x').status, 429)
     assert.match(aiError(500, 'Internal error', 'x').message, /\(Internal error\)/)
   })
