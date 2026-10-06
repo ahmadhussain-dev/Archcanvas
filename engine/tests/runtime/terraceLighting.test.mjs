@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as BABYLON from '@babylonjs/core';
-import { BabylonSceneRenderer, FloorplanDocument, isNoCeilingRoom, isParapetWall, PARAPET_HEIGHT } from '../../src/index.js';
+import { BabylonSceneRenderer, FloorplanDocument, isNoCeilingRoom, isParapetWall, PARAPET_HEIGHT, overlappedWallIds } from '../../src/index.js';
 
 test('isNoCeilingRoom correctly identifies terrace/balcony/outdoor rooms', () => {
  assert.equal(isNoCeilingRoom({ name: ' Second Floor Terrace Terrace 2F' }), true);
@@ -75,4 +75,21 @@ test('walls that only bound a terrace are waist-high parapets', () => {
   assert.equal(isParapetWall(floorplan, wall('n')), false, 'an indoor wall');
   assert.equal(isParapetWall(floorplan, wall('side')), false, 'has a window');
   assert.equal(PARAPET_HEIGHT, 1);
+});
+
+test('of two walls lying on each other, one is drawn under the other', () => {
+  const floorplan = {
+    floor: { rooms: [{ id: 'plot', wallIds: { south: 'plot_s' } }] },
+    walls: [
+      { id: 'plot_s', floorId: 'f1', from: [-4, -7], to: [4, -7] },
+      { id: 'house_s', floorId: 'f1', from: [-4, -7], to: [4, -7] },
+      { id: 'long', floorId: 'f1', from: [-4, 0], to: [4, 0] },
+      { id: 'short', floorId: 'f1', from: [0, 0], to: [2, 0] },
+      { id: 'painted', floorId: 'f1', from: [-4, 2], to: [0, 2], color: '#ffcc00' },
+      { id: 'plain', floorId: 'f1', from: [-4, 2], to: [4, 2] },
+      { id: 'upstairs', floorId: 'f2', from: [-4, 0], to: [4, 0] },
+      { id: 'apart', floorId: 'f1', from: [-4, 0.5], to: [4, 0.5] }
+    ]
+  };
+  assert.deepEqual([...overlappedWallIds(floorplan)].sort(), ['plain', 'plot_s', 'short']);
 });
