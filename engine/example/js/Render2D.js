@@ -2,6 +2,8 @@ import { getRoomVertices, isItemSnappedToBookshelfOrMannequin } from '../../src/
 
 import { createStoreProxy } from '../store/proxyHelper.js';
 import { render2DFurniturePlacementPreview } from './FurniturePlacementController.js';
+import { formatRoomSize } from './Units.js';
+import { isPlanDrawing, itemsOnPlan, wallStrokeStyle, renderOpeningSymbols, renderDimensions, roomClearSize } from './PlanDrawing.js';
 
 let rawCtx = null;
 const ctx = createStoreProxy(() => rawCtx);
@@ -99,7 +101,13 @@ export function renderPlan() {
   ctx.referenceFloorWalls().forEach((wall) => renderReferenceWall(wall));
   ctx.currentWalls().forEach((wall) => renderWall(wall));
   ctx.currentRooms().forEach((room) => renderRoomInteraction(room));
+  // ArchCanvas: door swings, window symbols and dimensions, under the
+  // (then invisible) opening hit lines so openings stay selectable.
+  const planApi = { ctx, worldToSvg, createSvgElement };
+  ctx.svg.classList.toggle('plan-drawing', isPlanDrawing());
+  if (isPlanDrawing()) renderOpeningSymbols(planApi);
   ctx.currentOpenings().forEach((opening) => renderOpening(opening));
+  if (isPlanDrawing()) renderDimensions(planApi);
 
   // 2D  ， Room 
   // ctx.currentRoofs().forEach((roof) => renderRoof(roof));
@@ -142,7 +150,7 @@ export function renderPlan() {
     if (!aIsRug && bIsRug) return 1;
     return 0;
   });
-  sortedItems.forEach((item) => renderPlanItem(item));
+  if (itemsOnPlan()) sortedItems.forEach((item) => renderPlanItem(item));
   render2DFurniturePlacementPreview();
   const selectedRoom = ctx.selectedRoomId ? ctx.testMap.getEntity('room', ctx.selectedRoomId) : null;
   if (selectedRoom) renderSelectedRoomHandles(selectedRoom);
@@ -178,6 +186,8 @@ export function renderRoom(room) {
   const centerX = sumX / vertices.length;
   const centerZ = sumZ / vertices.length;
   const svgCenter = worldToSvg(centerX, centerZ);
+  // ArchCanvas: the plot outline is labelled in the page header, not on the plan.
+  if (room.id === 'plot') return;
 
   //  Room 
   let area = 0;
@@ -194,6 +204,7 @@ export function renderRoom(room) {
 
   //  ：Room （  800，  slate  ）
   const nameNode = createSvgElement('text', {
+    class: 'room-name-label',
     x: svgCenter.x,
     y: svgCenter.y - 5,
     fill: 'rgba(15, 23, 42, 0.18)',
@@ -207,6 +218,7 @@ export function renderRoom(room) {
 
   //  ： （  800， ， ）
   const areaNode = createSvgElement('text', {
+    class: 'room-size-label',
     x: svgCenter.x,
     y: svgCenter.y + 8,
     fill: 'rgba(15, 23, 42, 0.14)',
@@ -216,10 +228,26 @@ export function renderRoom(room) {
     'text-anchor': 'middle',
     'dominant-baseline': 'middle'
   });
-  areaNode.textContent = `${formattedArea} ㎡`;
+  // ArchCanvas: the clear inside size, between the wall faces.
+  areaNode.textContent = (isPlanDrawing() && roomClearSize({ ctx }, room)) || formatRoomSize(room, formattedArea);
 
   labelGroup.appendChild(nameNode);
-  labelGroup.appendChild(areaNode);
+  // ArchCanvas: leave the size line off rooms too narrow to hold it.
+  const roomWidthPx = Math.abs(worldToSvg(room.width || 0, 0).x - worldToSvg(0, 0).x);
+  const sizeText = areaNode.textContent;
+  if (sizeText.length * 6.2 <= roomWidthPx - 8) {
+    labelGroup.appendChild(areaNode);
+  } else if (isPlanDrawing() && sizeText.includes(' × ') && sizeText.length * 3.4 <= roomWidthPx - 8) {
+    // A narrow room gets its clear size on two lines: width ×, then depth.
+    const [first, second] = sizeText.split(' × ');
+    areaNode.textContent = '';
+    [`${first} ×`, second].forEach((part, index) => {
+      const tspan = createSvgElement('tspan', { x: svgCenter.x, dy: index === 0 ? 0 : 11 });
+      tspan.textContent = part;
+      areaNode.appendChild(tspan);
+    });
+    labelGroup.appendChild(areaNode);
+  }
   ctx.svg.appendChild(labelGroup);
 }
 
@@ -382,6 +410,7 @@ export function renderWall(wall) {
     stroke: wall.color || '#f9fbff',
     'data-wall-id': wall.id
   });
+  if (isPlanDrawing()) line.setAttribute('style', wallStrokeStyle({ ctx, worldToSvg }, wall));
   line.addEventListener('pointerdown', (event) => {
     ctx.beginWallDrag(event, wall.id);
   });

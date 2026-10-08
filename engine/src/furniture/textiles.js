@@ -361,7 +361,7 @@ export const roundedRugFurniture = {
 
 export const ovalRugFurniture = {
   type: 'oval_rug',
-  name: 'Circle',
+  name: 'Oval Rug',
   unit: 'm',
   defaultSize: { width: 1.5, depth: 2.15, height: 0.01 },
   components: [
@@ -371,7 +371,7 @@ export const ovalRugFurniture = {
       defaultColor: '#ffffff',
       defaultMaterial: {
         id: 'fabric-circle',
-        name: ' Item',
+        name: 'Round Rug',
         category: 'fabric',
         kind: 'texture',
         scale: 2,
@@ -415,7 +415,7 @@ export const biscuitRugFurniture = {
       defaultColor: '#fffaf0',
       defaultMaterial: {
         id: 'fabric-foam-panel',
-        name: ' Item',
+        name: 'Foam Panel',
         category: 'fabric',
         kind: 'texture',
         scale: 2,
@@ -448,7 +448,7 @@ export const curtainFurniture = {
   isSwitchable: true,
   components: [
     { id: 'fabric', label: 'Component', defaultColor: '#ded8cc' },
-    { id: 'rod', label: ' ItemMetal Item', defaultColor: '#3b3a39' }
+    { id: 'rod', label: 'Metal rod', defaultColor: '#3b3a39' }
   ],
   build(registry, item, node, size) {
     const rodH = 0.03;
@@ -549,7 +549,7 @@ export const doubleSheerCurtainFurniture = {
   placeType: 'wall',
   isSwitchable: true,
   components: [
-    { id: 'rod', label: 'Metal Item', defaultColor: '#bcaaa4' },
+    { id: 'rod', label: 'Metal rod', defaultColor: '#bcaaa4' },
     { id: 'sheer', label: 'Component', defaultColor: '#f5f5f5' }
   ],
   build(registry, item, node, size) {

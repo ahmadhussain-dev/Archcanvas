@@ -12,6 +12,8 @@
 // =============================================
 // localStorage  
 // =============================================
+import { EMBEDDED } from './Embed.js';
+
 const STORAGE_KEY_BUILDING = 'blueprint3d-building-data';
 const STORAGE_KEY_MATERIAL = 'blueprint3d-material-library';
 const STORAGE_KEY_UI_STATE = 'blueprint3d-ui-state';
@@ -22,6 +24,8 @@ const STORAGE_KEY_PROJECT_PREFIX = 'blueprint3d-project-';
 const STORAGE_KEY_CURRENT_PROJECT = 'blueprint3d-current-project';
 
 export function readLocalSave() {
+  // Inside ArchCanvas the project comes from the server, not from this browser.
+  if (EMBEDDED) return { buildingData: null, materialLibrary: null, uiState: null };
   try {
     const rawBuilding = localStorage.getItem(STORAGE_KEY_BUILDING);
     const rawMaterial = localStorage.getItem(STORAGE_KEY_MATERIAL);
@@ -204,7 +208,7 @@ export class Store extends EventEmitter {
       this.emit('saved');
       return true;
     } catch (error) {
-      console.error('Save Item localStorage  Item:', error);
+      console.error('Failed to save to localStorage:', error);
       this.emit('saveError', error);
       return false;
     }
@@ -226,7 +230,7 @@ export class Store extends EventEmitter {
         uiState: rawUI ? JSON.parse(rawUI) : null,
       };
     } catch (error) {
-      console.error(' Item localStorage  Item:', error);
+      console.error('Failed to read from localStorage:', error);
       return { buildingData: null, materialLibrary: null, uiState: null };
     }
   }
@@ -250,7 +254,7 @@ export class Store extends EventEmitter {
       localStorage.removeItem(STORAGE_KEY_UI_STATE);
       localStorage.removeItem(STORAGE_KEY_SAVE_TS);
     } catch (error) {
-      console.error(' Item localStorage  Item:', error);
+      console.error('Failed to clear localStorage:', error);
     }
   }
 
@@ -286,6 +290,7 @@ export class Store extends EventEmitter {
    */
   startAutoSave(getExtra = () => ({})) {
     this.stopAutoSave();
+    if (EMBEDDED) return; // ArchCanvas saves versions to the server instead.
     this._getAutoSaveExtra = getExtra;
     this._autoSaveTimer = setInterval(() => {
       this._performAutoSave();
@@ -399,7 +404,7 @@ export class Store extends EventEmitter {
       this.emit('saved');
       return true;
     } catch (error) {
-      console.error('Save Item:', error);
+      console.error('Failed to save project:', error);
       this.emit('saveError', error);
       return false;
     }
@@ -420,7 +425,7 @@ export class Store extends EventEmitter {
       localStorage.setItem(STORAGE_KEY_CURRENT_PROJECT, this.currentProjectName);
       return data;
     } catch (error) {
-      console.error(' Item:', error);
+      console.error('Failed to load project:', error);
       return null;
     }
   }
@@ -436,7 +441,7 @@ export class Store extends EventEmitter {
       const index = this.listProjects().filter((p) => p.id !== id);
       this._saveProjectIndex(index);
     } catch (error) {
-      console.error('Delete Item:', error);
+      console.error('Failed to delete project:', error);
     }
   }
 

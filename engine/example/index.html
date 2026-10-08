@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>blueprint3d-babylon  Item</title>
+    <title>ArchCanvas editor</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
@@ -12,7 +12,7 @@
         <aside class="panel left-panel">
           <button id="btn-toggle-left" class="toggle-side-btn" type="button" aria-label="Collapse Panel">‹</button>
           <div class="left-panel-content">
-            <nav class="tabs" aria-label=" Item">
+            <nav class="tabs" aria-label="Panels">
             <div class="tabs-slider"></div>
             <button class="tab active" type="button" data-tab="floorplan">
               <svg class="tab-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/><path d="M21 12H3"/><path d="M12 3v18"/></svg>
@@ -115,56 +115,56 @@
 
             <div class="building-tool-group" data-tool-group="roof">
               <button class="tool-group-toggle" type="button" aria-expanded="false" aria-controls="roof-tools">
-                <span> Item</span>
+                <span>Roof</span>
                 <svg class="tool-group-chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
               </button>
               <div id="roof-tools" class="segmented roof-tools">
               <button class="mode" type="button" data-mode="add-roof-gable">
                 <svg class="mode-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 12L2 20h20Z"/></svg>
-                <span class="mode-text"> Item</span>
+                <span class="mode-text">Gable</span>
               </button>
               <button class="mode" type="button" data-mode="add-roof-shed">
                 <svg class="mode-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h20"/><path d="M2 20 L22 10 L22 20 Z"/></svg>
-                <span class="mode-text"> Item</span>
+                <span class="mode-text">Shed</span>
               </button>
               <button class="mode" type="button" data-mode="add-roof-arch">
                 <svg class="mode-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h20"/><path d="M2 20 C2 8 22 8 22 20 Z"/></svg>
-                <span class="mode-text"> Item</span>
+                <span class="mode-text">Arched</span>
               </button>
               <button class="mode" type="button" data-mode="add-roof-dome">
                 <svg class="mode-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h20"/><path d="M5 20 A7 7 0 0 1 19 20 Z"/></svg>
-                <span class="mode-text"> Item</span>
+                <span class="mode-text">Dome</span>
               </button>
               <button class="mode" type="button" data-mode="add-roof-trapezoid">
                 <svg class="mode-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h20"/><path d="M4 20 L8 10 L16 10 L20 20 Z"/></svg>
-                <span class="mode-text"> Item</span>
+                <span class="mode-text">Trapezoid</span>
               </button>
               <button class="mode" type="button" data-mode="add-roof-hip">
                 <svg class="mode-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h20"/><path d="M2 20 L7 12 L17 12 L22 20 Z M7 12 L12 6 L17 12"/></svg>
-                <span class="mode-text">Diamond Item</span>
+                <span class="mode-text">Hip</span>
               </button>
               <button class="mode" type="button" data-mode="add-roof-flat">
                 <svg class="mode-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h20"/><rect x="4" y="14" width="16" height="4" rx="1"/></svg>
-                <span class="mode-text"> Item</span>
+                <span class="mode-text">Flat</span>
               </button>
               </div>
             </div>
 
             <div class="building-tool-group" data-tool-group="stairs">
               <button class="tool-group-toggle" type="button" aria-expanded="true" aria-controls="stairs-tools">
-                <span> Item</span>
+                <span>Stairs</span>
                 <svg class="tool-group-chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
               </button>
               <div id="stairs-tools" class="segmented stairs-tools">
               <button class="mode" type="button" data-mode="add-stairs-straight">
                 <svg class="mode-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 20h14"/><path d="M10 16h10"/><path d="M14 12h6"/><path d="M18 8h2"/><path d="M2 20h4v-4h4v-4h4V8h4V4h4"/></svg>
-                <span class="mode-text"> Item</span>
+                <span class="mode-text">Straight</span>
               </button>
               <button class="mode" type="button" data-mode="add-stairs-lshape">
                 <svg class="mode-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="m16.49 12l3.75 3.75m0 0l-3.75 3.75m3.75-3.75H3.74V4.499"/>
                 </svg>
-                <span class="mode-text">L-Shape Item</span>
+                <span class="mode-text">L-shaped</span>
               </button>
               <button class="mode" type="button" data-mode="add-stairs-ushape">
                 <svg class="mode-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
@@ -172,165 +172,165 @@
                   <path d="m30 9l5-5l5 5"/>
                   <circle cx="13" cy="9" r="5" fill="currentColor" transform="rotate(-90 13 9)"/>
                 </svg>
-                <span class="mode-text">U Item</span>
+                <span class="mode-text">U-shaped</span>
               </button>
               <button class="mode" type="button" data-mode="add-stairs-spiral">
                 <svg class="mode-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="M12 6c4 0 4 4 0 4s-4 4 0 4 4 4 0 4"/></svg>
-                <span class="mode-text">Rotate Item</span>
+                <span class="mode-text">Spiral</span>
               </button>
               <button class="mode" type="button" data-mode="add-stairs-curved">
                 <svg class="mode-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20 A16 16 0 0 1 20 4"/><path d="M8 20 A12 12 0 0 1 20 8"/></svg>
-                <span class="mode-text"> Item</span>
+                <span class="mode-text">Curved</span>
               </button>
               <button class="mode" type="button" data-mode="add-stairs-floating">
                 <svg class="mode-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 18h6 M8 14h6 M14 10h6"/><path d="M2 20 L22 8" stroke-dasharray="2,2"/></svg>
-                <span class="mode-text"> Item</span>
+                <span class="mode-text">Floating</span>
               </button>
               <button class="mode" type="button" data-mode="add-stairs-ladder">
                 <svg class="mode-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 2v20M17 2v20M7 6h10M7 11h10M7 16h10"/></svg>
-                <span class="mode-text"> Item</span>
+                <span class="mode-text">Ladder</span>
               </button>
               <button class="mode" type="button" data-mode="add-stairs-slide">
                 <svg class="mode-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h4l12 12v4h-4L4 8Z"/><path d="M4 12v8h8"/></svg>
-                <span class="mode-text"> Item</span>
+                <span class="mode-text">Slide</span>
               </button>
               </div>
             </div>
 
             <div class="building-tool-group" data-tool-group="fence">
               <button class="tool-group-toggle" type="button" aria-expanded="true" aria-controls="fence-tools">
-                <span> Item</span>
+                <span>Fence</span>
                 <svg class="tool-group-chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
               </button>
               <div id="fence-tools" class="segmented fence-tools">
               <button class="mode" type="button" data-mode="draw-fence-picket_wood">
                 <svg class="mode-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22V4M20 22V4M4 8h16M4 16h16"/></svg>
-                <span class="mode-text"> Item</span>
+                <span class="mode-text">Wooden picket</span>
               </button>
               <button class="mode" type="button" data-mode="draw-fence-iron_ornamental">
                 <svg class="mode-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 22V2M18 22V2M2 6h20M2 18h20M12 22V2"/></svg>
-                <span class="mode-text"> Item</span>
+                <span class="mode-text">Ornamental iron</span>
               </button>
               <button class="mode" type="button" data-mode="draw-fence-wire_mesh">
                 <svg class="mode-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22V2M20 22V2M4 6l16 4M4 12l16 4M4 18l16-4"/></svg>
-                <span class="mode-text"> Item</span>
+                <span class="mode-text">Wire mesh</span>
               </button>
               <button class="mode" type="button" data-mode="draw-fence-stone_masonry">
                 <svg class="mode-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 22V10h18v12M3 14h18M3 18h18M9 10v12M15 10v12"/></svg>
-                <span class="mode-text"> Item</span>
+                <span class="mode-text">Stone masonry</span>
               </button>
               <button class="mode" type="button" data-mode="draw-fence-bamboo">
                 <svg class="mode-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 22V2M12 22V2M19 22V2M3 10h18M3 16h18"/></svg>
-                <span class="mode-text"> Item</span>
+                <span class="mode-text">Bamboo</span>
               </button>
               <button class="mode" type="button" data-mode="draw-fence-glass_rail">
                 <svg class="mode-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22V4M20 22V4M4 6h16M4 20h16M9 6v14M15 6v14"/></svg>
-                <span class="mode-text">Glass Item</span>
+                <span class="mode-text">Glass rail</span>
               </button>
               <button class="mode" type="button" data-mode="draw-fence-concrete">
                 <svg class="mode-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
-                <span class="mode-text"> Item</span>
+                <span class="mode-text">Concrete</span>
               </button>
               <button class="mode" type="button" data-mode="draw-fence-rope">
                 <svg class="mode-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22V4M20 22V4M4 8c4 3 12 3 16 0M4 14c4 3 12 3 16 0"/></svg>
-                <span class="mode-text"> Item</span>
+                <span class="mode-text">Rope</span>
               </button>
               </div>
             </div>
 
             <div class="building-tool-group" data-tool-group="fence-gate">
               <button class="tool-group-toggle" type="button" aria-expanded="true" aria-controls="fence-gate-tools">
-                <span> Item</span>
+                <span>Fence gate</span>
                 <svg class="tool-group-chevron" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
               </button>
               <div id="fence-gate-tools" class="segmented fence-gate-tools">
                 <button class="mode" type="button" data-mode="add-fence-gate-picket_wood">
                   <svg class="mode-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 22V4h3v18M18 22V4h3v18M6 8h12M6 16h12M9 8v8M15 8v8"/></svg>
-                  <span class="mode-text"> Item</span>
+                  <span class="mode-text">Wooden picket</span>
                 </button>
                 <button class="mode" type="button" data-mode="add-fence-gate-iron_ornamental">
                   <svg class="mode-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 22V4M21 22V4M6 6h12M6 18h12M12 22V4M9 10a3 3 0 0 1 6 0"/></svg>
-                  <span class="mode-text"> Item</span>
+                  <span class="mode-text">Ornamental iron</span>
                 </button>
                 <button class="mode" type="button" data-mode="add-fence-gate-wire_mesh">
                   <svg class="mode-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 22V4M21 22V4M3 8l18 4M3 14l18-4M3 18l18 2"/></svg>
-                  <span class="mode-text"> Item</span>
+                  <span class="mode-text">Wire mesh</span>
                 </button>
                 <button class="mode" type="button" data-mode="add-fence-gate-stone_masonry">
                   <svg class="mode-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 22V6h4v16M17 22V6h4v16M7 10h10M7 16h10M12 22V10"/></svg>
-                  <span class="mode-text"> Item</span>
+                  <span class="mode-text">Stone masonry</span>
                 </button>
                 <button class="mode" type="button" data-mode="add-fence-gate-bamboo">
                   <svg class="mode-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22V4M20 22V4M9 22V4M15 22V4M4 8h16M4 16h16"/></svg>
-                  <span class="mode-text"> Item</span>
+                  <span class="mode-text">Bamboo</span>
                 </button>
                 <button class="mode" type="button" data-mode="add-fence-gate-glass_rail">
                   <svg class="mode-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22V4M20 22V4M4 6h16M4 18h16"/></svg>
-                  <span class="mode-text">Glass Item</span>
+                  <span class="mode-text">Glass rail</span>
                 </button>
                 <button class="mode" type="button" data-mode="add-fence-gate-concrete">
                   <svg class="mode-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M12 3v18"/></svg>
-                  <span class="mode-text"> Item</span>
+                  <span class="mode-text">Concrete</span>
                 </button>
                 <button class="mode" type="button" data-mode="add-fence-gate-rope">
                   <svg class="mode-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="1"/><path d="M3 10c3 2 6 2 9 0M12 10c3 2 6 2 9 0M3 15c3 2 6 2 9 0M12 15c3 2 6 2 9 0"/></svg>
-                  <span class="mode-text"> Item</span>
+                  <span class="mode-text">Rope</span>
                 </button>
               </div>
             </div>
 
             <label class="check-field">
               <input id="snap-enabled" type="checkbox" checked />
-              <span> Item</span>
+              <span>Snap to grid</span>
             </label>
             <label class="field compact-field" style="display: none;">
-              <span> Item（ Item）</span>
+              <span>Grid size (m)</span>
               <input id="snap-size" type="number" min="0.1" max="2" step="0.1" value="1" />
             </label>
-            <p class="hint">SelectRoom Item， Item。Select ItemDelete。</p>
+            <p class="hint">Select a room to move or resize it. Select an object and press Delete to remove it</p>
           </section>
 
           <section class="tool-section hidden" data-panel="design">
-            <h2>Design Item</h2>
-            <div class="segmented design-tools" role="toolbar" aria-label="Design Item">
-              <button class="design-mode" type="button" data-design-mode="picker" title="Pick Material Item">
+            <h2>Design tools</h2>
+            <div class="segmented design-tools" role="toolbar" aria-label="Design tools">
+              <button class="design-mode" type="button" data-design-mode="picker" title="Pick a material from the scene">
                 <svg class="mode-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 9-8.414 8.414A2 2 0 0 0 3 18.828v1.344a2 2 0 0 1-.586 1.414A2 2 0 0 1 3.828 21h1.344a2 2 0 0 0 1.414-.586L15 12"/><path d="m18 9 .4.4a1 1 0 1 1-3 3l-3.8-3.8a1 1 0 1 1 3-3l.4.4 3.4-3.4a1 1 0 1 1 3 3z"/><path d="m2 22 .414-.414"/></svg>
                 <span class="mode-text">Pick Material</span>
                 <span class="mode-shortcut">I</span>
               </button>
-              <button class="design-mode" type="button" data-design-mode="brush" title=" Item； ItemLock">
+              <button class="design-mode" type="button" data-design-mode="brush" title="Brush: paint one surface at a time; click again to lock">
                 <svg class="mode-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m14.622 17.897-10.68-2.913"/><path d="M18.376 2.622a1 1 0 1 1 3.002 3.002L17.36 9.643a.5.5 0 0 0 0 .707l.944.944a2.41 2.41 0 0 1 0 3.408l-.944.944a.5.5 0 0 1-.707 0L8.354 7.348a.5.5 0 0 1 0-.707l.944-.944a2.41 2.41 0 0 1 3.408 0l.944.944a.5.5 0 0 0 .707 0z"/><path d="M9 8c-1.804 2.71-3.97 3.46-6.583 3.948a.507.507 0 0 0-.302.819l7.32 8.883a1 1 0 0 0 1.185.204C12.735 20.405 16 16.792 16 15"/></svg>
-                <span class="mode-text"> Item</span>
+                <span class="mode-text">Brush</span>
                 <span class="mode-shortcut">B</span>
               </button>
-              <button class="design-mode" type="button" data-design-mode="bucket" title=" Item">
+              <button class="design-mode" type="button" data-design-mode="bucket" title="Fill">
                 <svg class="mode-icon" style="transform: scaleX(-1)" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 7 6 2"/><path d="M18.992 12H2.041"/><path d="M21.145 18.38A3.34 3.34 0 0 1 20 16.5a3.3 3.3 0 0 1-1.145 1.88c-.575.46-.855 1.02-.855 1.595A2 2 0 0 0 20 22a2 2 0 0 0 2-2.025c0-.58-.285-1.13-.855-1.595"/><path d="m8.5 4.5 2.148-2.148a1.205 1.205 0 0 1 1.704 0l7.296 7.296a1.205 1.205 0 0 1 0 1.704l-7.592 7.592a3.615 3.615 0 0 1-5.112 0l-3.888-3.888a3.615 3.615 0 0 1 0-5.112L5.67 7.33"/></svg>
-                <span class="mode-text"> Item</span>
+                <span class="mode-text">Fill</span>
                 <span class="mode-shortcut">G</span>
               </button>
-              <button class="design-mode" type="button" data-design-mode="eraser" title=" Item">
+              <button class="design-mode" type="button" data-design-mode="eraser" title="Eraser">
                 <svg class="mode-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 21H8a2 2 0 0 1-1.42-.587l-3.994-3.999a2 2 0 0 1 0-2.828l10-10a2 2 0 0 1 2.829 0l5.999 6a2 2 0 0 1 0 2.828L12.834 21"/><path d="m5.082 11.09 8.828 8.828"/></svg>
-                <span class="mode-text"> Item</span>
+                <span class="mode-text">Eraser</span>
                 <span class="mode-shortcut">C</span>
               </button>
             </div>
             <div id="current-material-panel" class="field compact-field">
-              <span id="current-material-label"> Item</span>
+              <span id="current-material-label">Current material</span>
               <div id="current-material-grid" class="material-grid"></div>
             </div>
             <div class="material-uploader">
               <div class="field">
-                <span> Item</span>
+                <span>Category</span>
                 <select id="material-category"></select>
               </div>
               <input id="material-upload" type="file" accept="image/*" hidden />
             </div>
             <div id="material-library" class="material-library"></div>
             <div id="design-selection-panel" class="design-selection"></div>
-            <button id="btn-reset-material" type="button"> Item</button>
+            <button id="btn-reset-material" type="button">Reset material</button>
             <div id="hidden-floor-color-container" style="display: none;">
               <label id="floor-color-field" class="field">
-                <span> Item</span>
+                <span>Floor color</span>
                 <input id="floor-color" type="color" value="#f4efe6" />
               </label>
             </div>
@@ -342,13 +342,13 @@
                 <span class="search-icon-prefix" aria-hidden="true">
                   <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
                 </span>
-                <input id="furniture-search-input" type="search" placeholder=" ItemFurniture" autocomplete="off" aria-label=" ItemFurniture" />
-                <button id="btn-clear-furniture-search" class="clear-search-btn hidden" type="button" aria-label=" ItemFurniture Item" title=" Item">
+                <input id="furniture-search-input" type="search" placeholder="Search furniture" autocomplete="off" aria-label="Search furniture" />
+                <button id="btn-clear-furniture-search" class="clear-search-btn hidden" type="button" aria-label="Clear furniture search" title="Clear">
                   <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
                 </button>
               </div>
               <div class="field">
-                <span>Furniture Item</span>
+                <span>Category</span>
                 <select id="furniture-category-select"></select>
               </div>
             </div>
@@ -356,9 +356,9 @@
             <div id="furniture-upload-actions" class="furniture-upload-actions hidden">
               <button id="btn-upload-furniture" class="furniture-upload-button" type="button">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="m7 8 5-5 5 5"/><path d="M5 21h14a2 2 0 0 0 2-2v-4"/><path d="M3 15v4a2 2 0 0 0 2 2"/></svg>
-                <span> ItemFurniture</span>
+                <span>Upload furniture</span>
               </button>
-              <button id="btn-furniture-upload-help" class="furniture-upload-help" type="button" aria-label="CustomFurniture Item" title=" ItemFurniture">
+              <button id="btn-furniture-upload-help" class="furniture-upload-help" type="button" aria-label="Custom furniture help" title="How to upload furniture">
                 <svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 1 1 5.8 1c0 2-3 2-3 4"/><path d="M12 18h.01"/></svg>
               </button>
               <input id="furniture-upload-input" type="file" accept=".js,.mjs,text/javascript,application/javascript" hidden />
@@ -371,7 +371,7 @@
           <div class="stage-controls">
             <div class="control-group-left">
               <div class="file-dropdown">
-                <button id="btn-file-menu" type="button" class="btn-icon btn-menu" title=" Item">
+                <button id="btn-file-menu" type="button" class="btn-icon btn-menu" title="Menu">
                   <svg class="icon-svg" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
                 </button>
                 <div id="file-menu-content" class="dropdown-content hidden">
@@ -399,24 +399,24 @@
                         <span>Export JSON</span>
                         <span class="shortcut">Ctrl+E</span>
                       </button>
-                      <button id="btn-export-zip" type="button">Export ZIP（ Item）</button>
-                      <button id="btn-export-dxf" type="button">Export CAD（DXF）</button>
+                      <button id="btn-export-zip" type="button">Export ZIP (with assets)</button>
+                      <button id="btn-export-dxf" type="button">Export CAD (DXF)</button>
                       <button id="btn-export-3mf" type="button">Export 3MF</button>
                     </div>
                   </div>
                   <button id="btn-load" type="button">
-                    <span> Item</span>
+                    <span>Import</span>
                     <span class="shortcut">Ctrl+I</span>
                   </button>
                   <button id="btn-settings" type="button">
-                    <span> Item</span>
+                    <span>Settings</span>
                     <span class="shortcut">Ctrl+,</span>
                   </button>
                 </div>
               </div>
             </div>
             <div class="control-group-right">
-              <button id="btn-first-person" type="button" class="btn-icon" title=" Item (F11)">
+              <button id="btn-first-person" type="button" class="btn-icon" title="First-person view (F11)">
                 <svg class="icon-svg" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M18 21a6 6 0 0 0-12 0"/>
                   <circle cx="12" cy="10" r="4"/>
@@ -429,7 +429,7 @@
                   <circle cx="12" cy="13" r="4"/>
                 </svg>
               </button>
-              <button id="btn-snap-toggle" type="button" class="btn-icon" title=" Item">
+              <button id="btn-snap-toggle" type="button" class="btn-icon" title="Toggle snapping">
                 <svg class="icon-svg" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                   <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
                   <line x1="9" y1="3" x2="9" y2="21"/>
@@ -444,7 +444,7 @@
               <button id="btn-redo" type="button" class="btn-icon" title="Redo" disabled>
                 <svg class="icon-svg" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 7v6h-6"/><path d="M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3l3 2.7"/></svg>
               </button>
-              <button id="btn-reset-camera" type="button" class="btn-icon hidden" title=" Item">
+              <button id="btn-reset-camera" type="button" class="btn-icon hidden" title="Reset camera">
                 <svg class="icon-svg" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/></svg>
               </button>
               <button id="btn-view-toggle" class="primary" type="button" aria-pressed="false">3D</button>
@@ -455,7 +455,7 @@
           <div id="floor-floating-group" class="floor-floating-group"></div>
 
           <div class="view-card plan-card" data-view-card="2d">
-            <svg id="floorplan" viewBox="0 0 720 520" role="img" aria-label="2D Floorplan Item"></svg>
+            <svg id="floorplan" viewBox="0 0 720 520" role="img" aria-label="2D floor plan"></svg>
           </div>
           <div class="view-card canvas-card" data-view-card="3d">
             <canvas id="render-canvas"></canvas>
@@ -465,44 +465,44 @@
         <aside id="right-panel" class="panel right-panel">
           <button id="btn-toggle-right" class="toggle-side-btn" type="button" aria-label="Collapse Panel">›</button>
           <div class="right-panel-content">
-            <h2> Item</h2>
-            <div id="empty-state" class="empty-state"> ItemSelectRoom、 Item、Furniture、 Item</div>
+            <h2>Properties</h2>
+            <div id="empty-state" class="empty-state">Select a room, wall, furniture or opening to edit it</div>
 
             <div id="floor-editor" class="editor hidden">
-              <strong id="selected-floor-name"> Item</strong>
+              <strong id="selected-floor-name">Floor</strong>
               <label class="field">
-                <span> Item</span>
+                <span>Floor name</span>
                 <input id="floor-name" type="text" />
               </label>
               <label class="field">
-                <span> Item（ Item）</span>
+                <span>Wall height (m)</span>
                 <input id="floor-wall-height" type="number" min="0.5" step="0.1" />
               </label>
               <label class="field">
-                <span> Item/ Item（ Item）</span>
+                <span>Floor slab thickness (m)</span>
                 <input id="floor-height" type="number" min="0.01" step="0.01" />
               </label>
               <label class="check-field">
                 <input id="floor-hide-roof" type="checkbox" />
-                <span> Item</span>
+                <span>Hide roof</span>
               </label>
               <label class="check-field">
                 <input id="floor-hide-wall" type="checkbox" />
-                <span> Item</span>
+                <span>Hide walls</span>
               </label>
               <label class="check-field">
                 <input id="floor-skybox-enabled" type="checkbox" />
-                <span> ItemSky Item</span>
+                <span>Show sky</span>
               </label>
               <label class="check-field">
                 <input id="show-advanced-rendering" type="checkbox" />
-                <span> ItemHigh Quality</span>
+                <span>High quality rendering</span>
               </label>
               <label class="check-field">
                 <input id="show-all-floors" type="checkbox" />
-                <span> Item</span>
+                <span>Show all floors</span>
               </label>
-              <button id="btn-delete-floor" type="button" class="danger">Delete Item</button>
+              <button id="btn-delete-floor" type="button" class="danger">Delete floor</button>
             </div>
 
             <div id="room-editor" class="editor hidden">
@@ -525,65 +525,65 @@
                 </label>
               </div>
               <label class="field">
-                <span>Room Item</span>
+                <span>Room name</span>
                 <input id="room-name" type="text" />
               </label>
               <div class="fields-row">
                 <label class="field">
-                  <span> Item (m)</span>
+                  <span>Width (m)</span>
                   <input id="room-width" type="number" min="1.2" step="0.1" />
                 </label>
                 <label class="field">
-                  <span> Item (m)</span>
+                  <span>Depth (m)</span>
                   <input id="room-depth" type="number" min="1.2" step="0.1" />
                 </label>
               </div>
               <label class="field">
-                <span> Item (m)</span>
+                <span>Elevation (m)</span>
                 <input id="room-elevation" type="number" min="0" step="0.05" />
               </label>
               <label class="field">
-                <span>Rotate（ Item）</span>
+                <span>Rotation (°)</span>
                 <input id="room-rotation" type="number" min="0" max="359" step="15" />
                 <input id="room-rotation-range" type="range" min="0" max="360" step="1" />
               </label>
-              <button id="btn-delete-room" type="button" class="danger">DeleteRoom</button>
+              <button id="btn-delete-room" type="button" class="danger">Delete room</button>
             </div>
 
             <div id="wall-editor" class="editor hidden">
-              <strong id="selected-wall-name"> Item</strong>
+              <strong id="selected-wall-name">Wall</strong>
               <label class="field">
-                <span> Item (m)</span>
+                <span>Length (m)</span>
                 <input id="wall-length" type="number" min="0.2" step="0.1" />
               </label>
               <label class="field">
-                <span>Rotate（ Item）</span>
+                <span>Rotation (°)</span>
                 <input id="wall-rotation" type="number" min="0" max="359" step="90" />
                 <input id="wall-rotation-range" type="range" min="0" max="360" step="1" />
               </label>
               <label class="check-field">
                 <input id="wall-baseboard-enabled" type="checkbox" />
-                <span> Item</span>
+                <span>Baseboard</span>
               </label>
               <label class="field">
-                <span> Item (m)</span>
+                <span>Baseboard height (m)</span>
                 <input id="wall-baseboard-height" type="number" min="0.01" step="0.01" value="0.1" />
               </label>
               <label class="check-field">
                 <input id="wall-wainscot-enabled" type="checkbox" />
-                <span> ItemWall Panel Moulding</span>
+                <span>Wall panel moulding</span>
               </label>
               <label class="field">
-                <span>Wall Panel Moulding Item (m)</span>
+                <span>Moulding height (m)</span>
                 <input id="wall-wainscot-height" type="number" min="0.1" step="0.05" value="1" />
               </label>
-              <p class="hint"> Item& Item“Design” Item。</p>
-              <button id="btn-delete-wall" type="button" class="danger">Delete Item</button>
+              <p class="hint">Change wall paint and materials in the Design tab</p>
+              <button id="btn-delete-wall" type="button" class="danger">Delete wall</button>
             </div>
 
             <div id="fence-editor" class="editor hidden">
               <div class="editor-header">
-                <strong id="selected-fence-name"> Item</strong>
+                <strong id="selected-fence-name">Fence</strong>
                 <label class="switch">
                   <input id="fence-locked" type="checkbox" />
                   <span class="slider">
@@ -601,40 +601,40 @@
                 </label>
               </div>
               <div class="field">
-                <span> Item</span>
+                <span>Type</span>
                 <select id="fence-subtype">
-                  <option value="picket_wood" data-icon='<path d="M4 22V4M20 22V4M4 8h16M4 16h16"/>'> Item</option>
-                  <option value="iron_ornamental" data-icon='<path d="M6 22V2M18 22V2M2 6h20M2 18h20M12 22V2"/>'> Item</option>
-                  <option value="wire_mesh" data-icon='<path d="M4 22V2M20 22V2M4 6l16 4M4 12l16 4M4 18l16-4"/>'> Item</option>
-                  <option value="stone_masonry" data-icon='<path d="M3 22V10h18v12M3 14h18M3 18h18M9 10v12M15 10v12"/>'> Item</option>
-                  <option value="bamboo" data-icon='<path d="M5 22V2M12 22V2M19 22V2M3 10h18M3 16h18"/>'> Item</option>
-                  <option value="glass_rail" data-icon='<path d="M4 22V4M20 22V4M4 6h16M4 20h16M9 6v14M15 6v14"/>'>Glass Item</option>
-                  <option value="concrete" data-icon='<rect x="3" y="3" width="18" height="18" rx="2"/>'> Item</option>
-                  <option value="rope" data-icon='<path d="M4 22V4M20 22V4M4 8c4 3 12 3 16 0M4 14c4 3 12 3 16 0"/>'> Item</option>
+                  <option value="picket_wood" data-icon='<path d="M4 22V4M20 22V4M4 8h16M4 16h16"/>'>Wooden picket</option>
+                  <option value="iron_ornamental" data-icon='<path d="M6 22V2M18 22V2M2 6h20M2 18h20M12 22V2"/>'>Ornamental iron</option>
+                  <option value="wire_mesh" data-icon='<path d="M4 22V2M20 22V2M4 6l16 4M4 12l16 4M4 18l16-4"/>'>Wire mesh</option>
+                  <option value="stone_masonry" data-icon='<path d="M3 22V10h18v12M3 14h18M3 18h18M9 10v12M15 10v12"/>'>Stone masonry</option>
+                  <option value="bamboo" data-icon='<path d="M5 22V2M12 22V2M19 22V2M3 10h18M3 16h18"/>'>Bamboo</option>
+                  <option value="glass_rail" data-icon='<path d="M4 22V4M20 22V4M4 6h16M4 20h16M9 6v14M15 6v14"/>'>Glass rail</option>
+                  <option value="concrete" data-icon='<rect x="3" y="3" width="18" height="18" rx="2"/>'>Concrete</option>
+                  <option value="rope" data-icon='<path d="M4 22V4M20 22V4M4 8c4 3 12 3 16 0M4 14c4 3 12 3 16 0"/>'>Rope</option>
                 </select>
               </div>
               <div class="fields-row">
                 <label class="field">
-                  <span> Item (m)</span>
+                  <span>Length (m)</span>
                   <input id="fence-length" type="number" min="0.2" step="0.1" />
                 </label>
                 <label class="field">
-                  <span> Item (m)</span>
+                  <span>Height (m)</span>
                   <input id="fence-height" type="number" min="0.2" max="3.0" step="0.1" />
                 </label>
               </div>
               <div class="fields-row">
                 <label class="field">
-                  <span> Item (m)</span>
+                  <span>Vertical offset (m)</span>
                   <input id="fence-yoffset" type="number" step="0.05" />
                 </label>
               </div>
               <label class="field">
-                <span>Rotate（ Item）</span>
+                <span>Rotation (°)</span>
                 <input id="fence-rotation" type="number" min="0" max="359" step="15" />
                 <input id="fence-rotation-range" type="range" min="0" max="360" step="1" />
               </label>
-              <button id="btn-delete-fence" type="button" class="danger">Delete Item</button>
+              <button id="btn-delete-fence" type="button" class="danger">Delete fence</button>
             </div>
 
             <div id="item-editor" class="editor hidden">
@@ -658,66 +658,66 @@
               </div>
               <div class="fields-row">
                 <label class="field">
-                  <span> Item (m)</span>
+                  <span>Width (m)</span>
                   <input id="item-width" type="number" min="0.1" step="0.01" />
                 </label>
                 <label class="field">
-                  <span> Item (m)</span>
+                  <span>Depth (m)</span>
                   <input id="item-depth" type="number" min="0.1" step="0.01" />
                 </label>
                 <label class="field">
-                  <span> Item (m)</span>
+                  <span>Height (m)</span>
                   <input id="item-height" type="number" min="0.1" step="0.01" />
                 </label>
               </div>
               <label class="field">
-                <span> Item (m)</span>
+                <span>Elevation (m)</span>
                 <input id="item-elevation" type="number" min="0" step="0.01" />
                 <input id="item-elevation-range" type="range" min="0" max="3" step="0.01" />
               </label>
               <label class="field">
-                <span>Rotate（ Item）</span>
+                <span>Rotation (°)</span>
                 <input id="item-rotation" type="number" min="0" max="359" step="15" />
                 <input id="item-rotation-range" type="range" min="0" max="360" step="1" />
               </label>
               <label class="field">
-                <span> Item</span>
+                <span>Scale</span>
                 <input id="item-scale" type="number" min="0.5" max="4" step="0.1" />
                 <input id="item-scale-range" type="range" min="0.5" max="4" step="0.05" />
               </label>
               <label id="item-pose-field" class="field hidden">
-                <span> Item</span>
+                <span>Pose</span>
                 <select id="item-pose">
-                  <option value="stand"> Item</option>
-                  <option value="sit"> Item</option>
-                  <option value="lie"> Item</option>
+                  <option value="stand">Standing</option>
+                  <option value="sit">Sitting</option>
+                  <option value="lie">Lying down</option>
                 </select>
               </label>
               <label id="item-season-field" class="field hidden">
-                <span> Item</span>
+                <span>Season</span>
                 <select id="item-season"></select>
               </label>
               <label class="check-field">
                 <input id="item-mirrored" type="checkbox" />
-                <span> ItemFlip</span>
+                <span>Mirror</span>
               </label>
               <label id="item-light-field" class="check-field hidden">
                 <input id="item-light-on" type="checkbox" />
-                <span id="item-power-label"> Item</span>
+                <span id="item-power-label">Light on</span>
               </label>
               <label id="item-water-field" class="check-field hidden">
                 <input id="item-water-enabled" type="checkbox" />
-                <span id="item-water-label"> Item</span>
+                <span id="item-water-label">Show water</span>
               </label>
               <button id="btn-control-mannequin" type="button">
-                 Item
+                 Control mannequin
               </button>
-              <button id="btn-delete-item" type="button" class="danger" style="margin-top: 4px;">DeleteFurniture</button>
+              <button id="btn-delete-item" type="button" class="danger" style="margin-top: 4px;">Delete furniture</button>
             </div>
 
             <div id="opening-editor" class="editor hidden">
               <div class="editor-header">
-                <strong id="selected-opening-name"> Item</strong>
+                <strong id="selected-opening-name">Opening</strong>
                 <label class="switch">
                   <input id="opening-locked" type="checkbox" />
                   <span class="slider">
@@ -735,86 +735,86 @@
                 </label>
               </div>
               <label class="field">
-                <span> Item</span>
+                <span>Position</span>
                 <input id="opening-position" type="range" min="8" max="92" step="1" />
               </label>
               <div class="field">
-                <span> Item</span>
+                <span>Shape</span>
                 <select id="opening-shape">
                   <option value="square" data-icon='<rect x="5" y="3" width="14" height="18"/>'>Square</option>
                   <option value="diamond" data-icon='<path d="m12 3 8 9-8 9-8-9z"/>'>Diamond</option>
                   <option value="circle" data-icon='<circle cx="12" cy="12" r="8"/>'>Circle</option>
-                  <option value="semicircle" data-icon='<path d="M4 18a8 8 0 0 1 16 0z"/>'> ItemCircle</option>
-                  <option value="round-arch" data-icon='<path d="M5 21V10a7 7 0 0 1 14 0v11z"/>'> ItemSquare</option>
-                  <option value="pointed-arch" data-icon='<path d="M5 21V10l7-7 7 7v11z"/>'> ItemSquare</option>
+                  <option value="semicircle" data-icon='<path d="M4 18a8 8 0 0 1 16 0z"/>'>Semicircle</option>
+                  <option value="round-arch" data-icon='<path d="M5 21V10a7 7 0 0 1 14 0v11z"/>'>Round arch</option>
+                  <option value="pointed-arch" data-icon='<path d="M5 21V10l7-7 7 7v11z"/>'>Pointed arch</option>
                   <option value="quarter-sector" data-icon='<path d="M4 4a16 16 0 0 1 16 16H4z"/>'>Sector</option>
                   <option value="right-triangle" data-icon='<path d="M4 4v16h16z"/>'>Triangle</option>
                 </select>
               </div>
               <div class="fields-row">
                 <label class="field">
-                  <span> Item (m)</span>
+                  <span>Width (m)</span>
                   <input id="opening-width" type="number" min="0.25" max="3.6" step="0.05" />
                 </label>
                 <label id="opening-height-field" class="field hidden">
-                  <span> Item (m)</span>
+                  <span>Height (m)</span>
                   <input id="opening-height" type="number" min="0.3" max="2.2" step="0.05" />
                 </label>
               </div>
               <label id="opening-sill-field" class="field hidden">
-                <span> Item (m)</span>
+                <span>Sill height (m)</span>
                 <input id="opening-sill-height" type="number" min="0" max="2.4" step="0.05" />
               </label>
               <div id="opening-bars-fields" class="fields-row hidden">
                 <label class="field">
-                  <span> Item</span>
+                  <span>Horizontal bars</span>
                   <input id="opening-horizontal-bars" type="number" min="0" max="10" step="1" value="0" />
                 </label>
                 <label class="field">
-                  <span> Item</span>
+                  <span>Vertical bars</span>
                   <input id="opening-vertical-bars" type="number" min="0" max="10" step="1" value="0" />
                 </label>
               </div>
               <div id="opening-curved-bars-fields" class="fields-row hidden">
                 <label class="field">
-                  <span> Item</span>
+                  <span>Concentric bars</span>
                   <input id="opening-concentric-bars" type="number" min="0" max="10" step="1" value="0" />
                 </label>
                 <label class="field">
-                  <span> Item</span>
+                  <span>Radial bars</span>
                   <input id="opening-radial-bars" type="number" min="0" max="24" step="1" value="0" />
                 </label>
               </div>
               <label id="opening-open-field" class="check-field hidden">
                 <input id="opening-open" type="checkbox" />
-                <span> Item</span>
+                <span>Open</span>
               </label>
               <label id="opening-double-door-field" class="check-field hidden">
                 <input id="opening-double-door" type="checkbox" />
-                <span> Item</span>
+                <span>Double door</span>
               </label>
               <label id="opening-flip-lr-field" class="check-field hidden">
                 <input id="opening-flip-lr" type="checkbox" />
-                <span> ItemFlip</span>
+                <span>Flip left/right</span>
               </label>
               <label id="opening-flip-io-field" class="check-field hidden">
                 <input id="opening-flip-io" type="checkbox" />
-                <span> ItemFlip</span>
+                <span>Flip inside/outside</span>
               </label>
               <label class="check-field">
                 <input id="opening-content-hidden" type="checkbox" />
-                <span id="opening-content-hidden-label"> Item</span>
+                <span id="opening-content-hidden-label">Hide door panel</span>
               </label>
               <label id="opening-frame-hidden-field" class="check-field hidden">
                 <input id="opening-frame-hidden" type="checkbox" />
-                <span> Item</span>
+                <span>Hide frame</span>
               </label>
-              <button id="btn-delete-opening" type="button" class="danger">Delete Item</button>
+              <button id="btn-delete-opening" type="button" class="danger">Delete opening</button>
             </div>
 
             <div id="fence-gate-editor" class="editor hidden">
               <div class="editor-header">
-                <strong> Item</strong>
+                <strong>Fence gate</strong>
                 <label class="switch">
                   <input id="fence-gate-locked" type="checkbox" />
                   <span class="slider">
@@ -832,67 +832,67 @@
                 </label>
               </div>
               <div class="field">
-                <span> Item</span>
+                <span>Type</span>
                 <select id="fence-gate-subtype">
-                  <option value="picket_wood" data-icon='<path d="M3 22V4h3v18M18 22V4h3v18M6 8h12M6 16h12M9 8v8M15 8v8"/>'> Item</option>
-                  <option value="iron_ornamental" data-icon='<path d="M3 22V4M21 22V4M6 6h12M6 18h12M12 22V4M9 10a3 3 0 0 1 6 0"/>'> Item</option>
-                  <option value="wire_mesh" data-icon='<path d="M3 22V4M21 22V4M3 8l18 4M3 14l18-4M3 18l18 2"/>'> Item</option>
-                  <option value="stone_masonry" data-icon='<path d="M3 22V6h4v16M17 22V6h4v16M7 10h10M7 16h10M12 22V10"/>'> Item</option>
-                  <option value="bamboo" data-icon='<path d="M4 22V4M20 22V4M9 22V4M15 22V4M4 8h16M4 16h16"/>'> Item</option>
-                  <option value="glass_rail" data-icon='<path d="M4 22V4M20 22V4M4 6h16M4 18h16"/>'>Glass Item</option>
-                  <option value="concrete" data-icon='<rect x="3" y="3" width="18" height="18" rx="1"/><path d="M12 3v18"/>'> Item</option>
-                  <option value="rope" data-icon='<rect x="3" y="3" width="18" height="18" rx="1"/><path d="M3 10c3 2 6 2 9 0M12 10c3 2 6 2 9 0M3 15c3 2 6 2 9 0M12 15c3 2 6 2 9 0"/>'> Item</option>
+                  <option value="picket_wood" data-icon='<path d="M3 22V4h3v18M18 22V4h3v18M6 8h12M6 16h12M9 8v8M15 8v8"/>'>Wooden picket</option>
+                  <option value="iron_ornamental" data-icon='<path d="M3 22V4M21 22V4M6 6h12M6 18h12M12 22V4M9 10a3 3 0 0 1 6 0"/>'>Ornamental iron</option>
+                  <option value="wire_mesh" data-icon='<path d="M3 22V4M21 22V4M3 8l18 4M3 14l18-4M3 18l18 2"/>'>Wire mesh</option>
+                  <option value="stone_masonry" data-icon='<path d="M3 22V6h4v16M17 22V6h4v16M7 10h10M7 16h10M12 22V10"/>'>Stone masonry</option>
+                  <option value="bamboo" data-icon='<path d="M4 22V4M20 22V4M9 22V4M15 22V4M4 8h16M4 16h16"/>'>Bamboo</option>
+                  <option value="glass_rail" data-icon='<path d="M4 22V4M20 22V4M4 6h16M4 18h16"/>'>Glass rail</option>
+                  <option value="concrete" data-icon='<rect x="3" y="3" width="18" height="18" rx="1"/><path d="M12 3v18"/>'>Concrete</option>
+                  <option value="rope" data-icon='<rect x="3" y="3" width="18" height="18" rx="1"/><path d="M3 10c3 2 6 2 9 0M12 10c3 2 6 2 9 0M3 15c3 2 6 2 9 0M12 15c3 2 6 2 9 0"/>'>Rope</option>
                 </select>
               </div>
               <label id="fence-gate-position-field" class="field hidden">
-                <span> Item</span>
+                <span>Position</span>
                 <input id="fence-gate-position" type="range" min="2" max="98" step="1" />
               </label>
               <div class="fields-row">
                 <label class="field">
-                  <span> Item (m)</span>
+                  <span>Width (m)</span>
                   <input id="fence-gate-width" type="number" min="0.4" max="3.0" step="0.05" />
                 </label>
                 <label class="field">
-                  <span> Item (m)</span>
+                  <span>Height (m)</span>
                   <input id="fence-gate-height" type="number" min="0.2" max="2.5" step="0.05" />
                 </label>
               </div>
               <div class="fields-row">
                 <label class="field">
-                  <span> Item (m)</span>
+                  <span>Thickness (m)</span>
                   <input id="fence-gate-thickness" type="number" min="0.04" max="0.5" step="0.01" />
                 </label>
                 <label class="field">
-                  <span> Item (m)</span>
+                  <span>Vertical offset (m)</span>
                   <input id="fence-gate-yoffset" type="number" min="-1" max="2" step="0.05" />
                 </label>
               </div>
               <div class="fields-row">
                 <label class="check-field">
                   <input id="fence-gate-open" type="checkbox" />
-                  <span> Item</span>
+                  <span>Open</span>
                 </label>
                 <label class="check-field">
                   <input id="fence-gate-double-door" type="checkbox" />
-                  <span> Item</span>
+                  <span>Double gate</span>
                 </label>
               </div>
               <div class="fields-row">
                 <label class="check-field">
                   <input id="fence-gate-flip-lr" type="checkbox" />
-                  <span> ItemFlip</span>
+                  <span>Flip left/right</span>
                 </label>
                 <label class="check-field">
                   <input id="fence-gate-flip-io" type="checkbox" />
-                  <span> ItemFlip</span>
+                  <span>Flip inside/outside</span>
                 </label>
               </div>
               <label class="check-field">
                 <input id="fence-gate-content-hidden" type="checkbox" />
-                <span> Item</span>
+                <span>Hide gate panel</span>
               </label>
-              <button id="btn-delete-fence-gate" type="button" class="danger">Delete Item</button>
+              <button id="btn-delete-fence-gate" type="button" class="danger">Delete gate</button>
             </div>
           </div>
         </aside>

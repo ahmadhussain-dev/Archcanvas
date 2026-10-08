@@ -86,6 +86,11 @@ const TEXTURE_MAP = {
   'wallpaper_ink_bamboo_mist.jpg': new URL('../textures/wallpaper_ink_bamboo_mist.jpg', import.meta.url).href,
   'wallpaper_cloud_navy_gold.jpg': new URL('../textures/wallpaper_cloud_navy_gold.jpg', import.meta.url).href,
   'wallpaper_ruyi_swirl_yellow.jpg': new URL('../textures/wallpaper_ruyi_swirl_yellow.jpg', import.meta.url).href,
+  'fabric_flower.jpg': new URL('../textures/fabric_flower.jpg', import.meta.url).href,
+  'fabric_foam_panel.jpg': new URL('../textures/fabric_foam_panel.jpg', import.meta.url).href,
+  'fabric_long_pile.jpg': new URL('../textures/fabric_long_pile.jpg', import.meta.url).href,
+  'fabric_rug_geometric.jpg': new URL('../textures/fabric_rug_geometric.jpg', import.meta.url).href,
+  'fabric_triangle.jpg': new URL('../textures/fabric_triangle.jpg', import.meta.url).href,
   'wallpaper_floral_blue_white.jpg': new URL('../textures/wallpaper_floral_blue_white.jpg', import.meta.url).href,
   'wallpaper_seigaiha_blush.jpg': new URL('../textures/wallpaper_seigaiha_blush.jpg', import.meta.url).href,
   'wallpaper_rose.jpg': new URL('../textures/wallpaper_rose.jpg', import.meta.url).href,
@@ -118,6 +123,34 @@ export function toSameOriginUrl(url) {
   return url;
 }
 
+function textureFileName(src) {
+  return src.split('/').pop()?.split('?')[0]?.split('#')[0];
+}
+
+/**
+ * The form a texture URL is saved in: 'textures/<file>' for the engine's own
+ * textures (resolved again on load), anything else unchanged. Bundler URLs
+ * depend on the machine and dev server (e.g. /@fs/D:/...), so they are never saved.
+ */
+export function toPortableTextureSrc(src) {
+  if (typeof src !== 'string' || !src || src.startsWith('data:') || src.startsWith('blob:')) return src;
+  const fileName = textureFileName(src);
+  return fileName && TEXTURE_MAP[fileName] ? `textures/${fileName}` : src;
+}
+
+/** Rewrites every texture `src` / `url` in saved plan data with toPortableTextureSrc. */
+export function makeTexturePathsPortable(value) {
+  if (Array.isArray(value)) return value.map(makeTexturePathsPortable);
+  if (!value || typeof value !== 'object') return value;
+  const out = {};
+  for (const [key, entry] of Object.entries(value)) {
+    out[key] = (key === 'src' || key === 'url') && typeof entry === 'string'
+      ? toPortableTextureSrc(entry)
+      : makeTexturePathsPortable(entry);
+  }
+  return out;
+}
+
 export function resolveMaterialAssetDescriptor(descriptor) {
   if (!descriptor || typeof descriptor !== 'object') return descriptor;
   if (descriptor.kind !== 'texture' && !descriptor.src && !descriptor.url) return descriptor;
@@ -140,8 +173,7 @@ export function resolveMaterialAssetDescriptor(descriptor) {
     }
   }
   if (typeof src === 'string') {
-    const fileName = src.split('/').pop()?.split('?')[0];
-    src = TEXTURE_MAP[fileName] || src;
+    src = TEXTURE_MAP[textureFileName(src)] || src;
   }
 
   src = toSameOriginUrl(src);

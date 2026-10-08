@@ -78,7 +78,7 @@ export function startFurniturePlacement(type) {
     (navigator.maxTouchPoints && navigator.maxTouchPoints > 0) ||
     /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent || '')
   );
-  Context.showToast?.(isMobile ? ' ItemFurniture' : ' ItemFurniture， Item');
+  Context.showToast?.(isMobile ? 'Tap to place furniture' : 'Click to place furniture, Esc to cancel');
   return true;
 }
 

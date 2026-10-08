@@ -136,7 +136,7 @@ export const wardrobeFurniture = {
 // 4.  Headboard  (Nightstand)
 export const nightstandFurniture = {
   type: 'nightstand',
-  name: 'Headboard',
+  name: 'Nightstand',
   unit: 'm',
   defaultSize: { width: 0.5, depth: 0.45, height: 0.6 },
   components: [
@@ -215,7 +215,7 @@ export const chestDrawersFurniture = {
   components: [
     { id: 'cabinet', label: 'Component', defaultColor: '#e6d6c3' },
     { id: 'drawers', label: 'Component', defaultColor: '#d1bfad' },
-    { id: 'knobs', label: 'Circle Item', defaultColor: '#594c3d' }
+    { id: 'knobs', label: 'Round knobs', defaultColor: '#594c3d' }
   ],
   build(registry, item, node, size) {
     boxComponent(registry, item, chestDrawersFurniture, 'cabinet', {
@@ -287,7 +287,7 @@ export const displayCabinetFurniture = {
   defaultSize: { width: 0.7, depth: 0.35, height: 1.75 },
   components: [
     { id: 'cabinet', label: 'Component', defaultColor: '#403c39' },
-    { id: 'glass', label: ' ItemGlass', defaultColor: '#d4efff' },
+    { id: 'glass', label: 'Glass doors', defaultColor: '#d4efff' },
     { id: 'shelves', label: 'Component', defaultColor: '#c9bdad' }
   ],
   build(registry, item, node, size) {
@@ -468,7 +468,7 @@ export const cornerShelfFurniture = {
   defaultSize: { width: 0.4, depth: 0.4, height: 1.5 },
   components: [
     { id: 'pole', label: 'Component', defaultColor: '#4e342e' },
-    { id: 'shelves', label: 'Sector Item', defaultColor: '#8d6e63' }
+    { id: 'shelves', label: 'Quarter-round shelves', defaultColor: '#8d6e63' }
   ],
   build(registry, item, node, size) {
     const poleD = 0.03;

@@ -51,7 +51,7 @@ export const customSphereFurniture = {
 // 4. Custom Triangle (Custom Right Triangle)
 export const customRightTriangleFurniture = {
   type: 'custom_right_triangle',
-  name: 'Triangle',
+  name: 'Custom Right Triangle',
   unit: 'm',
   defaultSize: { width: 1, depth: 1, height: 1 },
   components: [
@@ -67,11 +67,11 @@ export const customRightTriangleFurniture = {
 // 5. CustomSemicircle  (Custom Half Cylinder)
 export const customHalfCylinderFurniture = {
   type: 'custom_half_cylinder',
-  name: 'Semicircle',
+  name: 'Custom Half Cylinder',
   unit: 'm',
   defaultSize: { width: 1, depth: 0.5, height: 1 },
   components: [
-    { id: 'halfCylinder', label: 'Semicircle Item', defaultColor: '#e0e0e0' }
+    { id: 'halfCylinder', label: 'Half cylinder', defaultColor: '#e0e0e0' }
   ],
   build(registry, item, node, size) {
     halfCylinderComponent(registry, item, customHalfCylinderFurniture, 'halfCylinder', {

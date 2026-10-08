@@ -10,7 +10,7 @@ import {
 } from '../../src/index.js';
 
 let Context = null;
-const FURNITURE_IMAGE_PROXY_PREFIX = '/__furniture-images__/';
+const FURNITURE_IMAGE_PROXY_PREFIX = `${import.meta.env?.BASE_URL || '/'}__furniture-images__/`;
 const fallbackFurnitureType = 'custom_cube';
 const transparentGIF = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
 
@@ -200,9 +200,9 @@ export function initFurnitureButtons() {
   const clearSearchBtn = document.getElementById('btn-clear-furniture-search');
   const groups = [
     { label: '', items: ['all', 'custom'] },
-    { label: ' ItemFurniture', items: ['tables', 'seating', 'storage', 'bedroom', 'kitchen', 'bathroom'] },
-    { label: ' ItemAppliances', items: ['appliances', 'lighting', 'decor', 'food', 'textiles', 'clothing', 'plants'] },
-    { label: ' ItemOutdoor', items: ['outdoor', 'landscape', 'flora'] }
+    { label: 'Furniture', items: ['tables', 'seating', 'storage', 'bedroom', 'kitchen', 'bathroom'] },
+    { label: 'Appliances & decor', items: ['appliances', 'lighting', 'decor', 'food', 'textiles', 'clothing', 'plants'] },
+    { label: 'Outdoor', items: ['outdoor', 'landscape', 'flora'] }
   ];
 
   if (categorySelect && categorySelect.children.length === 0) {
@@ -325,6 +325,7 @@ export function renderFurnitureGrid() {
       button.type = 'button';
       button.dataset.addItem = definition.type;
       button.className = 'furniture-item-btn';
+      button.title = definition.name;
 
       const img = document.createElement('img');
       const imageType = definition.type;

@@ -561,7 +561,7 @@ export function buildMannequin(registry, item, definition, node, size, gender) {
 
 export const clothing_t_shirt = {
   type: 'clothing_t_shirt',
-  name: 'T',
+  name: 'Clothing T-Shirt',
   unit: 'm',
   defaultSize: { width: 0.5, depth: 0.2, height: 0.6 },
   components: [
@@ -657,7 +657,7 @@ export const clothing_vest = {
 
 export const clothing_polo_shirt = {
   type: 'clothing_polo_shirt',
-  name: 'Polo',
+  name: 'Clothing Polo Shirt',
   unit: 'm',
   defaultSize: { width: 0.5, depth: 0.2, height: 0.6 },
   components: [
@@ -806,7 +806,7 @@ export const clothing_leather_skirt = {
   defaultSize: { width: 0.35, depth: 0.25, height: 0.4 },
   components: [
     { id: 'fabric', label: 'Component', defaultColor: '#111111' },
-    { id: 'detail', label: 'Metal Item', defaultColor: '#eeeeee' }
+    { id: 'detail', label: 'Metal details', defaultColor: '#eeeeee' }
   ],
   build(registry, item, node, size) {
     buildPantsOrSkirt(registry, item, clothing_leather_skirt, node, size, { isSkirt: true, skirtType: 'straight' });
@@ -815,7 +815,7 @@ export const clothing_leather_skirt = {
 
 export const clothing_a_line_skirt = {
   type: 'clothing_a_line_skirt',
-  name: 'A',
+  name: 'Clothing A-Line Skirt',
   unit: 'm',
   defaultSize: { width: 0.35, depth: 0.3, height: 0.45 },
   components: [
@@ -834,7 +834,7 @@ export const clothing_pencil_skirt = {
   defaultSize: { width: 0.35, depth: 0.23, height: 0.45 },
   components: [
     { id: 'fabric', label: 'Component', defaultColor: '#37474f' },
-    { id: 'detail', label: 'Decor Item', defaultColor: '#263238' }
+    { id: 'detail', label: 'Trim', defaultColor: '#263238' }
   ],
   build(registry, item, node, size) {
     buildPantsOrSkirt(registry, item, clothing_pencil_skirt, node, size, { isSkirt: true, skirtType: 'straight' });
@@ -1167,7 +1167,7 @@ export const clothing_boots = {
   components: [
     { id: 'fabric', label: 'Component', defaultColor: '#212121' },
     { id: 'sole', label: 'Component', defaultColor: '#3e2723' },
-    { id: 'detail', label: ' ItemMetal Item', defaultColor: '#eeeeee' }
+    { id: 'detail', label: 'Metal buckles', defaultColor: '#eeeeee' }
   ],
   build(registry, item, node, size) {
     buildShoes(registry, item, clothing_boots, node, size, { heelType: 'mid', shaftType: 'mid', hasLaces: true });
@@ -1209,7 +1209,7 @@ export const clothing_slippers = {
   defaultSize: { width: 0.25, depth: 0.3, height: 0.08 },
   components: [
     { id: 'fabric', label: 'Component', defaultColor: '#e8f5e9' },
-    { id: 'sole', label: 'EVA Item', defaultColor: '#ffffff' }
+    { id: 'sole', label: 'EVA sole', defaultColor: '#ffffff' }
   ],
   build(registry, item, node, size) {
     buildShoes(registry, item, clothing_slippers, node, size, { heelType: 'flat', shaftType: 'low', isOpen: true });

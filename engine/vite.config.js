@@ -14,12 +14,14 @@ function sendJson(res, statusCode, payload) {
 
 function serveFurnitureImage(req, res, next) {
   const urlPath = req.url ? req.url.split('?')[0] : '';
-  if (!urlPath.startsWith('/__furniture-images__/')) {
+  // Also matches under a base path such as /editor/ (ArchCanvas embed).
+  const prefixAt = urlPath.indexOf('/__furniture-images__/');
+  if (prefixAt < 0) {
     next();
     return;
   }
 
-  const requestedName = decodeURIComponent(urlPath.slice('/__furniture-images__/'.length));
+  const requestedName = decodeURIComponent(urlPath.slice(prefixAt + '/__furniture-images__/'.length));
   const safeName = path.basename(requestedName);
   const filePath = path.join(furnitureImageDir, safeName);
 
@@ -99,8 +101,19 @@ function copyFurnitureImagesPlugin() {
   };
 }
 
+// configureServer is a plugin hook; Vite ignores it inside `server`.
+function devFurnitureImagesPlugin() {
+  return {
+    name: 'dev-furniture-images',
+    configureServer(server) {
+      server.middlewares.use(serveFurnitureImage);
+      server.middlewares.use(handleSaveImage);
+    }
+  };
+}
+
 export default defineConfig(({ command }) => ({
-  plugins: [copyFurnitureImagesPlugin()],
+  plugins: [copyFurnitureImagesPlugin(), devFurnitureImagesPlugin()],
   root: 'example',
   base: command === 'serve' ? '/' : '/blueprint3d-babylon/example/',
   optimizeDeps: {
@@ -133,10 +146,6 @@ export default defineConfig(({ command }) => ({
         './js/Viewer3D.js',
         './js/Viewer3DHandles.js'
       ]
-    },
-    configureServer(server) {
-      server.middlewares.use(serveFurnitureImage);
-      server.middlewares.use(handleSaveImage);
     }
   },
   resolve: {

@@ -27,9 +27,9 @@ export const STAIR_SUBTYPE_DEFAULTS = {
     height: 3,
     steps: 12,
     color: '#f5b984',
-    material: { id: 'paint-f5b984', name: 'Pick Material Item (#f5b984)', category: 'paint', kind: 'paint', color: '#f5b984' },
+    material: { id: 'paint-f5b984', name: 'Custom color (#f5b984)', category: 'paint', kind: 'paint', color: '#f5b984' },
     sideColor: '#f9fbff',
-    sideMaterial: { id: 'paint-soft-white', name: ' ItemPaint', category: 'paint', color: '#f9fbff' }
+    sideMaterial: { id: 'paint-soft-white', name: 'Soft White', category: 'paint', color: '#f9fbff' }
   },
   lshape: {
     width: 1,
@@ -40,9 +40,9 @@ export const STAIR_SUBTYPE_DEFAULTS = {
     runBeforeCorner: 2,
     runAfterCorner: 2,
     color: '#f5b984',
-    material: { id: 'paint-f5b984', name: 'Pick Material Item (#f5b984)', category: 'paint', kind: 'paint', color: '#f5b984' },
+    material: { id: 'paint-f5b984', name: 'Custom color (#f5b984)', category: 'paint', kind: 'paint', color: '#f5b984' },
     sideColor: '#f9fbff',
-    sideMaterial: { id: 'paint-soft-white', name: ' ItemPaint', category: 'paint', color: '#f9fbff' }
+    sideMaterial: { id: 'paint-soft-white', name: 'Soft White', category: 'paint', color: '#f9fbff' }
   },
   ushape: {
     width: 2,
@@ -55,9 +55,9 @@ export const STAIR_SUBTYPE_DEFAULTS = {
     uSlotWidth: 0,
     uVoidLength: 2,
     color: '#f5b984',
-    material: { id: 'paint-f5b984', name: 'Pick Material Item (#f5b984)', category: 'paint', kind: 'paint', color: '#f5b984' },
+    material: { id: 'paint-f5b984', name: 'Custom color (#f5b984)', category: 'paint', kind: 'paint', color: '#f5b984' },
     sideColor: '#f9fbff',
-    sideMaterial: { id: 'paint-soft-white', name: ' ItemPaint', category: 'paint', color: '#f9fbff' }
+    sideMaterial: { id: 'paint-soft-white', name: 'Soft White', category: 'paint', color: '#f9fbff' }
   },
   spiral: {
     width: 3,
@@ -66,9 +66,9 @@ export const STAIR_SUBTYPE_DEFAULTS = {
     steps: 12,
     spiralDegrees: 360,
     color: '#f5b984',
-    material: { id: 'paint-f5b984', name: 'Pick Material Item (#f5b984)', category: 'paint', kind: 'paint', color: '#f5b984' },
+    material: { id: 'paint-f5b984', name: 'Custom color (#f5b984)', category: 'paint', kind: 'paint', color: '#f5b984' },
     sideColor: '#d8c0a0',
-    sideMaterial: { id: 'paint-d8c0a0', name: 'Pick Material Item (#d8c0a0)', category: 'paint', kind: 'paint', color: '#d8c0a0' }
+    sideMaterial: { id: 'paint-d8c0a0', name: 'Custom color (#d8c0a0)', category: 'paint', kind: 'paint', color: '#d8c0a0' }
   },
   curved: {
     width: 1,
@@ -79,7 +79,7 @@ export const STAIR_SUBTYPE_DEFAULTS = {
     color: '#f5b984',
     material: '#f5b984',
     sideColor: '#f9fbff',
-    sideMaterial: { id: 'paint-soft-white', name: ' ItemPaint', category: 'paint', color: '#f9fbff' }
+    sideMaterial: { id: 'paint-soft-white', name: 'Soft White', category: 'paint', color: '#f9fbff' }
   },
   floating: {
     width: 1,
@@ -88,7 +88,7 @@ export const STAIR_SUBTYPE_DEFAULTS = {
     steps: 12,
     beamCount: 1,
     color: '#f5b984',
-    material: { id: 'paint-f5b984', name: 'Pick Material Item (#f5b984)', category: 'paint', kind: 'paint', color: '#f5b984' },
+    material: { id: 'paint-f5b984', name: 'Custom color (#f5b984)', category: 'paint', kind: 'paint', color: '#f5b984' },
     sideColor: '#d8c0a0',
     sideMaterial: '#d8c0a0'
   },
@@ -98,9 +98,9 @@ export const STAIR_SUBTYPE_DEFAULTS = {
     height: 3,
     steps: 10,
     color: '#cfd8dc',
-    material: { id: 'metal-silver', name: ' ItemMetal', category: 'metal', kind: 'metal', color: '#cfd8dc' },
+    material: { id: 'metal-silver', name: 'Silver', category: 'metal', kind: 'metal', color: '#cfd8dc' },
     sideColor: '#90a4ae',
-    sideMaterial: { id: 'metal-steel', name: ' ItemMetal', category: 'metal', kind: 'metal', color: '#90a4ae' }
+    sideMaterial: { id: 'metal-steel', name: 'Steel', category: 'metal', kind: 'metal', color: '#90a4ae' }
   },
   slide: {
     width: 0.9,
@@ -108,9 +108,9 @@ export const STAIR_SUBTYPE_DEFAULTS = {
     height: 1.8,
     steps: 1,
     color: '#ffb74d',
-    material: { id: 'paint-orange', name: ' Item', category: 'paint', kind: 'paint', color: '#ffb74d' },
+    material: { id: 'paint-orange', name: 'Orange', category: 'paint', kind: 'paint', color: '#ffb74d' },
     sideColor: '#ef5350',
-    sideMaterial: { id: 'paint-red', name: ' Item', category: 'paint', kind: 'paint', color: '#ef5350' }
+    sideMaterial: { id: 'paint-red', name: 'Red', category: 'paint', kind: 'paint', color: '#ef5350' }
   }
 };
 
@@ -1095,7 +1095,7 @@ export class FloorplanDocument {
     const room = {
       ...partialRoom,
       id,
-      name: partialRoom.name || ' ItemRoom',
+      name: partialRoom.name || 'New room',
       x,
       z,
       width,

@@ -49,6 +49,72 @@ export function isNoCeilingRoom(room) {
   return false;
 }
 
+const STYLE_KEY = /color|material|paper|paint|texture/i;
+
+/**
+ * Walls that lie on top of another wall (the plot boundary under the house's
+ * outside wall, or a long wall overlapping a neighbour's shorter one) fight
+ * for the same pixels, so the picture flickers between their two looks. For
+ * each overlapping pair this picks the one to draw a hair thinner and lower,
+ * so the other always shows: a house wall over the plot boundary, a styled
+ * wall over a plain one, then the longer one.
+ */
+export function overlappedWallIds(floorplan) {
+  const plot = (floorplan.floor?.rooms || []).find((room) => room.id === 'plot');
+  const plotWalls = new Set(Object.values(plot?.wallIds || {}));
+  const info = (floorplan.walls || []).map((wall) => {
+    const [x1, z1] = wall.from;
+    const [x2, z2] = wall.to;
+    const length = Math.hypot(x2 - x1, z2 - z1);
+    const styled = Object.entries(wall).some(([key, value]) => STYLE_KEY.test(key) && value);
+    return { wall, x1, z1, length, ux: (x2 - x1) / (length || 1), uz: (z2 - z1) / (length || 1), styled };
+  }).filter((entry) => entry.length > 0.01);
+  const rank = (entry) => [plotWalls.has(entry.wall.id) ? 0 : 1, entry.styled ? 1 : 0, entry.length];
+  const beats = (a, b) => {
+    const ra = rank(a);
+    const rb = rank(b);
+    for (let i = 0; i < ra.length; i += 1) if (Math.abs(ra[i] - rb[i]) > 1e-6) return ra[i] > rb[i];
+    return String(a.wall.id) < String(b.wall.id);
+  };
+  const out = new Set();
+  for (let i = 0; i < info.length; i += 1) {
+    for (let j = i + 1; j < info.length; j += 1) {
+      const a = info[i];
+      const b = info[j];
+      if ((a.wall.floorId ?? DEFAULT_FLOOR_ID) !== (b.wall.floorId ?? DEFAULT_FLOOR_ID)) continue;
+      if (Math.abs(a.ux * b.uz - a.uz * b.ux) > 1e-3) continue;
+      // b's ends measured along and across a's line.
+      const along = (x, z) => (x - a.x1) * a.ux + (z - a.z1) * a.uz;
+      const across = (x, z) => Math.abs((x - a.x1) * a.uz - (z - a.z1) * a.ux);
+      const [bx2, bz2] = b.wall.to;
+      if (across(b.x1, b.z1) > 0.01 || across(bx2, bz2) > 0.01) continue;
+      const t1 = along(b.x1, b.z1);
+      const t2 = along(bx2, bz2);
+      const overlap = Math.min(a.length, Math.max(t1, t2)) - Math.max(0, Math.min(t1, t2));
+      if (overlap < 0.05) continue;
+      out.add((beats(a, b) ? b : a).wall.id);
+    }
+  }
+  return out;
+}
+
+// Height of the low wall round a terrace or balcony.
+export const PARAPET_HEIGHT = 1.0;
+
+/**
+ * A wall that only bounds open-air rooms (terrace, balcony) and has no door or
+ * window is a parapet: waist high, so the terrace is open to the sky and the
+ * view. A wall shared with an indoor room stays full height.
+ */
+export function isParapetWall(floorplan, wall) {
+  const floorId = wall.floorId ?? DEFAULT_FLOOR_ID;
+  const rooms = (floorplan.floor?.rooms || []).filter((room) => room.id !== 'plot'
+    && (room.floorId ?? DEFAULT_FLOOR_ID) === floorId
+    && Object.values(room.wallIds || {}).includes(wall.id));
+  if (!rooms.length || !rooms.every(isNoCeilingRoom)) return false;
+  return !(floorplan.openings || []).some((opening) => opening.wallId === wall.id);
+}
+
 function getWallSurfaceFields(side, component = 'main') {
   return MaterialResolver.getWallSurfaceFields(side, component);
 }
@@ -1367,14 +1433,16 @@ export class BabylonSceneRenderer {
         floorMaterial.metadata?.blueprintMaterial?.kind === 'glass' ||
         (floorMaterial.metadata?.blueprintMaterial?.alpha !== undefined && floorMaterial.metadata.blueprintMaterial.alpha < 0.99)
       );
-      const hasCeilingSkin = !isNoCeilingRoom(room) && !isTransparentFloor;
+      const hasCeilingSkin = !isNoCeilingRoom(room) && !isTransparentFloor && room.id !== 'plot';
       const ceilingMaterial = hasCeilingSkin ? createBlueprintMaterial(this.scene, `ceiling_${room.id}`, '#ffffff', {
         fallbackColor: '#ffffff'
       }) : null;
       const currentFloorHeight = this.document.getFloorHeight(room.floorId);
 
       const group = new BABYLON.TransformNode(`floor_${room.id}`, this.scene);
-      group.position.set(room.x, floorY - currentFloorHeight / 2, room.z);
+      // The plot's ground sits just under the rooms' floors so they never flicker against it.
+      const sink = room.id === 'plot' ? 0.02 : 0;
+      group.position.set(room.x, floorY - currentFloorHeight / 2 - sink, room.z);
       group.metadata = { blueprintRoomId: room.id, floorId: room.floorId, locked: !!room.locked, originalWidth: room.width, originalDepth: room.depth };
       this.add(group, { shadowCaster: false });
 
@@ -1451,6 +1519,7 @@ export class BabylonSceneRenderer {
     };
 
     const wallsToBuild = wallIds ? visibleWalls.filter((wall) => wallIds.has(wall.id)) : visibleWalls;
+    const overlapped = overlappedWallIds(this.floorplan);
     wallsToBuild.forEach((wall) => {
       //  ， 
       const oldGroup = this.wallNodes.get(wall.id);
@@ -1472,12 +1541,21 @@ export class BabylonSceneRenderer {
       const hasMiter1 = adj1.length === 1;
       const hasMiter2 = adj2.length === 1;
 
-      const T = this.floorplan.wallThickness;
       const wallFloor = this.document.getFloor(wall.floorId);
+      // A wall lying on another one is drawn a hair thinner and lower, so the two never flicker.
+      const yields = overlapped.has(wall.id);
+      const T = this.floorplan.wallThickness - (yields ? 0.01 : 0);
       let H = this.document.getFloorWallRenderHeight(wall.floorId);
       if (wallFloor && wallFloor.hideWall) {
         H = 0.2;
+      } else if (isParapetWall(this.floorplan, wall)) {
+        H = Math.min(H, PARAPET_HEIGHT);
+      } else if (H > Number(wallFloor?.wallHeight ?? this.floorplan.wallHeight ?? 2.8) + 0.001) {
+        // Walls reaching up into the next floor's slab stop just under its surface,
+        // so their tops do not show through that floor as white lines.
+        H -= 0.01;
       }
+      if (yields) H -= 0.005;
       const floorY = this.document.getFloorElevation(wall.floorId);
       const wallBaseY = floorY + this.document.getWallElevationOffset(wall.id);
       const FH = Number(wallFloor ? (wallFloor.floorHeight ?? this.floorplan.floorHeight ?? 0.2) : (this.floorplan.floorHeight ?? 0.2));

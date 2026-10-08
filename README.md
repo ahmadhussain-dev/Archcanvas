@@ -22,9 +22,11 @@ npm install                      # installs all three parts
 cp api/.env.example api/.env     # then fill in MONGODB_URI and the secrets
 
 npm run dev:api                  # API on http://localhost:4000
-npm run dev:web                  # website on http://localhost:5173
-npm run dev:engine               # engine demo on http://localhost:3000
+npm run dev:editor               # 2D/3D editor on http://localhost:3000/editor/
+npm run dev:web                  # website on http://localhost:5173 (open this one)
 ```
+
+Run all three in separate terminals. The website forwards `/api` to the API and `/editor` to the editor, which opens inside the project page. `npm run dev:engine` still runs the engine's own demo app on its own.
 
 Check the API is up: open http://localhost:4000/api/health.
 
@@ -35,6 +37,12 @@ npm run seed -w @archcanvas/api                            # adds the default ma
 npm run make-admin -w @archcanvas/api -- you@example.com   # after signing up, makes you an admin
 ```
 
+Ask ArchCanvas (the AI panel in the editor) uses Google's free Gemini API. Get a key at https://aistudio.google.com/apikey, put it in `api/.env` as `AI_API_KEY=...` and restart the API. Without a key you can try the panel with `AI_PROVIDER=mock`, which gives fixed demo answers.
+
+Asked to plan or design a whole floor, the AI only lists the rooms it wants and where they go (back, middle or front, attached baths with their bedroom) in one `layout_floor` change. ArchCanvas works out the sizes itself, so the rooms fill the plot (or the floor below) with no gaps and nothing under its minimum size, then adds the doors (into the lounge, baths from their bedroom, a wide car porch gate), windows on the front and back walls, a flight of stairs over the stairs below, and the furniture (`api/src/lib/layoutFloor.js`). Rooms that cannot fit are listed with the reason.
+
+Asked to furnish, style or complete rooms, the AI uses one change per room (`furnish_room`), and the editor lays out the full set for that kind of room: kitchen counter with sink, cooking range, cabinets and fridge; bathroom shower, commode and basin; bedroom bed with side tables, wardrobe and dressing table; lounge sofas facing the TV; dining table with chairs; a clear car porch. Pieces go against the walls, out of door swings, off the stairs, and tall ones never cover a window (`engine/src/ai/roomKits.js`).
+
 ## API
 
 | Route | Who | What |
@@ -44,6 +52,7 @@ npm run make-admin -w @archcanvas/api -- you@example.com   # after signing up, m
 | `GET /api/auth/me` | logged in | The current user. |
 | `GET/POST /api/projects`, `GET/PATCH/DELETE /api/projects/:id` | owner | Projects with plot size, floors, roof height and requirements. |
 | `GET/POST /api/projects/:id/versions`, `GET .../versions/:n`, `POST .../versions/:n/restore` | owner | Saved plans (engine building JSON). Restoring copies an old version forward. |
+| `POST /api/projects/:id/ai` | owner | Ask ArchCanvas: `{ prompt, floorplan }` returns the AI's message and the checked changes (rooms inside the plot, no overlaps, minimum room sizes). Nothing is saved until the person applies them. |
 | `GET /api/projects/:id/estimate` | owner | Grey structure cost for the project. |
 | `GET /api/plots/presets`, `GET /api/rates`, `POST /api/estimate` | anyone | Marla presets, current prices and a quick estimate. |
 | `GET /api/admin/rates`, `PATCH /api/admin/rates/:id` | admin | Edit and verify material prices. |
@@ -54,7 +63,7 @@ Send the access token as `Authorization: Bearer <token>`. The estimate rules of 
 
 ```bash
 npm test          # API tests and engine tests (database tests need MongoDB on localhost, else they are skipped)
-npm run build     # production build of the website
+npm run build     # production build of the website, with the editor in web/dist/editor
 ```
 
 GitHub Actions runs the same checks on every pull request.

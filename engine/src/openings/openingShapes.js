@@ -2,9 +2,9 @@ export const OPENING_SHAPES = Object.freeze([
   { id: 'square', label: 'Square' },
   { id: 'diamond', label: 'Diamond' },
   { id: 'circle', label: 'Circle' },
-  { id: 'semicircle', label: ' ItemCircle' },
-  { id: 'round-arch', label: ' ItemSquare' },
-  { id: 'pointed-arch', label: ' ItemSquare' },
+  { id: 'semicircle', label: 'Semicircle' },
+  { id: 'round-arch', label: 'Round arch' },
+  { id: 'pointed-arch', label: 'Pointed arch' },
   { id: 'quarter-sector', label: 'Sector' },
   { id: 'right-triangle', label: 'Triangle' }
 ]);

@@ -1,9 +1,8 @@
 import { useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router'
+import { Link, useSearchParams } from 'react-router'
 import Button from '../../components/Button.jsx'
 import AuthLayout, { Field, FormError } from './AuthLayout.jsx'
 import { useAuth } from '../../auth/AuthContext.jsx'
-import { safeNext } from '../../auth/guards.jsx'
 
 // 0 to 4: length 8+, a letter and a number, 12+, mixed case or a symbol.
 export function passwordStrength(pw) {
@@ -24,7 +23,6 @@ const STRENGTH = [
 
 export default function Register() {
   const { register } = useAuth()
-  const navigate = useNavigate()
   const [params] = useSearchParams()
   const next = params.get('next')
   const [form, setForm] = useState({ name: '', email: '', password: '' })
@@ -46,7 +44,7 @@ export default function Register() {
     setBusy(true)
     try {
       await register(form.name, form.email, form.password)
-      navigate(next ? safeNext(next) : '/projects/new', { replace: true })
+      // GuestOnly sends the now logged-in person on to ?next= or their projects.
     } catch (err) {
       setErrors(err.fieldErrors ?? {})
       if (!err.details?.length) setFormError(err.message)

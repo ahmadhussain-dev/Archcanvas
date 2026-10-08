@@ -1377,7 +1377,7 @@ export const landscapePalmTree = {
     { value: 'winter', label: 'Component' }
   ],
   components: [
-    { id: 'palm-leaves', label: 'Sector Item', defaultColor: PALM_TREE_SEASONS.summer.leaves },
+    { id: 'palm-leaves', label: 'Palm fronds', defaultColor: PALM_TREE_SEASONS.summer.leaves },
     { id: 'palm-trunk', label: 'Component', defaultColor: PALM_TREE_SEASONS.summer.trunk }
   ],
   build(registry, item, node, size) {
@@ -2233,7 +2233,7 @@ export const landscapeDandelionPatch = {
     { value: 'winter', label: 'Component' }
   ],
   components: [
-    { id: 'dandelion-leaves', label: ' ItemGrass', defaultColor: '#689f38' },
+    { id: 'dandelion-leaves', label: 'Leaves', defaultColor: '#689f38' },
     { id: 'dandelion-puff', label: 'Component', defaultColor: '#ffffff' }
   ],
   build(registry, item, node, size) {

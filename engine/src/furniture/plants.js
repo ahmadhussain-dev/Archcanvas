@@ -238,7 +238,7 @@ export const bambooFurniture = {
   defaultSize: { width: 0.4, depth: 0.4, height: 1.35 },
   components: [
     { id: 'bamboo-stem', label: 'Component', defaultColor: '#388e3c' },
-    { id: 'bamboo-vase', label: 'Glass Item', defaultColor: '#e0f7fa' }
+    { id: 'bamboo-vase', label: 'Glass vase', defaultColor: '#e0f7fa' }
   ],
   build(registry, item, node, size) {
     const vaseH = size.height * 0.35;
@@ -417,7 +417,7 @@ export const bonsaiFurniture = {
 
 export const flowerRoseFurniture = {
   type: 'flower_rose',
-  name: 'Potted Plants',
+  name: 'Potted Rose',
   unit: 'm',
   defaultSize: { width: 0.45, depth: 0.45, height: 0.7 },
   components: [
@@ -1317,9 +1317,9 @@ export const landscapeMossMicro = {
   unit: 'm',
   defaultSize: { width: 0.35, depth: 0.35, height: 0.35 },
   components: [
-    { id: 'moss-glass', label: ' ItemGlass Item', defaultColor: '#e0f2f1' },
+    { id: 'moss-glass', label: 'Glass jar', defaultColor: '#e0f2f1' },
     { id: 'moss-green', label: 'Component', defaultColor: '#558b2f' },
-    { id: 'moss-decor', label: ' Item/ Item', defaultColor: '#d84315' }
+    { id: 'moss-decor', label: 'Decorations', defaultColor: '#d84315' }
   ],
   build(registry, item, node, size) {
     sphereComponent(registry, item, landscapeMossMicro, 'moss-glass', {
@@ -1625,7 +1625,7 @@ export const terracottaFlowerUrn = {
 
 export const pottedPinkRose = {
   type: 'potted_pink_rose',
-  name: 'Potted Plants',
+  name: 'Potted Pink Rose',
   unit: 'm',
   defaultSize: { width: 0.55, depth: 0.55, height: 0.95 },
 

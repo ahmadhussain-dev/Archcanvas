@@ -74,6 +74,10 @@ export {
 } from '../domain/MaterialResolver.js';
 
 export {
+  applyAiOperations
+} from '../ai/applyAiPlan.js';
+
+export {
   createFlatMaterial,
   createBlueprintMaterial,
   createMaterialPalette
@@ -205,7 +209,10 @@ export {
 
 export {
   BabylonSceneRenderer,
-  isNoCeilingRoom
+  isNoCeilingRoom,
+  isParapetWall,
+  overlappedWallIds,
+  PARAPET_HEIGHT
 } from '../runtime/BabylonSceneRenderer.js';
 
 export {
