@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@import './art.css';
 
 /* ArchCanvas design tokens. Source: docs/design/ui-guidelines.md.
    Light theme only for now. */
@@ -45,5 +46,24 @@
   }
   a {
     @apply text-blueprint hover:text-blueprint-hover;
+  }
+}
+
+@layer components {
+  .ac-art svg {
+    width: 100%;
+    height: auto;
+  }
+  .bg-grid {
+    background-color: #fbfcfc;
+    background-image: linear-gradient(var(--grid-line, #eef1f4) 1px, transparent 1px),
+      linear-gradient(90deg, var(--grid-line, #eef1f4) 1px, transparent 1px);
+    background-size: var(--grid-size, 24px) var(--grid-size, 24px);
+  }
+  .field-input {
+    @apply h-10 w-full rounded-control border border-line-strong bg-white px-3 text-[15px] text-navy outline-none placeholder:text-[#8a96a1] focus:border-blueprint focus:ring-2 focus:ring-blueprint/20;
+  }
+  .field-input[aria-invalid='true'] {
+    @apply border-red focus:ring-red/20;
   }
 }
