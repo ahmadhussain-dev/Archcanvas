@@ -211,6 +211,7 @@ export {
   BabylonSceneRenderer,
   isNoCeilingRoom,
   isParapetWall,
+  overlappedWallIds,
   PARAPET_HEIGHT
 } from '../runtime/BabylonSceneRenderer.js';
 

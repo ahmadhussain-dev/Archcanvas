@@ -922,8 +922,14 @@ function enterFirstPerson(Context, targetPuppetId = null) {
     alpha: camera.alpha,
     beta: camera.beta,
     radius: camera.radius,
-    target: camera.target.clone()
+    target: camera.target.clone(),
+    minZ: camera.minZ,
+    maxZ: camera.maxZ
   };
+  // Walking, things are close and the house is small: a near clip of 5 cm and a
+  // short far plane keep depth precise, so coplanar surfaces do not flicker.
+  camera.minZ = 0.05;
+  camera.maxZ = 400;
 
   // 3.  
   const leftPanel = document.querySelector('.left-panel');
@@ -1438,6 +1444,8 @@ export function exitFirstPerson(Context, { expandPanels = false } = {}) {
     camera.alpha = prevCameraState.alpha;
     camera.beta = prevCameraState.beta;
     camera.target.copyFrom(prevCameraState.target);
+    camera.minZ = prevCameraState.minZ;
+    camera.maxZ = prevCameraState.maxZ;
   }
   camera.attachControl(canvas, true, false, 1);
 
