@@ -2,6 +2,19 @@ import { AbstractMesh, ArcRotateCamera, Color3, Color4, CubeTexture, Directional
 const BABYLON = { AbstractMesh, ArcRotateCamera, Color3, Color4, CubeTexture, DirectionalLight, Engine, HemisphericLight, Matrix, MeshBuilder, Node, Plane, PhotoDome, Scene, ShadowGenerator, Vector3, StandardMaterial, Texture };
 
 const SKYBOX_SIZE = 1000.0;
+/** Steepest the orbit camera may tilt: just above the horizon. */
+export const ORBIT_MAX_BETA = Math.PI / 2 - 0.05;
+/** How far (metres) the orbit target may wander from the plan's origin; the lawn is 120 m wide. */
+const MAX_TARGET_DISTANCE = 60;
+
+function keepTargetNearHouse(target) {
+  if (target.y < 0) target.y = 0;
+  const d = Math.hypot(target.x, target.z);
+  if (d > MAX_TARGET_DISTANCE) {
+    target.x *= MAX_TARGET_DISTANCE / d;
+    target.z *= MAX_TARGET_DISTANCE / d;
+  }
+}
 const SKYBOX_HORIZON_OFFSET = SKYBOX_SIZE * 0.1;
 const MOBILE_RENDER_FPS = 30;
 const DESKTOP_RENDER_FPS = 60;
@@ -132,6 +145,11 @@ export class Viewer3D {
     this.camera.angularSensibilityY = 2500;
     this.camera.lowerRadiusLimit = 0.5;
     this.camera.upperRadiusLimit = 100;
+    // Keep the orbit camera above the ground and near the house. Below the ground
+    // you only see sky through the one-sided floors, and a far-off target loses
+    // the house altogether (walk mode lifts the angle limit while walking).
+    this.camera.upperBetaLimit = ORBIT_MAX_BETA;
+    this.scene.onBeforeRenderObservable.add(() => keepTargetNearHouse(this.camera.target));
     this.camera.wheelDeltaPercentage = 0.02;
     this.camera.panningSensibility = 1200;
     this.camera.panningMouseButton = 1; //  
