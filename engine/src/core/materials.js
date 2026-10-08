@@ -5,6 +5,14 @@ import { resolveMaterialAssetDescriptor, toSameOriginUrl } from './materialAsset
 
 const BABYLON = { Color3, DynamicTexture, Material, StandardMaterial, Texture };
 
+/**
+ * Lights one material may use. Each light is a uniform block in the shader, and
+ * many GPUs allow only 12 to 14 blocks, so 16 lights stopped shaders compiling once
+ * a plan had about a dozen lamps (those surfaces then vanished). 8 lights plus the
+ * scene, material and mesh blocks fits the WebGL 2 minimum of 12.
+ */
+export const MAX_LIGHTS_PER_MATERIAL = 8;
+
 function configureSpriteSheetAnimation(scene, texture, columns, rows, frameDuration) {
   const columnCount = Math.max(1, Number(columns) || 1);
   const rowCount = Math.max(1, Number(rows) || 1);
@@ -186,7 +194,7 @@ export function createFlatMaterial(scene, name, colorHex, options = {}) {
   }
   material.specularColor = options.specularColor || new BABYLON.Color3(0, 0, 0);
   material.flatShading = options.flatShading !== false;
-  material.maxSimultaneousLights = 16;
+  material.maxSimultaneousLights = MAX_LIGHTS_PER_MATERIAL;
 
   if (options.alpha !== undefined) material.alpha = options.alpha;
   if (options.emissive || options.disableLighting) {
@@ -244,7 +252,7 @@ export function createBlueprintMaterial(scene, name, descriptor, options = {}) {
     material.backFaceCulling = false; //  
     material.twoSidedLighting = true;
     material.flatShading = false;
-    material.maxSimultaneousLights = 16;
+    material.maxSimultaneousLights = MAX_LIGHTS_PER_MATERIAL;
 
     // Use the shared, prefiltered environment map. A per-material ReflectionProbe
     // is prohibitively expensive and leaks easily when editor items are rebuilt.
@@ -272,7 +280,7 @@ export function createBlueprintMaterial(scene, name, descriptor, options = {}) {
     material.backFaceCulling = false;
     material.twoSidedLighting = true;
     material.flatShading = false;
-    material.maxSimultaneousLights = 16;
+    material.maxSimultaneousLights = MAX_LIGHTS_PER_MATERIAL;
 
     const reflectionLevel = isMatte ? 0.15 : 0.55;
     material.reflectionTexture = createEnvironmentReflectionTexture(scene, name, reflectionLevel);
@@ -312,7 +320,7 @@ export function createBlueprintMaterial(scene, name, descriptor, options = {}) {
     material.backFaceCulling = false;
     material.twoSidedLighting = true;
     material.flatShading = false;
-    material.maxSimultaneousLights = 16;
+    material.maxSimultaneousLights = MAX_LIGHTS_PER_MATERIAL;
     //   opacityFresnelParameters ——   alpha  
     material.metadata = { ...(material.metadata || {}), blueprintMaterial: normalized };
     return material;
@@ -335,7 +343,7 @@ export function createBlueprintMaterial(scene, name, descriptor, options = {}) {
     material.backFaceCulling = false;
     material.twoSidedLighting = true;
     material.flatShading = false;
-    material.maxSimultaneousLights = 16;
+    material.maxSimultaneousLights = MAX_LIGHTS_PER_MATERIAL;
     material.metadata = { ...(material.metadata || {}), blueprintMaterial: normalized };
     return material;
   }

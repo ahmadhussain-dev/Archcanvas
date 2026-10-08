@@ -166,6 +166,9 @@ export class Viewer3D {
     /** @type {BABYLON.DirectionalLight}  （ ） */
     this.sun = new BABYLON.DirectionalLight('sun', new BABYLON.Vector3(-0.4, -1, -0.5), this.scene);
     this.sun.position.set(8, 12, 8);
+    // Each surface uses only a few lights, so the daylight always comes before lamps.
+    this.hemi.renderPriority = 10;
+    this.sun.renderPriority = 10;
     this.sun.intensity = 0.60;
 
     // ==========   ==========
