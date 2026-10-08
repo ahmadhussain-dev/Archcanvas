@@ -169,7 +169,7 @@ function bindToolSelectors(Context) {
     }
     const addButton = event.target.closest('#btn-add-floor');
     if (addButton) {
-      Context.showCustomConfirm('DuplicateFloorplan', ' ItemDuplicate ItemFloorplan？').then((copyCurrentFloor) => {
+      Context.showCustomConfirm('Duplicate floor plan', 'Copy the current floor plan to the new floor?').then((copyCurrentFloor) => {
         const sourceFloorId = Context.testMap.getCurrentFloorId();
         Context.pushHistory();
         Context.testMap.executeCommand('addFloor', copyCurrentFloor ? { copyFromFloorId: sourceFloorId } : {});

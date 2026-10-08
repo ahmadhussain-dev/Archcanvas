@@ -29,8 +29,8 @@ export const PINK_CASTLE_BLUEPRINT = {
   playerWaterY: 0.52,
   sakuraCount: 25,
   interactables: [
-    { id: 'exit_castle', name: ' Item（ Item）', x: 0, y: 0.6, z: 16.2, triggerRadius: 2.2 },
-    { id: 'lie_bed', name: ' Item（Princess Bed）', x: -12.5, y: 5.45, z: -3.7, triggerRadius: 1.6 }
+    { id: 'exit_castle', name: 'Exit castle', x: 0, y: 0.6, z: 16.2, triggerRadius: 2.2 },
+    { id: 'lie_bed', name: 'Lie down (princess bed)', x: -12.5, y: 5.45, z: -3.7, triggerRadius: 1.6 }
   ]
 };
 

@@ -94,7 +94,7 @@ export function startBuildingPlacement(mode) {
         x: pos.x,
         z: pos.z,
         shape: shape,
-        name: ` ItemRoom ${roomCounter}`
+        name: `Room ${roomCounter}`
       });
     } else if (mode.startsWith('add-door') || mode.startsWith('add-window') || mode === 'add-door' || mode === 'add-window') {
       entityType = 'opening';
@@ -103,7 +103,7 @@ export function startBuildingPlacement(mode) {
       const shape = match ? (match[2] || 'square') : 'square';
       const walls = map.getCurrentFloorEntities('wall');
       if (!walls || walls.length === 0) {
-        Context.showToast?.(' Item， Item');
+        Context.showToast?.('No walls yet, draw a wall first');
         return false;
       }
       const wall = walls[0];
@@ -185,7 +185,7 @@ export function startBuildingPlacement(mode) {
       (navigator.maxTouchPoints && navigator.maxTouchPoints > 0) ||
       /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent || '')
     );
-    Context.showToast?.(isMobile ? ' Item' : ' Item， Item');
+    Context.showToast?.(isMobile ? 'Tap to place' : 'Click to place, Esc to cancel');
     return true;
   } catch (error) {
     console.error('Failed to start building placement preview:', error);

@@ -1,3 +1,5 @@
+import { makeTexturePathsPortable } from './materialAssets.js';
+
 export const BUILDING_FILE_FORMAT = 'blueprint3d-babylon.building.v1';
 export const BUILDING_FILE_EXTENSION = 'b3dbuilding.json';
 
@@ -21,7 +23,8 @@ export function createBuildingFile(floorplan, options = {}) {
       units: floorplan?.unit || 'in',
       entry: 'Blueprint3DTestMap.loadBuildingFile'
     },
-    floorplan: cloneData(floorplan)
+    // Texture paths are saved by file name so the file opens on any machine.
+    floorplan: makeTexturePathsPortable(cloneData(floorplan))
   };
 }
 

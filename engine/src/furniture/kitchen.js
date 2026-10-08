@@ -157,7 +157,7 @@ export const microwaveFurniture = {
   defaultSize: { width: 0.5, depth: 0.4, height: 0.3 },
   components: [
     { id: 'body', label: 'Component', defaultColor: '#3b3f45' },
-    { id: 'window', label: 'Glass Item', defaultColor: '#141517' },
+    { id: 'window', label: 'Glass window', defaultColor: '#141517' },
     { id: 'button', label: 'Component', defaultColor: '#ff9a6c' }
   ],
   build(registry, item, node, size) {
@@ -185,7 +185,7 @@ export const stoveFurniture = {
     { id: 'cooktop', label: 'Component', defaultColor: '#1a1a1a' },
     { id: 'burners', label: 'Component', defaultColor: '#00a2ff' },
     { id: 'oven_frame', label: 'Component', defaultColor: '#30343a' },
-    { id: 'oven_glass', label: ' ItemGlass', defaultColor: '#141a20' },
+    { id: 'oven_glass', label: 'Oven glass', defaultColor: '#141a20' },
     { id: 'oven_handle', label: 'Component', defaultColor: '#b7bcc0' }
   ],
   build(registry, item, node, size) {
@@ -234,7 +234,7 @@ export const rangeHoodFurniture = {
   defaultSize: { width: 1, depth: 0.5, height: 0.45 },
   components: [
     { id: 'body', label: 'Component', defaultColor: '#b0b5b8' },
-    { id: 'glass', label: ' ItemGlass', defaultColor: '#3b3e40' },
+    { id: 'glass', label: 'Glass panel', defaultColor: '#3b3e40' },
     { id: 'filter', label: 'Component', defaultColor: '#4a4d50' }
   ],
   build(registry, item, node, size) {
@@ -263,7 +263,7 @@ export const coffeeMakerFurniture = {
   components: [
     { id: 'body', label: 'Component', defaultColor: '#3a2d28' },
     { id: 'pot', label: 'Component', defaultColor: '#eef2f5' },
-    { id: 'accent', label: 'Metal Item', defaultColor: '#cca352' }
+    { id: 'accent', label: 'Metal trim', defaultColor: '#cca352' }
   ],
   build(registry, item, node, size) {
     //  

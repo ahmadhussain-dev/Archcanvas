@@ -20,7 +20,7 @@ export const BLUEPRINT3D_TEST_FLOORPLAN = {
     rooms: [
       {
         id: 'living',
-        name: '\u5ba2\u5385',
+        name: 'Living room',
         x: 0,
         z: 0,
         width: 10,
@@ -34,7 +34,7 @@ export const BLUEPRINT3D_TEST_FLOORPLAN = {
       },
       {
         id: 'bedroom',
-        name: '\u5367\u5ba4',
+        name: 'Bedroom',
         x: -2.5,
         z: -6.5,
         width: 5,
@@ -47,7 +47,7 @@ export const BLUEPRINT3D_TEST_FLOORPLAN = {
       },
       {
         id: 'studio',
-        name: '\u5de5\u4f5c\u95f4',
+        name: 'Studio',
         x: 3,
         z: -6.5,
         width: 6,
@@ -78,10 +78,10 @@ export const BLUEPRINT3D_TEST_FLOORPLAN = {
     { id: 'window_living_south', type: 'window', wallId: 'w_south_living', t: 0.5, width: 1.25, height: 0.85 }
   ],
   items: [
-    { id: 'sofa_1', type: 'sofa', name: '\u4e91\u6735\u6c99\u53d1', x: 2.1, z: -1.7, width: 84, depth: 36, height: 32, rotation: 0 },
-    { id: 'table_1', type: 'table', name: '\u5706\u8336\u51e0', x: 0.7, z: 1.1, width: 42, depth: 42, height: 20, rotation: 0 },
-    { id: 'bed_1', type: 'bed', name: '\u7c89\u8272\u516c\u4e3b\u5e8a', x: -2.4, z: -6.3, width: 76, depth: 88, height: 42, rotation: 0 },
-    { id: 'desk_1', type: 'desk', name: '\u84dd\u56fe\u5de5\u4f5c\u684c', x: 3.2, z: -6.2, width: 64, depth: 30, height: 34, rotation: 0 }
+    { id: 'sofa_1', type: 'sofa', name: 'Cloud sofa', x: 2.1, z: -1.7, width: 84, depth: 36, height: 32, rotation: 0 },
+    { id: 'table_1', type: 'table', name: 'Round coffee table', x: 0.7, z: 1.1, width: 42, depth: 42, height: 20, rotation: 0 },
+    { id: 'bed_1', type: 'bed', name: 'Pink princess bed', x: -2.4, z: -6.3, width: 76, depth: 88, height: 42, rotation: 0 },
+    { id: 'desk_1', type: 'desk', name: 'Blueprint desk', x: 3.2, z: -6.2, width: 64, depth: 30, height: 34, rotation: 0 }
   ]
 };
 

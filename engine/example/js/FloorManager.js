@@ -44,7 +44,7 @@ export function ensureVisibleCurrentFloor(options = {}) {
   console.warn(`[floor-recovery] Switched empty floor "${currentFloorId}" to populated floor "${fallbackFloor.floor.id}" during ${reason}.`);
   Context.updateSkyboxFromCurrentFloor();
   if (!silent) {
-    Context.showToast(` Item， Item“${fallbackFloor.floor.name || fallbackFloor.floor.id}”`);
+    Context.showToast(`Current floor is empty, switched to "${fallbackFloor.floor.name || fallbackFloor.floor.id}"`);
   }
   return true;
 }
@@ -55,9 +55,9 @@ export function showFloorContextMenu(target, clientX, clientY) {
   const index = sorted.findIndex((floor) => floor.id === target.id);
   if (index < 0) return;
   Context.showIconMenu(clientX, clientY, [
-    { icon: 'edit', title: ' Item', onClick: () => renameCurrentFloor(target.id) },
-    { icon: 'up', title: ' Item', disabled: index === sorted.length - 1, onClick: () => moveFloorAction(target.id, 'up') },
-    { icon: 'down', title: ' Item', disabled: index <= 0, onClick: () => moveFloorAction(target.id, 'down') },
+    { icon: 'edit', title: 'Rename', onClick: () => renameCurrentFloor(target.id) },
+    { icon: 'up', title: 'Move up', disabled: index === sorted.length - 1, onClick: () => moveFloorAction(target.id, 'up') },
+    { icon: 'down', title: 'Move down', disabled: index <= 0, onClick: () => moveFloorAction(target.id, 'down') },
     { icon: 'trash', title: 'Delete', disabled: Context.testMap.getFloors().length <= 1, onClick: () => deleteFloorAction(target.id) }
   ]);
 }
@@ -86,7 +86,7 @@ export async function renameCurrentFloor(floorId) {
   const floor = Context.testMap.getFloor(floorId);
   if (!floor) return;
   const currentName = floor.name || `${Number(floor.level || 0) + 1}F`;
-  const newName = await Context.showCustomPrompt(' Item', ' Item：', currentName);
+  const newName = await Context.showCustomPrompt('Rename floor', 'Floor name:', currentName);
   if (newName !== null) {
     const trimmed = newName.trim();
     if (trimmed && trimmed !== currentName) {
@@ -107,6 +107,9 @@ export function formatFloorDisplayName(name) {
     const match = name.match(/[\u4e00-\u9fa5]/);
     return match ? match[0] : name.slice(0, 2);
   }
+  if (/^ground\b/i.test(name)) return 'G';
+  const number = name.match(/\d+/);
+  if (number) return number[0];
   return name.slice(0, 2);
 }
 
@@ -120,8 +123,8 @@ export function syncFloorControls() {
     const toggleBtn = document.createElement('button');
     toggleBtn.type = 'button';
     toggleBtn.className = 'btn-icon btn-floor-toggle-expanded';
-    toggleBtn.title = ' Item';
-    toggleBtn.setAttribute('aria-label', ' Item');
+    toggleBtn.title = 'Show floors';
+    toggleBtn.setAttribute('aria-label', 'Show floors');
     toggleBtn.innerHTML = '<svg class="icon-svg" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-10 4 10 4 10-4Z"/><path d="m2 12 10 4 10-4"/><path d="m2 17 10 4 10-4"/></svg>';
     
     toggleBtn.addEventListener('click', () => {
@@ -142,8 +145,8 @@ export function syncFloorControls() {
     btn.className = 'btn-icon btn-floor-item';
     btn.dataset.floorId = floor.id;
     btn.textContent = formatFloorDisplayName(floorName);
-    btn.title = ` Item ${floorName}`;
-    btn.setAttribute('aria-label', ` Item ${floorName}`);
+    btn.title = `Switch to ${floorName}`;
+    btn.setAttribute('aria-label', `Switch to ${floorName}`);
 
     if (floor.id === Context.testMap.getCurrentFloorId()) {
       btn.classList.add('active');
@@ -170,8 +173,8 @@ export function syncFloorControls() {
   addBtn.id = 'btn-add-floor';
   addBtn.type = 'button';
   addBtn.className = 'btn-icon btn-floor-add';
-  addBtn.title = 'New Item';
-  addBtn.setAttribute('aria-label', 'New Item');
+  addBtn.title = 'New floor';
+  addBtn.setAttribute('aria-label', 'New floor');
   addBtn.innerHTML = '<svg class="icon-svg" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>';
   
   container.appendChild(addBtn);
@@ -179,8 +182,8 @@ export function syncFloorControls() {
   const foldBtn = document.createElement('button');
   foldBtn.type = 'button';
   foldBtn.className = 'btn-icon btn-floor-fold';
-  foldBtn.title = ' Item';
-  foldBtn.setAttribute('aria-label', ' Item');
+  foldBtn.title = 'Collapse floors';
+  foldBtn.setAttribute('aria-label', 'Collapse floors');
   foldBtn.innerHTML = '<svg class="icon-svg" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>';
   
   foldBtn.addEventListener('click', () => {

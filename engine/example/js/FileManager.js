@@ -124,7 +124,7 @@ export async function download3MFFile() {
 
   //  Export Furniture（'furniture'   'all'）  3D  ， 
   const needsRendering = (category === 'furniture' || category === 'all') && !ctx.testMap.renderingEnabled;
-  const loading = showLoading(' ItemExport 3MF', ' Item 3D  Item， Item...');
+  const loading = showLoading('Exporting 3MF', 'Preparing 3D models, please wait...');
 
   try {
     if (needsRendering) {
@@ -194,7 +194,7 @@ async function onFileInputChange(event) {
     }
   } catch (error) {
     console.error(error);
-    await ctx.showCustomAlert(' Item', ' Item， Item blueprint3d-babylon  Item ZIP  Item。');
+    await ctx.showCustomAlert('Import failed', 'Could not read this file. Please choose a blueprint3d-babylon building file or ZIP package.');
   }
 }
 
@@ -203,7 +203,7 @@ async function onFileInputChange(event) {
  */
 export async function saveToLocalStorage() {
   const defaultName = ctx.store.getCurrentProjectName() || getProjectName('');
-  const name = await ctx.showCustomPrompt('Save Item', ' Item：', defaultName || ' Item');
+  const name = await ctx.showCustomPrompt('Save project', 'Project name:', defaultName || 'Untitled project');
   if (!name) return;
 
   const ok = ctx.store.saveProject(name, {
@@ -222,7 +222,7 @@ export async function saveToLocalStorage() {
   if (ok) {
     updateLocalProjectCount();
   }
-  ctx.showToast(ok ? `✓  ItemSave「${name}」` : '⚠ Save Item');
+  ctx.showToast(ok ? `✓ Saved "${name}"` : '⚠ Save failed');
 }
 
 /**
@@ -231,7 +231,7 @@ export async function saveToLocalStorage() {
 export async function openLocalStorageList() {
   const projects = ctx.store.listProjects();
   if (!projects.length) {
-    await ctx.showCustomAlert(' Item', ' ItemSave Item， Item「Save Item」。');
+    await ctx.showCustomAlert('No saved projects', 'You have no saved projects yet. Use "Save project" first.');
     return;
   }
   const result = await ctx.showProjectListModal(projects);
@@ -280,16 +280,16 @@ export async function openLocalStorageList() {
           }
         });
       }
-      ctx.showToast(`✓  ItemOpen「${result.name}」`);
+      ctx.showToast(`✓ Opened "${result.name}"`);
     } else {
-      await ctx.showCustomAlert('Open Item', ' Item。');
+      await ctx.showCustomAlert('Open failed', 'Could not load this project.');
     }
   } else if (result.action === 'delete') {
-    const confirmed = await ctx.showCustomConfirm('Delete Item', ` ItemDelete「${result.name}」 Item？ ItemUndo。`);
+    const confirmed = await ctx.showCustomConfirm('Delete project', `Delete "${result.name}"? This cannot be undone.`);
     if (confirmed) {
       ctx.store.deleteProject(result.name);
       updateLocalProjectCount();
-      ctx.showToast(` ItemDelete「${result.name}」`);
+      ctx.showToast(`Deleted "${result.name}"`);
     }
   }
 }
@@ -380,7 +380,7 @@ function arrayBufferToBase64(buffer) {
  */
 export async function downloadBuildingZIP() {
   try {
-    ctx.showToast(' ItemExport ZIP  Item...');
+    ctx.showToast('Exporting ZIP package...');
     const zip = new JSZip();
 
     // 1.  
@@ -464,10 +464,10 @@ export async function downloadBuildingZIP() {
     link.remove();
     URL.revokeObjectURL(url);
     
-    ctx.showToast('✓ ZIP Export Item');
+    ctx.showToast('✓ ZIP exported');
   } catch (error) {
     console.error('Failed to export ZIP:', error);
-    ctx.showCustomAlert('Export Item', 'Export ZIP  Item：' + (error.message || error));
+    ctx.showCustomAlert('Export failed', 'ZIP export failed: ' + (error.message || error));
   }
 }
 
@@ -477,7 +477,7 @@ export async function downloadBuildingZIP() {
 export async function loadBuildingZIP(file) {
   if (!file) return;
   
-  ctx.showToast(' Item ZIP  Item...');
+  ctx.showToast('Importing ZIP package...');
   
   try {
     const zip = await JSZip.loadAsync(file);
@@ -493,7 +493,7 @@ export async function loadBuildingZIP(file) {
     });
     
     if (!mainJsonFile) {
-      throw new Error('  ZIP   *.b3dbuilding.json  。');
+      throw new Error('No *.b3dbuilding.json file found in the ZIP root');
     }
     
     const mainJsonText = await mainJsonFile.async('text');
@@ -509,7 +509,7 @@ export async function loadBuildingZIP(file) {
     });
     
     if (furnitureFiles.length > 0) {
-      ctx.showToast(` Item ${furnitureFiles.length}  ItemCustomFurniture， Item...`);
+      ctx.showToast(`Found ${furnitureFiles.length} custom furniture files, loading...`);
       for (const fFile of furnitureFiles) {
         try {
           const source = await fFile.entry.async('text');
@@ -539,7 +539,7 @@ export async function loadBuildingZIP(file) {
     });
     
     if (materialsFiles.length > 0) {
-      ctx.showToast(` Item ${materialsFiles.length}  ItemCustom Item， Item...`);
+      ctx.showToast(`Found ${materialsFiles.length} custom materials, loading...`);
       for (const mFile of materialsFiles) {
         try {
           const buffer = await mFile.entry.async('arraybuffer');
@@ -620,16 +620,16 @@ export async function loadBuildingZIP(file) {
       });
     }
     
-    ctx.showToast(`✓  Item ZIP  Item「${buildingFileObj.name || ' Item'}」`);
+    ctx.showToast(`✓ Imported ZIP project "${buildingFileObj.name || 'Untitled'}"`);
   } catch (error) {
     console.error('Failed to import ZIP:', error);
-    ctx.showCustomAlert(' Item', 'ZIP  Item， Item blueprint3d-babylon  Item：' + (error.message || error));
+    ctx.showCustomAlert('Import failed', 'ZIP import failed. Make sure it is a blueprint3d-babylon package: ' + (error.message || error));
   }
 }
 
 export function takePhoto() {
   if (ctx.currentView === '3d') {
-    ctx.showToast(' Item 3D  Item...');
+    ctx.showToast('Capturing 3D screenshot...');
     
     // 1.   3D  
     const originalGridState = ctx.viewer3d.show3DGrid;
@@ -657,11 +657,11 @@ export function takePhoto() {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        ctx.showToast('✓ 3D  Item');
+        ctx.showToast('✓ 3D screenshot saved');
       })
       .catch((err) => {
-        console.error('3D  Item:', err);
-        ctx.showToast('⚠ 3D  Item');
+        console.error('3D screenshot failed:', err);
+        ctx.showToast('⚠ 3D screenshot failed');
       })
       .finally(() => {
         // 4.   3D  
@@ -675,7 +675,7 @@ export function takePhoto() {
         });
       });
   } else {
-    ctx.showToast(' Item 2D  Item...');
+    ctx.showToast('Capturing 2D screenshot...');
     get2DPlanScreenshot()
       .then((dataUrl) => {
         const filename = `screenshot_2d_${Date.now()}.png`;
@@ -685,11 +685,11 @@ export function takePhoto() {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        ctx.showToast('✓ 2D  Item');
+        ctx.showToast('✓ 2D screenshot saved');
       })
       .catch((err) => {
-        console.error('2D  Item:', err);
-        ctx.showToast('⚠ 2D  Item');
+        console.error('2D screenshot failed:', err);
+        ctx.showToast('⚠ 2D screenshot failed');
       });
   }
 }
@@ -698,7 +698,7 @@ function get2DPlanScreenshot() {
   return new Promise((resolve, reject) => {
     const svgEl = document.getElementById('floorplan');
     if (!svgEl) {
-      reject(new Error(' Item floorplan SVG  Item'));
+      reject(new Error('Floor plan SVG not found'));
       return;
     }
     
@@ -755,7 +755,7 @@ function get2DPlanScreenshot() {
           reject(e);
         }
       } else {
-        reject(new Error(' Item 2D canvas context'));
+        reject(new Error('Could not get 2D canvas context'));
       }
       URL.revokeObjectURL(blobURL);
     };
