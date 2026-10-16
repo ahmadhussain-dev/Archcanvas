@@ -2,18 +2,33 @@ import mongoose from 'mongoose'
 
 export const MATERIAL_KEYS = ['steel', 'cement', 'bricks', 'sand', 'crush', 'labour', 'pipes']
 export const RATE_STATUSES = ['unverified', 'verified']
+// Where a price came from: the built-in starting value, an admin, or the daily online check.
+export const RATE_ORIGINS = ['seed', 'admin', 'auto']
 export const STALE_AFTER_DAYS = 30
 
 const historySchema = new mongoose.Schema(
   {
     ratePkr: { type: Number, required: true, min: 0 },
     at: { type: Date, default: Date.now },
-    by: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
+    by: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    origin: { type: String, enum: RATE_ORIGINS }
   },
   { _id: false }
 )
 
-// Grey structure material prices, edited by admins on /admin/prices.
+const sourceSchema = new mongoose.Schema(
+  {
+    origin: { type: String, enum: RATE_ORIGINS, default: 'seed' },
+    name: { type: String, trim: true, maxlength: 80 },
+    url: { type: String, trim: true, maxlength: 300 },
+    // The city whose listed price this one uses, or 'Pakistan average'.
+    basedOn: { type: String, trim: true, maxlength: 60 }
+  },
+  { _id: false }
+)
+
+// Grey structure material prices, one per material per city. Cement and steel
+// are refreshed by the daily online check; admins edit the rest on /admin/prices.
 const materialRateSchema = new mongoose.Schema(
   {
     key: { type: String, enum: MATERIAL_KEYS, required: true },
@@ -24,6 +39,7 @@ const materialRateSchema = new mongoose.Schema(
     status: { type: String, enum: RATE_STATUSES, default: 'unverified' },
     verifiedAt: { type: Date },
     verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    source: { type: sourceSchema, default: () => ({ origin: 'seed' }) },
     history: { type: [historySchema], default: [] }
   },
   { timestamps: true }

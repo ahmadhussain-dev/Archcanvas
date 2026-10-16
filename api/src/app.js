@@ -7,10 +7,12 @@ import routes from './routes/index.js'
 import { notFound, errorHandler } from './middleware/errors.js'
 
 // options.rateLimited: set false in tests so repeated logins are not throttled.
+// options.fetchPage: replaces downloading price pages (tests use saved pages).
 export function createApp(options = {}) {
   const app = express()
 
   app.disable('x-powered-by')
+  app.locals.fetchPage = options.fetchPage
   // One proxy in front in production (Render/Railway), so rate limits see the real client IP.
   if (env.nodeEnv === 'production') app.set('trust proxy', 1)
   app.use(helmet())

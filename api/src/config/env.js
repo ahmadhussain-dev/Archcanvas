@@ -5,7 +5,9 @@ const env = {
   mongoUri: process.env.MONGODB_URI ?? 'mongodb://127.0.0.1:27017/archcanvas',
   clientOrigin: process.env.CLIENT_ORIGIN ?? 'http://localhost:5173',
   jwtAccessSecret: process.env.JWT_ACCESS_SECRET ?? 'dev-access-secret',
-  jwtRefreshSecret: process.env.JWT_REFRESH_SECRET ?? 'dev-refresh-secret'
+  jwtRefreshSecret: process.env.JWT_REFRESH_SECRET ?? 'dev-refresh-secret',
+  // Daily online check of cement and steel prices. RATE_AUTO_CHECK=off turns it off.
+  rateAutoCheck: (process.env.RATE_AUTO_CHECK ?? 'on').toLowerCase() !== 'off'
 }
 
 export const isProduction = env.nodeEnv === 'production'

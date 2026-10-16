@@ -9,7 +9,8 @@
     "start": "node src/server.js",
     "test": "node --test --test-concurrency=1 \"tests/**/*.test.js\"",
     "seed": "node --env-file-if-exists=.env src/seed/run.js",
-    "make-admin": "node --env-file-if-exists=.env src/scripts/makeAdmin.js"
+    "make-admin": "node --env-file-if-exists=.env src/scripts/makeAdmin.js",
+    "check-prices": "node --env-file-if-exists=.env src/scripts/checkPrices.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",

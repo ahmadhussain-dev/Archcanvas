@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router'
 import Button from '../../components/Button.jsx'
 import Chip from '../../components/Chip.jsx'
+import CitySelect from '../../components/CitySelect.jsx'
 import Icon from '../../components/Icon.jsx'
 import Logo from '../../components/Logo.jsx'
 import PlotThumb from '../../components/PlotThumb.jsx'
@@ -22,7 +23,6 @@ const FALLBACK_PRESETS = [
   { key: '2-kanal', label: '2 Kanal', widthFt: 100, depthFt: 90 }
 ]
 const MAIN_PRESETS = ['5-marla', '10-marla', '1-kanal']
-const CITIES = ['Faisalabad', 'Lahore', 'Islamabad', 'Rawalpindi', 'Karachi', 'Multan', 'Peshawar', 'Gujranwala', 'Sialkot']
 const EXTRAS = ['Dining', 'Store', 'Servant room', 'Prayer room', 'Laundry']
 
 const sectionLabel = 'text-xs font-semibold tracking-[0.6px] text-muted uppercase'
@@ -254,11 +254,7 @@ export default function NewProject() {
                 <FeetField label="Roof height" value={roofHeightFt} error={sizeErrors.roof} onChange={setRoof} />
                 <label className="flex flex-col gap-1 text-xs font-medium text-muted">
                   City (for prices)
-                  <select className="field-input h-9 text-sm" value={city} onChange={(e) => setCity(e.target.value)}>
-                    {CITIES.map((c) => (
-                      <option key={c}>{c}</option>
-                    ))}
-                  </select>
+                  <CitySelect className="field-input h-9 text-sm" value={city} onChange={setCity} />
                 </label>
               </div>
               <div className="flex flex-wrap gap-1.5 pt-2">

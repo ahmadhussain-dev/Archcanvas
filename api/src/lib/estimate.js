@@ -25,7 +25,7 @@ const round = (value, places = 0) => {
   return Math.round(value * f) / f
 }
 
-// rates: { [key]: { name, unit, ratePkr, status } }
+// rates: { [key]: { name, unit, ratePkr, status, source?, checkedAt? } }
 export function calculateEstimate({ widthFt, depthFt, floors, roofHeightFt }, rates) {
   const coveredAreaSqft = widthFt * depthFt * floors
   const heightFactor = roofHeightFt / BASE_ROOF_HEIGHT_FT
@@ -42,7 +42,9 @@ export function calculateEstimate({ widthFt, depthFt, floors, roofHeightFt }, ra
       quantity: round(qty, key === 'steel' ? 2 : 0),
       ratePkr: rate.ratePkr,
       amountPkr: round(qty * rate.ratePkr),
-      rateStatus: rate.status
+      rateStatus: rate.status,
+      rateSource: rate.source ?? null,
+      rateCheckedAt: rate.checkedAt ?? null
     }
   })
 

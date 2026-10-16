@@ -1,10 +1,13 @@
+import { useState } from 'react'
 import { Link, useParams } from 'react-router'
 import Button from '../../components/Button.jsx'
 import Chip from '../../components/Chip.jsx'
+import CitySelect from '../../components/CitySelect.jsx'
 import StatePanel from '../../components/StatePanel.jsx'
 import FullPageSpinner from '../../components/FullPageSpinner.jsx'
+import { api } from '../../lib/api.js'
 import { useApi } from '../../lib/useApi.js'
-import { ftin, num, num2, pkrShort } from '../../lib/format.js'
+import { ftin, num, num2, pkrShort, timeAgo } from '../../lib/format.js'
 
 const COLORS = { steel: '#13202C', cement: '#1E5AA8', bricks: '#B2441C', labour: '#6E8FB8', crush: '#A9BCD4', sand: '#C9B48F', pipes: '#D8CDB8' }
 const STATUS = { verified: ['Verified', 'green'], stale: ['Stale', 'amber'], unverified: ['Unverified', 'grey'] }
@@ -15,10 +18,34 @@ function qty(line) {
   return `${line.key === 'steel' ? num2(line.quantity) : num(line.quantity)}${unit ? ` ${unit}` : ''}`
 }
 
+// "Online, Lahore price, checked 3 hours ago" under each material.
+function sourceText(line, city) {
+  const src = line.rateSource ?? {}
+  const from = src.city && src.city !== city ? ` (${src.city})` : ''
+  if (src.origin === 'auto') {
+    const borrowed = src.basedOn && src.basedOn !== city && src.basedOn !== src.city ? `, ${src.basedOn} price` : ''
+    return `Online${borrowed}${from}${line.rateCheckedAt ? `, checked ${timeAgo(line.rateCheckedAt)}` : ''}`
+  }
+  if (src.origin === 'admin') return `Set by admin${from}`
+  return `Starting value${src.basedOn ? ` (${src.basedOn})` : from}`
+}
+
 export default function Estimate() {
   const { id } = useParams()
   const project = useApi(`/projects/${id}`)
   const estimate = useApi(`/projects/${id}/estimate`)
+  const [cityError, setCityError] = useState('')
+
+  async function changeCity(city) {
+    setCityError('')
+    try {
+      const { project: updated } = await api.patch(`/projects/${id}`, { city })
+      project.setData((d) => ({ ...d, project: updated }))
+      estimate.reload()
+    } catch (err) {
+      setCityError(err.message)
+    }
+  }
 
   if (project.loading || estimate.loading) return <FullPageSpinner />
   const err = project.error ?? estimate.error
@@ -45,8 +72,15 @@ export default function Estimate() {
             <h1 className="m-0 text-2xl font-bold">Grey structure estimate</h1>
             <span className="text-[13.5px] text-muted">
               {p.name} · <span className="font-mono">{num(e.coveredAreaSqft)} sq ft</span> covered · {e.floors} floor{e.floors === 1 ? '' : 's'} · roof{' '}
-              <span className="font-mono">{ftin(e.roofHeightFt)}</span> · {e.city} rates
+              <span className="font-mono">{ftin(e.roofHeightFt)}</span> · rates for
+              <CitySelect
+                aria-label="City for prices"
+                className="ml-1.5 h-7 rounded-control border border-line-strong bg-white px-1.5 text-[13px] text-navy print:appearance-none print:border-0"
+                value={e.city}
+                onChange={changeCity}
+              />
             </span>
+            {cityError && <span className="text-[13px] text-red">{cityError}</span>}
           </div>
           <div className="flex gap-2 print:hidden">
             <Button as={Link} to={`/projects/${id}/editor`}>Back to editor</Button>
@@ -76,7 +110,7 @@ export default function Estimate() {
             <span className="text-[12.5px] leading-[1.45] text-muted">
               {e.hasUnverifiedRates
                 ? 'Some prices are starting values or older than 30 days. An admin can check them against the market.'
-                : 'Every price was checked by an admin in the last 30 days.'}
+                : 'Every price was checked in the last 30 days. Cement and steel are checked online every day.'}
             </span>
           </div>
         </div>
@@ -114,7 +148,7 @@ export default function Estimate() {
 
         <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-[minmax(0,1fr)_380px]">
           <div className="overflow-x-auto rounded-card border border-line bg-white">
-            <table className="w-full min-w-[620px] border-collapse text-sm">
+            <table className="w-full min-w-[700px] border-collapse text-sm">
               <thead>
                 <tr className="bg-paper">
                   <th scope="col" className={`${th} text-left`}>Item</th>
@@ -127,7 +161,12 @@ export default function Estimate() {
               <tbody>
                 {lines.map((l) => (
                   <tr key={l.key} className="border-t border-[#eef1f3]">
-                    <td className="px-4 py-3 font-medium">{l.name}</td>
+                    <td className="px-4 py-3">
+                      <span className="flex flex-col">
+                        <span className="font-medium">{l.name}</span>
+                        <span className="text-xs text-muted">{sourceText(l, e.city)}</span>
+                      </span>
+                    </td>
                     <td className="px-4 py-3 text-right font-mono">{qty(l)}</td>
                     <td className="px-4 py-3 text-right font-mono">
                       {num(l.ratePkr)} / {SHORT[l.unit] ?? l.unit}
