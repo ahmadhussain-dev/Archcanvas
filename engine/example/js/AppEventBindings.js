@@ -156,7 +156,10 @@ function bindToolSelectors(Context) {
       Context.clearDrawWallPreview();
       document.querySelectorAll('.mode').forEach((candidate) => candidate.classList.toggle('active', candidate === button));
       Context.handleModeChange(Context.mode);
-      if (isBuildingPlacementMode(clickedMode)) {
+      // On the 2D plan a roof is drawn corner to corner instead of dropped
+      // onto a whole room, so it can cover only part of the house.
+      const drawsRoofOnPlan = clickedMode.startsWith('add-roof') && Context.currentView === '2d';
+      if (isBuildingPlacementMode(clickedMode) && !drawsRoofOnPlan) {
         startBuildingPlacement(clickedMode);
       }
       Context.syncLocalToStore();

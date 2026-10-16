@@ -3,7 +3,8 @@
 //   or straight across or down from where the wall started;
 // - a live preview of the wall being drawn, with its length;
 // - the Measure tool: click two points to read the distance between them;
-// - the clear inside width and depth of the selected room.
+// - the clear inside width and depth of the selected room;
+// - drawing a roof: click two opposite corners to roof just that area.
 import { formatLength } from './Units.js';
 import { dimension, wallThickness } from './PlanDrawing.js';
 import { getRoomVertices } from '../../src/index.js';
@@ -13,6 +14,9 @@ const SNAP_PX = 12;
 const STRAIGHT_DEG = 7;
 
 let measure = { a: null, b: null, hover: null };
+let roofDraw = { a: null, hover: null };
+
+const isRoofMode = (mode) => typeof mode === 'string' && mode.startsWith('add-roof');
 
 function unitScale(r) {
   return Math.abs(r.worldToSvg(1, 0).x - r.worldToSvg(0, 0).x) || 1;
@@ -127,9 +131,14 @@ function snapMarker(r, layer, snap) {
 /** While drawing a wall or measuring: the line to the pointer and its length. */
 export function updatePlanToolPreview(r, event) {
   const mode = r.ctx.mode;
-  if (mode !== 'draw-wall' && mode !== 'measure') return;
+  if (mode !== 'draw-wall' && mode !== 'measure' && !isRoofMode(mode)) return;
   const point = r.ctx.svgPointFromEvent(event);
   const world = r.ctx.svgToWorld(point.x, point.y);
+  if (isRoofMode(mode)) {
+    roofDraw.hover = snapPlanPoint(r, world, null, { faces: true });
+    drawRoofPreview(r);
+    return;
+  }
   if (mode === 'draw-wall') {
     const start = r.ctx.getDrawStart?.() ?? r.ctx.drawStart ?? null;
     const snap = snapPlanPoint(r, world, start);
@@ -154,6 +163,69 @@ export function measureClick(r, event) {
   drawMeasure(r);
 }
 
+/**
+ * A click with a roof tool: the first corner, then the opposite corner,
+ * which adds a roof over just that rectangle. Returns the new roof's
+ * size, or null while waiting for the second corner.
+ */
+export function roofClick(r, event) {
+  const point = r.ctx.svgPointFromEvent(event);
+  const world = r.ctx.svgToWorld(point.x, point.y);
+  const snap = snapPlanPoint(r, world, null, { faces: true });
+  if (!roofDraw.a) {
+    roofDraw = { a: snap.point, hover: snap };
+    drawRoofPreview(r);
+    return null;
+  }
+  const [ax, az] = roofDraw.a;
+  const [bx, bz] = snap.point;
+  if (Math.abs(bx - ax) < 0.5 || Math.abs(bz - az) < 0.5) return null;
+  roofDraw = { a: null, hover: null };
+  return {
+    x: Number(((ax + bx) / 2).toFixed(3)),
+    z: Number(((az + bz) / 2).toFixed(3)),
+    width: Number(Math.abs(bx - ax).toFixed(3)),
+    depth: Number(Math.abs(bz - az).toFixed(3))
+  };
+}
+
+function drawRoofPreview(r) {
+  if (!isRoofMode(r.ctx.mode)) return;
+  const layer = overlay(r);
+  const { a, hover } = roofDraw;
+  if (a && hover) {
+    const b = hover.point;
+    const pa = r.worldToSvg(a[0], a[1]);
+    const pb = r.worldToSvg(b[0], b[1]);
+    const colour = '#1E5AA8';
+    layer.appendChild(r.createSvgElement('rect', {
+      x: Math.min(pa.x, pb.x), y: Math.min(pa.y, pb.y),
+      width: Math.abs(pb.x - pa.x), height: Math.abs(pb.y - pa.y),
+      fill: colour, 'fill-opacity': 0.12, stroke: colour, 'stroke-width': 2, 'stroke-dasharray': '6,4'
+    }));
+    const label = `Roof ${formatLength(Math.abs(b[0] - a[0]))} × ${formatLength(Math.abs(b[1] - a[1]))}`;
+    const w = label.length * 7 + 12;
+    const cx = (pa.x + pb.x) / 2;
+    const cy = Math.min(pa.y, pb.y);
+    layer.appendChild(r.createSvgElement('rect', { x: cx - w / 2, y: cy - 24, width: w, height: 18, rx: 4, fill: colour }));
+    const text = r.createSvgElement('text', { x: cx, y: cy - 11, 'text-anchor': 'middle', fill: '#ffffff', 'font-size': 12, 'font-family': 'IBM Plex Mono, monospace' });
+    text.textContent = label;
+    layer.appendChild(text);
+  }
+  if (hover) {
+    snapMarker(r, layer, hover);
+    const p = r.worldToSvg(hover.point[0], hover.point[1]);
+    const hint = a ? 'Click the opposite corner' : 'Click a corner of the roof';
+    const text = r.createSvgElement('text', { x: p.x + 12, y: p.y + 22, fill: '#13202C', 'font-size': 11, 'paint-order': 'stroke', stroke: '#ffffff', 'stroke-width': 3 });
+    text.textContent = hint;
+    layer.appendChild(text);
+  }
+}
+
+export function clearRoofDraw() {
+  roofDraw = { a: null, hover: null };
+}
+
 export function clearMeasure() {
   measure = { a: null, b: null, hover: null };
 }
@@ -169,7 +241,9 @@ function drawMeasure(r) {
 /** Called after each 2D render: the measurement, and the selected room's inside sizes. */
 export function renderPlanTools(r) {
   if (r.ctx.mode !== 'measure') clearMeasure();
+  if (!isRoofMode(r.ctx.mode)) clearRoofDraw();
   drawMeasure(r);
+  drawRoofPreview(r);
   const room = r.ctx.selectedRoomId ? r.ctx.testMap.getEntity('room', r.ctx.selectedRoomId) : null;
   if (room && room.id !== 'plot') renderInsideSizes(r, room);
 }

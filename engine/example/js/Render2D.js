@@ -119,6 +119,9 @@ export function renderPlan() {
   // Walls go over the rooms' click areas, so a room's wall can be picked
   // (and moved with the arrow keys) as well as the room itself.
   ctx.currentRooms().forEach((room) => renderRoomInteraction(room));
+  // Roofs as dashed outlines with a tag, so you can see which parts are
+  // covered (a car porch can stay open) and pick a roof to move or resize.
+  ctx.currentRoofs().forEach((roof) => renderRoofOutline(roof));
   ctx.currentWalls().forEach((wall) => renderWall(wall));
   // ArchCanvas: door swings, window symbols and dimensions, under the
   // (then invisible) opening hit lines so openings stay selectable.
@@ -494,6 +497,50 @@ export function renderOpening(opening) {
     }
   });
   ctx.svg.appendChild(line);
+}
+
+export function renderRoofOutline(roof) {
+  const a = worldToSvg((roof.x || 0) - (roof.width || 6) / 2, (roof.z || 0) - (roof.depth || 6) / 2);
+  const b = worldToSvg((roof.x || 0) + (roof.width || 6) / 2, (roof.z || 0) + (roof.depth || 6) / 2);
+  const x = Math.min(a.x, b.x);
+  const y = Math.min(a.y, b.y);
+  const w = Math.abs(b.x - a.x);
+  const h = Math.abs(b.y - a.y);
+  const selected = ctx.selectedRoofId === roof.id;
+  const colour = selected ? '#1E5AA8' : '#B2441C';
+  const group = createSvgElement('g', { class: `plan-roof ${selected ? 'selected' : ''}`, 'data-roof-id': roof.id });
+  group.appendChild(createSvgElement('rect', {
+    x, y, width: w, height: h,
+    fill: selected ? colour : 'none', 'fill-opacity': selected ? 0.08 : 0,
+    stroke: colour, 'stroke-width': 1.5, 'stroke-dasharray': '8,5',
+    'pointer-events': 'none'
+  }));
+  // Only the edge and the tag take clicks, so the rooms under a roof stay
+  // easy to select.
+  const edge = createSvgElement('rect', {
+    x, y, width: w, height: h, fill: 'none', stroke: 'transparent', 'stroke-width': 6,
+    'pointer-events': 'stroke', style: 'cursor: pointer;'
+  });
+  const tagText = `Roof${roof.subtype && roof.subtype !== 'flat' ? ` (${roof.subtype})` : ''}`;
+  const tagW = tagText.length * 6.5 + 10;
+  const tag = createSvgElement('g', { style: 'cursor: pointer;' });
+  tag.appendChild(createSvgElement('rect', { x: x + 4, y: y + 4, width: tagW, height: 16, rx: 3, fill: colour }));
+  const label = createSvgElement('text', { x: x + 4 + tagW / 2, y: y + 15.5, 'text-anchor': 'middle', fill: '#ffffff', 'font-size': 10.5, 'font-weight': 600 });
+  label.textContent = tagText;
+  tag.appendChild(label);
+  for (const target of [edge, tag]) {
+    target.addEventListener('pointerdown', (event) => {
+      if (ctx.mode === 'select') ctx.beginStructureDrag(event, 'roof', roof.id);
+    });
+    target.addEventListener('click', (event) => {
+      if (ctx.mode !== 'select') return;
+      event.stopPropagation();
+      ctx.selectRoof(roof.id);
+    });
+    ctx.attachContextMenuTrigger?.(target, () => ({ type: 'roof', id: roof.id }));
+  }
+  group.append(edge, tag);
+  ctx.svg.appendChild(group);
 }
 
 export function renderRoof(roof) {
