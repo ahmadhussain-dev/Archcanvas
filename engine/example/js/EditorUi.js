@@ -1747,6 +1747,27 @@ export function initUiEventListeners() {
     refreshShadows();
   });
 
+  document.getElementById('btn-roof-room')?.addEventListener('click', () => {
+    const room = selection.selectedRoomId ? testMap.getEntity('room', selection.selectedRoomId) : null;
+    if (!room) return;
+    // Out to the walls' outer faces, so the roof sits on them.
+    const thickness = Number(testMap.getProjectMetadata().wallThickness) || 0.23;
+    const xs = getRoomVertices(room).map((v) => v.x);
+    const zs = getRoomVertices(room).map((v) => v.z);
+    const [minX, maxX, minZ, maxZ] = [Math.min(...xs), Math.max(...xs), Math.min(...zs), Math.max(...zs)];
+    pushHistory();
+    testMap.addRoof({
+      x: Number(((minX + maxX) / 2).toFixed(3)),
+      z: Number(((minZ + maxZ) / 2).toFixed(3)),
+      width: Number((maxX - minX + thickness).toFixed(3)),
+      depth: Number((maxZ - minZ + thickness).toFixed(3)),
+      subtype: 'flat'
+    });
+    refreshShadows();
+    renderPlan();
+    showToast?.('Roof added over this room');
+  });
+
   document.getElementById('btn-delete-room').addEventListener('click', () => {
     if (!selection.selectedRoomId) return;
     if (testMap.getEntity('room', selection.selectedRoomId)?.locked) return;

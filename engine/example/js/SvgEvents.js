@@ -1,7 +1,6 @@
-import { Topology } from '../../src/index.js';
 import * as DragHandler from './DragHandler.js';
 import { worldToSvg, createSvgElement, svgPointFromClient } from './Render2D.js';
-import { snapPlanPoint, updatePlanToolPreview, measureClick } from './PlanTools.js';
+import { snapPlanPoint, updatePlanToolPreview, measureClick, roofClick } from './PlanTools.js';
 
 const planApi = () => ({ ctx, worldToSvg, createSvgElement });
 import { createStoreProxy } from '../store/proxyHelper.js';
@@ -471,11 +470,12 @@ function onClick(event) {
     ctx.selectRoom(room.id);
     ctx.switchToSelectMode();
   } else if (ctx.mode.startsWith('add-roof')) {
+    // Click two opposite corners: the roof covers just that area, so a
+    // car porch or stair well can stay open to the sky.
+    const roofBounds = roofClick(planApi(), event);
+    if (!roofBounds) return;
     ctx.pushHistory();
     const subtype = ctx.mode.replace('add-roof-', '') || 'gable';
-    const room = ctx.selectedRoomId ? ctx.testMap.getEntity('room', ctx.selectedRoomId) : ctx.testMap.getRoomAt(snapped[0], snapped[1]);
-    const wallThickness = ctx.testMap.getProjectMetadata().wallThickness;
-    const roofBounds = Topology.calculateAutoRoofBounds(room, { x: snapped[0], z: snapped[1] }, wallThickness);
     const roof = ctx.testMap.addRoof({
       x: roofBounds.x,
       z: roofBounds.z,
