@@ -1,14 +1,14 @@
 import { useMemo, useState } from 'react'
 import Button from '../../components/Button.jsx'
 import Chip from '../../components/Chip.jsx'
+import CitySelect from '../../components/CitySelect.jsx'
 import Icon from '../../components/Icon.jsx'
 import StatePanel from '../../components/StatePanel.jsx'
 import FullPageSpinner from '../../components/FullPageSpinner.jsx'
 import { api } from '../../lib/api.js'
 import { useApi } from '../../lib/useApi.js'
-import { formatDate, num } from '../../lib/format.js'
+import { formatDate, num, timeAgo } from '../../lib/format.js'
 
-const CITIES = ['Faisalabad', 'Lahore', 'Islamabad', 'Rawalpindi', 'Karachi', 'Multan', 'Peshawar', 'Gujranwala', 'Sialkot']
 const STATUS = { verified: ['Verified', 'green'], stale: ['Stale', 'amber'], unverified: ['Unverified', 'grey'] }
 
 function Spark({ values }) {
@@ -34,9 +34,65 @@ function check(rate, text) {
   return ''
 }
 
+// Where a price came from, in a few words.
+function sourceLabel(r, city) {
+  const src = r.source ?? {}
+  if (src.origin === 'auto') return { text: `Online${src.basedOn && src.basedOn !== city ? `, ${src.basedOn} price` : ''}`, url: src.url, title: src.name }
+  if (src.origin === 'admin') return { text: 'Admin' }
+  return { text: src.basedOn ? `Starting value (${src.basedOn})` : 'Starting value' }
+}
+
+// The daily online check of cement and steel prices, and "Check now".
+function PriceCheck({ onChecked }) {
+  const { data, setData } = useApi('/admin/rates/check')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState('')
+  const check = data?.check
+
+  async function run() {
+    setBusy(true)
+    setError('')
+    try {
+      const res = await api.post('/admin/rates/check')
+      setData(res)
+      onChecked()
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="flex flex-wrap items-start justify-between gap-3 rounded-card border border-line bg-white px-4 py-3.5">
+      <div className="flex min-w-0 flex-col gap-1.5">
+        <b className="text-sm">Online price check</b>
+        <span className="text-[13px] text-muted">
+          Cement and steel prices for all 40 cities are read from online price lists once a day and approved automatically.
+          {check?.finishedAt ? ` Last check ${timeAgo(check.finishedAt)}.` : check ? ' A check is running.' : ' No check has run yet.'}
+        </span>
+        {check?.results?.map((r) => (
+          <span key={r.key} className={`flex flex-wrap items-center gap-1.5 text-[13px] ${r.ok ? '' : 'text-red'}`}>
+            <Chip tone={r.ok ? 'green' : 'red'} icon={r.ok ? 'check' : 'error'}>{r.key === 'steel' ? 'Steel' : 'Cement'}</Chip>
+            {r.message}
+            {r.held?.length > 0 && <span className="text-amber">Held: {r.held.join(', ')}. Save a price to accept it.</span>}
+            {r.url && (
+              <a href={r.url} target="_blank" rel="noreferrer" className="text-blueprint">
+                {r.source}
+              </a>
+            )}
+          </span>
+        ))}
+        {error && <span className="text-[13px] text-red">{error}</span>}
+      </div>
+      <Button icon="clock" onClick={run} disabled={busy}>{busy ? 'Checking…' : 'Check prices now'}</Button>
+    </div>
+  )
+}
+
 function downloadCsv(city, rates) {
-  const rows = [['Material', 'Unit', 'Rate (PKR)', 'Status', 'Verified on']]
-  for (const r of rates) rows.push([r.name, r.unit, r.ratePkr, r.displayStatus, r.verifiedAt ? formatDate(r.verifiedAt) : ''])
+  const rows = [['Material', 'Unit', 'Rate (PKR)', 'Status', 'Verified on', 'Source', 'Source link']]
+  for (const r of rates) rows.push([r.name, r.unit, r.ratePkr, r.displayStatus, r.verifiedAt ? formatDate(r.verifiedAt) : '', sourceLabel(r, city).text, r.source?.url ?? ''])
   const csv = rows.map((row) => row.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n')
   const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }))
   const a = Object.assign(document.createElement('a'), { href: url, download: `archcanvas-prices-${city.toLowerCase()}.csv` })
@@ -106,25 +162,23 @@ export default function AdminPrices() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="flex flex-col gap-1">
           <h1 className="m-0 text-2xl font-bold">Material prices</h1>
-          <span className="text-[13.5px] text-muted">These rates drive every grey structure estimate. Verify them against the market at least every 30 days.</span>
+          <span className="text-[13.5px] text-muted">These rates drive every grey structure estimate. Cement and steel update online every day; check the others against the market at least every 30 days.</span>
         </div>
         <div className="flex flex-wrap gap-2">
-          <select
+          <CitySelect
             aria-label="City"
             className="field-input h-10 w-auto text-sm"
             value={city}
-            onChange={(e) => (setCity(e.target.value), setEdits({}), setSelected([]), setMessage(null))}
-          >
-            {CITIES.map((c) => (
-              <option key={c}>{c}</option>
-            ))}
-          </select>
+            onChange={(next) => (setCity(next), setEdits({}), setSelected([]), setMessage(null))}
+          />
           <Button icon="download" onClick={() => downloadCsv(city, rates)} disabled={!rates.length}>Export CSV</Button>
           <Button variant="primary" onClick={save} disabled={busy || !changed.length || hardErrors.length > 0}>
             {busy ? 'Saving…' : changed.length ? `Save ${changed.length} change${changed.length === 1 ? '' : 's'}` : 'Save changes'}
           </Button>
         </div>
       </div>
+
+      <PriceCheck onChecked={reload} />
 
       {loading && !data ? (
         <FullPageSpinner />
@@ -135,7 +189,7 @@ export default function AdminPrices() {
           compact
           kind="empty"
           title={`No prices for ${city} yet`}
-          text={city === 'Faisalabad' ? 'Run the seed script to add the starting prices: npm run seed -w @archcanvas/api' : `Estimates for ${city} use the Faisalabad prices until ${city} has its own.`}
+          text={city === 'Faisalabad' ? 'Run the seed script to add the starting prices: npm run seed -w @archcanvas/api' : `Estimates for ${city} use nearby city or Faisalabad prices until it has its own. "Check prices now" adds prices for all 40 cities.`}
         />
       ) : (
         <>
@@ -158,7 +212,7 @@ export default function AdminPrices() {
             </div>
           )}
           <div className="overflow-x-auto rounded-card border border-line bg-white">
-            <table className="w-full min-w-[860px] border-collapse text-sm">
+            <table className="w-full min-w-[980px] border-collapse text-sm">
               <thead>
                 <tr className="bg-paper">
                   <th scope="col" className={th}>
@@ -175,6 +229,7 @@ export default function AdminPrices() {
                   <th scope="col" className={th}>Rate (PKR)</th>
                   <th scope="col" className={th}>Change</th>
                   <th scope="col" className={th}>Last checked</th>
+                  <th scope="col" className={th}>Source</th>
                   <th scope="col" className={th}>History</th>
                   <th scope="col" className={th}>Status</th>
                 </tr>
@@ -227,6 +282,18 @@ export default function AdminPrices() {
                       <td className="px-3 py-2.5 text-[13px] text-muted">
                         {edits[r.id] !== undefined && value !== r.ratePkr ? 'Not saved' : r.verifiedAt ? formatDate(r.verifiedAt) : 'Starting value'}
                       </td>
+                      <td className="px-3 py-2.5 text-[13px]">
+                        {(() => {
+                          const src = sourceLabel(r, city)
+                          return src.url ? (
+                            <a href={src.url} target="_blank" rel="noreferrer" title={src.title} className="text-blueprint">
+                              {src.text}
+                            </a>
+                          ) : (
+                            <span className="text-muted">{src.text}</span>
+                          )
+                        })()}
+                      </td>
                       <td className="px-3 py-2.5">
                         <Spark values={r.history.map((h) => h.ratePkr)} />
                       </td>
@@ -240,7 +307,7 @@ export default function AdminPrices() {
             </table>
           </div>
           <span className="text-[12.5px] text-muted">
-            Grey means unverified, green verified, amber older than 30 days, red a price to check before saving. Saving a new price marks it as checked today.
+            Grey means unverified, green verified, amber older than 30 days, red a price to check before saving. Saving a new price marks it as checked today. The next online check replaces cement and steel prices again.
           </span>
         </>
       )}
