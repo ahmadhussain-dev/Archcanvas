@@ -402,12 +402,18 @@ test('L ', () => {
  const holes = renderer.getStairFloorHoles(room);
 
  assert.equal(holes.length, 2, 'L 2 （ ）');
- // 1 X [-0.5, 0.5] （ ）
- const h1 = holes.find((h) => Math.abs(h.left - (-0.5)) < 0.01 && Math.abs(h.right - 0.5) < 0.01);
- assert.ok(h1, ' X ');
- // 2 X [0.5, 2.0]（ runAfterCorner = 1.5）
- const h2 = holes.find((h) => Math.abs(h.left - 0.5) < 0.01 && Math.abs(h.right - 2.0) < 0.01);
- assert.ok(h2, ' X ');
+ // The stairs' x is the centre of the whole L (1 + 1.5 wide), as on the 2D plan:
+ // first flight X [-1.25, -0.25], second flight X [-0.25, 1.25].
+ const h1 = holes.find((h) => Math.abs(h.left - (-1.25)) < 0.01 && Math.abs(h.right - (-0.25)) < 0.01);
+ assert.ok(h1, 'first flight opening');
+ const h2 = holes.find((h) => Math.abs(h.left - (-0.25)) < 0.01 && Math.abs(h.right - 1.25) < 0.01);
+ assert.ok(h2, 'second flight opening');
+
+ // Mirrored, the L flips about the same centre and stays inside the same box.
+ document.floorplan.stairs[0].mirrored = true;
+ const flipped = renderer.getStairFloorHoles(room);
+ assert.ok(flipped.some((h) => Math.abs(h.left - 0.25) < 0.01 && Math.abs(h.right - 1.25) < 0.01), 'mirrored first flight');
+ assert.ok(flipped.some((h) => Math.abs(h.left - (-1.25)) < 0.01 && Math.abs(h.right - 0.25) < 0.01), 'mirrored second flight');
 
  scene.dispose();
  engine.dispose();

@@ -15,6 +15,7 @@ import {
   getRoofCutNeighborIds
 } from '../geometry/roofCutGeometry.js';
 import { buildStairsGeometry } from '../geometry/stairsGeometry.js';
+import { lShapeOffsetX } from '../geometry/stairsLayout.js';
 import { buildFenceGeometry } from '../geometry/fenceGeometry.js';
 import { buildFenceGateGeometry } from '../geometry/fenceGateGeometry.js';
 import { shouldIncludeShadowCaster } from './shadowCasterFilter.js';
@@ -1285,7 +1286,9 @@ export class BabylonSceneRenderer {
             bottom: landingZ + w / 2
           };
 
-          return [r1, r2].map((q) => {
+          const offset = lShapeOffsetX(stairs, w, d);
+          return [r1, r2].map((rect) => {
+            const q = { ...rect, left: rect.left + offset, right: rect.right + offset };
             const aabb = rotateEnvelope(q, rotation);
             return {
               left: Math.max(left, cx + aabb.left),
@@ -1555,6 +1558,8 @@ export class BabylonSceneRenderer {
         // so their tops do not show through that floor as white lines.
         H -= 0.01;
       }
+      // A wall with its own height (a low boundary wall) stops there.
+      if (Number(wall.height) > 0 && !wallFloor?.hideWall) H = Math.min(H, Number(wall.height));
       if (yields) H -= 0.005;
       const floorY = this.document.getFloorElevation(wall.floorId);
       const wallBaseY = floorY + this.document.getWallElevationOffset(wall.id);

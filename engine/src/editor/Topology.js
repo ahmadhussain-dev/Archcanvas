@@ -1,4 +1,5 @@
 import { getRoomVertices } from '../rooms/index.js';
+import { lShapeOffsetX } from '../geometry/stairsLayout.js';
 
 /**
  *  
@@ -609,7 +610,9 @@ export function getStairsRailingSegments(stairs, testMap) {
   const depth = Math.max(0.1, Number(stairs.depth || 0.2));
   const height = testMap.getStairsAutoHeight(stairs);
 
-  function getWordPos(lx, lz) {
+  const offsetX = (stairs.subtype || 'straight') === 'lshape' ? lShapeOffsetX(stairs, width, depth) : 0;
+  function getWordPos(localX, lz) {
+    const lx = localX + offsetX;
     const rot = stairs.rotation || 0;
     const cos = Math.cos(rot);
     const sin = Math.sin(rot);

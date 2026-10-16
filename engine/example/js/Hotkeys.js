@@ -229,6 +229,29 @@ export function handleHotkeys(event, ctx) {
         ctx.updateEditor();
         ctx.renderPlan();
       }
+    } else if (ctx.selectedWallId || ctx.selectedRoomId || ctx.selectedStairsId) {
+      // Walls, rooms and stairs move 1 inch a press, or 1 ft with Shift.
+      const step = event.shiftKey ? 0.3048 : 0.0254;
+      const dx = key === 'arrowleft' ? -step : key === 'arrowright' ? step : 0;
+      const dz = key === 'arrowup' ? step : key === 'arrowdown' ? -step : 0;
+      ctx.pushHistory();
+      if (ctx.selectedWallId) {
+        const moved = ctx.testMap.executeCommand('moveWall', { wallId: ctx.selectedWallId, dx, dz });
+        if (moved?.id && moved.id !== ctx.selectedWallId) ctx.selectWall(moved.id);
+      } else if (ctx.selectedRoomId) {
+        const room = ctx.testMap.getEntity('room', ctx.selectedRoomId);
+        if (room && !room.locked) {
+          ctx.testMap.updateRoom(room.id, { x: Number((room.x + dx).toFixed(3)), z: Number((room.z + dz).toFixed(3)) }, { moveItems: true });
+        }
+      } else {
+        const stairs = ctx.testMap.getEntity('stairs', ctx.selectedStairsId);
+        if (stairs && !stairs.locked) {
+          ctx.testMap.executeCommand('updateStairs', { stairsId: stairs.id, patch: { x: Number((stairs.x + dx).toFixed(3)), z: Number((stairs.z + dz).toFixed(3)) } });
+        }
+      }
+      ctx.refreshShadows();
+      ctx.updateEditor();
+      ctx.renderPlan();
     }
     return;
   }
@@ -441,7 +464,8 @@ export function handleHotkeys(event, ctx) {
       'r': 'add-room-square',
       'd': 'add-door-square',
       'w': 'add-window-square',
-      'v': 'view'
+      'v': 'view',
+      'm': 'measure'
     };
     targetMode = keyMap[key];
   }

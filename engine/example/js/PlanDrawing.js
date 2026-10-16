@@ -123,7 +123,7 @@ export function renderOpeningSymbols(r) {
 
 // A dimension line between two plan points (svg units), pushed `offset` units
 // to the left of a -> b, with extension lines, tick marks and its label.
-function dimension(r, parent, a, b, offset, label) {
+export function dimension(r, parent, a, b, offset, label) {
   const dx = b.x - a.x;
   const dy = b.y - a.y;
   const len = Math.hypot(dx, dy);

@@ -379,6 +379,18 @@ export function updateEditor() {
     const baseboardHeightInput = document.getElementById('wall-baseboard-height');
     const wainscotEnabledInput = document.getElementById('wall-wainscot-enabled');
     const wainscotHeightInput = document.getElementById('wall-wainscot-height');
+    // A wall can be lower than the floor's walls, such as a 5 ft front boundary wall.
+    const ownHeight = Number(wall.height) > 0;
+    const floorWallHeight = testMap.getFloor?.(wall.floorId)?.wallHeight ?? testMap.getSnapshot().wallHeight ?? 3.0;
+    const ownHeightInput = document.getElementById('wall-own-height');
+    const wallHeightInput = document.getElementById('wall-height');
+    if (ownHeightInput) ownHeightInput.checked = ownHeight;
+    if (wallHeightInput) {
+      wallHeightInput.value = Number((ownHeight ? Number(wall.height) : floorWallHeight).toFixed(2));
+      wallHeightInput.max = floorWallHeight;
+      wallHeightInput.disabled = !ownHeight;
+      wallHeightInput.parentElement.classList.toggle('hidden', !ownHeight);
+    }
     if (baseboardEnabledInput) baseboardEnabledInput.checked = !!wall.baseboardEnabled;
     if (baseboardHeightInput) {
       baseboardHeightInput.value = Number((wall.baseboardHeight ?? 0.1).toFixed(2));
@@ -1451,6 +1463,16 @@ export function initUiEventListeners() {
     updateEditor();
     renderPlan();
   };
+
+  document.getElementById('wall-own-height')?.addEventListener('change', (event) => {
+    // Start a new own height at 5 ft, the usual front boundary wall.
+    updateSelectedWallDecor({ height: event.target.checked ? 1.524 : null });
+  });
+
+  document.getElementById('wall-height')?.addEventListener('change', (event) => {
+    const value = Number(event.target.value);
+    if (value > 0) updateSelectedWallDecor({ height: Math.max(0.3, value) });
+  });
 
   document.getElementById('wall-baseboard-enabled')?.addEventListener('change', (event) => {
     updateSelectedWallDecor({ baseboardEnabled: event.target.checked });

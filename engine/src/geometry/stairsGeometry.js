@@ -1,6 +1,7 @@
 import { createBox, createCylinder } from '../core/primitives.js';
 import { createBlueprintMaterial } from '../core/materials.js';
 import { Mesh, MeshBuilder, VertexData } from '../core/babylon.js';
+import { lShapeOffsetX } from './stairsLayout.js';
 
 function mergeAndAddSideMeshes(registry, group, sideMaterial, sideMeshes, name) {
   if (!sideMeshes || sideMeshes.length === 0) return null;
@@ -199,6 +200,7 @@ export function buildStairsGeometry(registry, group, stairs, material, width, de
   const flipX = stairs.mirrored ? -1 : 1;
   const sideHidden = !!stairs.sideHidden;
   const scene = registry?.scene || registry?.renderer?.scene || group.getScene();
+  const before = new Set(group.getChildren());
 
   //  
   let sideMaterial = material;
@@ -920,6 +922,12 @@ export function buildStairsGeometry(registry, group, stairs, material, width, de
       rotation: { x: slopeAngle1, y: 0, z: 0 }
     }, { material, parent: group, receiveShadows: false, shadowCaster: false });
     h2.visibility = 0; h2.isPickable = true; h2.metadata = { ...h2.metadata, isHitbox: true };
+  }
+
+  // L-shaped stairs: centre the whole L on the stairs' position (see stairsLayout.js).
+  if (subtype === 'lshape') {
+    const offset = lShapeOffsetX(stairs, width, depth);
+    group.getChildren().forEach((node) => { if (!before.has(node)) node.position.x += offset; });
   }
 
   //  ， 

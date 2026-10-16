@@ -4,6 +4,7 @@ import { createStoreProxy } from '../store/proxyHelper.js';
 import { render2DFurniturePlacementPreview } from './FurniturePlacementController.js';
 import { formatRoomSize } from './Units.js';
 import { isPlanDrawing, itemsOnPlan, wallStrokeStyle, renderOpeningSymbols, renderDimensions, roomClearSize } from './PlanDrawing.js';
+import { renderPlanTools } from './PlanTools.js';
 
 let rawCtx = null;
 const ctx = createStoreProxy(() => rawCtx);
@@ -51,10 +52,26 @@ export function createSvgElement(name, attrs = {}) {
 }
 
 export function svgPointFromEvent(event) {
-  const rect = ctx.svg.getBoundingClientRect();
+  return svgPointFromClient(event.clientX, event.clientY);
+}
+
+// The plan keeps a fixed 720 x 520 viewBox, so on a panel with a different
+// shape the browser letterboxes it. Going through the screen matrix maps a
+// click to the right plan point whatever the panel's shape.
+export function svgPointFromClient(clientX, clientY) {
+  const svg = ctx.svg;
+  const matrix = svg.getScreenCTM?.();
+  if (matrix && svg.createSVGPoint) {
+    const point = svg.createSVGPoint();
+    point.x = clientX;
+    point.y = clientY;
+    const local = point.matrixTransform(matrix.inverse());
+    return { x: local.x, y: local.y };
+  }
+  const rect = svg.getBoundingClientRect();
   return {
-    x: ((event.clientX - rect.left) / rect.width) * ctx.view.width,
-    y: ((event.clientY - rect.top) / rect.height) * ctx.view.height
+    x: ((clientX - rect.left) / rect.width) * ctx.view.width,
+    y: ((clientY - rect.top) / rect.height) * ctx.view.height
   };
 }
 
@@ -99,8 +116,10 @@ export function renderPlan() {
 
   ctx.currentRooms().forEach((room) => renderRoom(room));
   ctx.referenceFloorWalls().forEach((wall) => renderReferenceWall(wall));
-  ctx.currentWalls().forEach((wall) => renderWall(wall));
+  // Walls go over the rooms' click areas, so a room's wall can be picked
+  // (and moved with the arrow keys) as well as the room itself.
   ctx.currentRooms().forEach((room) => renderRoomInteraction(room));
+  ctx.currentWalls().forEach((wall) => renderWall(wall));
   // ArchCanvas: door swings, window symbols and dimensions, under the
   // (then invisible) opening hit lines so openings stay selectable.
   const planApi = { ctx, worldToSvg, createSvgElement };
@@ -158,6 +177,7 @@ export function renderPlan() {
   if (selectedRoof) renderSelectedRoofHandles(selectedRoof);
   const selectedFence = ctx.selectedFenceId ? ctx.testMap.getEntity('fence', ctx.selectedFenceId) : null;
   if (selectedFence) renderSelectedFenceHandles(selectedFence);
+  renderPlanTools(planApi);
 }
 
 export function renderRoom(room) {
