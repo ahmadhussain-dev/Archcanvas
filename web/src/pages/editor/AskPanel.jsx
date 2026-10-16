@@ -3,12 +3,12 @@ import Button from '../../components/Button.jsx'
 import Icon from '../../components/Icon.jsx'
 import { api } from '../../lib/api.js'
 
-const IDEAS = [
-  'Design this floor: 2 bedrooms with attached baths, TV lounge, kitchen, car porch',
-  'Add a 12 x 14 ft bedroom with an attached bath',
-  'Furnish every room with proper furniture',
-  'Paint the lounge walls a light warm grey',
-  'Put white marble tiles in the drawing room'
+// Shown until the plot's own ideas arrive (or if they cannot be loaded).
+const FALLBACK_IDEAS = [
+  { kind: 'design', text: 'Design this floor: 2 bedrooms with attached baths, TV lounge, kitchen, car porch' },
+  { kind: 'change', text: 'Furnish every room with proper furniture' },
+  { kind: 'change', text: 'Paint the lounge walls a light warm grey' },
+  { kind: 'change', text: 'Put white marble tiles in the drawing room' }
 ]
 
 // "✦ Ask ArchCanvas": the person describes a change, the AI proposes it, the
@@ -21,11 +21,25 @@ export default function AskPanel({ projectId, bridge, onClose, onPreviewChange, 
   const [error, setError] = useState('')
   const [answer, setAnswer] = useState(null) // { message, applied, skipped }
   const [showing, setShowing] = useState('after')
+  const [guide, setGuide] = useState(null) // { size, why, ideas }
   const input = useRef(null)
 
   useEffect(() => {
     input.current?.focus()
   }, [])
+
+  // Ideas that suit this plot's size and the floor being edited.
+  useEffect(() => {
+    if (!bridge) return
+    let live = true
+    bridge.snapshot()
+      .then((floorplan) => api.post(`/projects/${projectId}/ai/ideas`, { floorplan }))
+      .then((res) => { if (live) setGuide(res) })
+      .catch(() => {})
+    return () => { live = false }
+  }, [bridge, projectId])
+  const ideas = guide?.ideas ?? FALLBACK_IDEAS
+  const best = ideas.find((idea) => idea.kind === 'best')
 
   const previewing = step === 'preview' && answer?.applied.length > 0
   useEffect(() => {
@@ -138,15 +152,24 @@ export default function AskPanel({ projectId, bridge, onClose, onPreviewChange, 
             )}
             {step === 'ask' && !prompt && (
               <div className="flex flex-col gap-1.5">
+                {best && (
+                  <div className="mb-1 rounded-control border border-[#c9bdf5] p-2.5">
+                    <span className="text-xs font-semibold text-muted">Best plan for {guide.size}</span>
+                    <p className="mt-0.5 mb-2 text-[13px] text-navy">Suggested: {guide.why}.</p>
+                    <Button variant="ai" icon="sparkle" onClick={() => setPrompt(best.text)} className="w-full">
+                      Suggest the best layout
+                    </Button>
+                  </div>
+                )}
                 <span className="text-xs font-semibold text-muted">Try</span>
-                {IDEAS.map((idea) => (
+                {ideas.filter((idea) => idea.kind !== 'best').map((idea) => (
                   <button
-                    key={idea}
+                    key={idea.text}
                     type="button"
-                    onClick={() => setPrompt(idea)}
+                    onClick={() => setPrompt(idea.text)}
                     className="rounded-control bg-violet-tint px-2.5 py-1.5 text-left text-[13px] text-[#4a33a8] hover:bg-[#e2d9fb]"
                   >
-                    {idea}
+                    {idea.text}
                   </button>
                 ))}
               </div>

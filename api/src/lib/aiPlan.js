@@ -8,7 +8,8 @@
 // (engine/src/ai/applyAiPlan.js).
 import { z } from 'zod'
 import { planFrame, floorplanOf, fromWorld, toWorld, summarizePlan, ROOM_KINDS, roomKind, FT } from './planSummary.js'
-import { layoutFloor, ZONES } from './layoutFloor.js'
+import { layoutFloor, ZONES, forbiddenDoor, sharedEdge } from './layoutFloor.js'
+import { suggestedFloor } from './plotGuide.js'
 
 // Smallest clear inside size (between wall faces) for each kind of room, in
 // feet as [short side, long side]. Pakistani house planning rules of thumb.
@@ -81,6 +82,14 @@ Rules:
 - Respect minimum clear inside sizes (feet): ${MIN_ROOM_SIZES.map((r) => `${r.kind} ${r.min[0]}x${r.min[1]}`).join(', ')}.
 - Use the space sensibly: the front of the house is the bottom of the plan. Car porch at the front with the main gate, the main entrance door from the porch or front into the lounge or drawing room, bathrooms next to bedrooms (attached baths open from the bedroom), kitchen next to the dining area or lounge.
 - Every room needs a door. Each room's "openings" says where its doors lead ("door bottom to TV Lounge", "door right to outside"). A bedroom, kitchen or bathroom door should lead into the lounge, a corridor or its bedroom, not outside. Add missing doors before furnishing.
+- A kitchen never opens into a washroom, and a washroom door never opens into the kitchen, the dining area or the main entrance. Attached baths open only from their bedroom; a guest bath opens from the drawing room or the lounge.
+
+Good Pakistani home layout (follow it unless the person asks otherwise):
+- Bedrooms at the back for privacy, the TV lounge as the family hub in the middle, and the car porch, drawing room (with its own door for guests) and guest bath at the front.
+- Use as few walls as the request needs. Do not add rooms for passages, open space or "space", and do not wall in the stairs or a dining area: they open into the lounge through a wide archway (add_door with "open":true and a "width" in feet).
+- Kitchen next to the dining area or lounge, on an outside wall for light and the exhaust. Stack bathrooms over bathrooms and stairs over stairs.
+- Keep open space at the back (a lawn) on big plots instead of making every room huge.
+- When asked for the best or a recommended plan, use layout_floor with the suggested rooms for this plot (in the request) adjusted to what the person said, and say in the message why it suits the plot.
 - To plan, design or redo a whole floor (or a whole house), use one layout_floor listing the rooms you want, each with a zone: back (top of the plan), middle, or front (the street side). ArchCanvas works out the sizes and positions with no gaps and nothing undersized, then adds the doors, windows, stairs and furniture itself, replacing the rooms already on the floor. Do not add rooms one by one for a whole floor, and do not send doors or furnish_room for the rooms it creates. Give attached baths "attached_to" their bedroom. Every floor of a house with more than one floor needs a Staircase; upstairs, put a Terrace at the front over the car porch.
 - To furnish, decorate, style or "complete" a room, use furnish_room. It installs the complete, properly arranged set for the room's kind, sized to the room and kept clear of its doors, windows and stairs:
   kitchen: counter with sink (under the window), cooking range, cabinets, fridge, microwave, cooker hood; bathroom: shower, commode, wash basin with mirror, towel rail; bedroom: bed with two side tables, wardrobe, dressing table, AC (and a study desk when large); lounge: sofas facing a TV unit with TV, centre table, rug, AC; drawing room: sofa set, centre table, showcase; dining: table with chairs, sideboard; car porch: kept clear for the car, planters, shoe rack.
@@ -93,6 +102,11 @@ Rules:
 - Only use the operations, floor ids and furniture types listed here. Refer to existing rooms by their id; refer to rooms you add in this answer by their name.
 - Keep "message" short and friendly (1 to 3 sentences, plain English).
 
+Tone:
+- Be warm, respectful and encouraging. Never criticise, mock or lecture the person, and never comment on their budget, family, religion, plot size or taste.
+- When something does not fit or breaks a rule, say so gently, give the reason in plain words, and do the closest thing that works.
+- If the request is not about the house plan, or asks for something rude or harmful, politely say you can only help with the house design, return no operations and set "refused" to true.
+
 Operations:
 {"op":"layout_floor","rooms":[{"name":"Car Porch","zone":"front"},{"name":"Drawing Room","zone":"front"},{"name":"TV Lounge","zone":"middle"},{"name":"Staircase","zone":"middle"},{"name":"Kitchen","zone":"middle"},{"name":"Master Bedroom","zone":"back","size":"large"},{"name":"Master Bath","attached_to":"Master Bedroom"}]}   (size small|normal|large is optional)
 {"op":"add_room","name":"Bedroom 2","x":0,"y":0,"width":12,"depth":13}
@@ -103,7 +117,7 @@ Operations:
 {"op":"add_furniture","room":"<id>","type":"<furniture type>","count":1}   (placed automatically along the walls)
 {"op":"furnish_room","room":"<id>"}   (add "as":"<kind>" when the name does not say the kind; kinds: ${ROOM_KINDS.map(([kind]) => kind).join(', ')})
 {"op":"remove_furniture","room":"<id>","type":"<furniture type, or omit for all>"}
-{"op":"add_door","room":"<id>","side":"top|right|bottom|left","at":12}   ("at" is optional: plan x on a top/bottom wall, plan y on a left/right wall)
+{"op":"add_door","room":"<id>","side":"top|right|bottom|left","at":12}   ("at" is optional: plan x on a top/bottom wall, plan y on a left/right wall; add "open":true,"width":6 for an archway with no door leaf)
 {"op":"add_window","room":"<id>","side":"top|right|bottom|left"}
 
 Floor ids: ${Object.entries(FLOOR_MATERIALS).map(([id, name]) => `${id} (${name})`).join(', ')}.
@@ -112,9 +126,13 @@ Furniture types: ${Object.entries(FURNITURE).map(([id, name]) => `${id} (${name}
 Answer format:
 {"message":"...","refused":false,"operations":[...]}`
 
-  const user = `Project: ${project.name}, ${project.city}. Plot ${project.plot.widthFt} x ${project.plot.depthFt} ft, ${project.floors} floor(s).
+  const guide = suggestedFloor(project.plot, { upstairs: !!summary.floorBelow })
+  const user = `Project: ${project.name}, ${project.city}. Plot ${project.plot.widthFt} x ${project.plot.depthFt} ft (${guide.label}), ${project.floors} floor(s).
 Current plan (${summary.floor} floor):
 ${JSON.stringify(summary)}
+
+Suggested rooms for this floor of a ${guide.label} plot (${guide.why}):
+${JSON.stringify(guide.rooms)}
 
 Request: ${prompt}`
 
@@ -149,7 +167,7 @@ const opSchemas = {
   add_furniture: z.object({ room: z.string(), type: z.enum(Object.keys(FURNITURE)), count: z.coerce.number().int().min(1).max(8).optional() }),
   furnish_room: z.object({ room: z.string(), as: z.enum(ROOM_KINDS.map(([kind]) => kind)).optional() }),
   remove_furniture: z.object({ room: z.string(), type: z.enum(Object.keys(FURNITURE)).optional() }),
-  add_door: z.object({ room: z.string(), side: z.enum(SIDES), at: num.optional() }),
+  add_door: z.object({ room: z.string(), side: z.enum(SIDES), at: num.optional(), open: z.boolean().optional(), width: num.positive().max(12).optional() }),
   add_window: z.object({ room: z.string(), side: z.enum(SIDES), at: num.optional() }),
   layout_floor: z.object({
     rooms: z.array(z.object({
@@ -190,6 +208,22 @@ export function checkOperations(building, rawOperations, { idPrefix = `ai${Date.
     if (rooms.has(ref)) return rooms.get(ref)
     const lower = String(ref).trim().toLowerCase()
     return [...rooms.values()].find((room) => room.name.toLowerCase() === lower) ?? null
+  }
+
+  // Why a door the AI asked for breaks a layout rule (a washroom opening into
+  // the kitchen or dining), or null.
+  const doorProblem = (room, op) => {
+    const kind = roomKind(room.name)
+    if (!room.rect || !kind) return null
+    const neighbours = [...rooms.values()].filter((other) => {
+      if (other.id === room.id || !other.rect) return false
+      const edge = sharedEdge(room.rect, other.rect)
+      if (!edge || edge.side !== op.side) return false
+      return op.at === undefined || (op.at >= edge.lo - 0.1 && op.at <= edge.hi + 0.1)
+    })
+    const bad = neighbours.filter((other) => forbiddenDoor(kind, roomKind(other.name)))
+    if (!bad.length || bad.length < neighbours.length) return null
+    return `${bad[0].name} is on that side, and a washroom should not open into a kitchen or dining area, for hygiene and privacy. Ask for a door to the lounge or a bedroom instead.`
   }
 
   // Why a room rectangle is not allowed, or null.
@@ -307,9 +341,17 @@ export function checkOperations(building, rawOperations, { idPrefix = `ai${Date.
       case 'add_door':
       case 'add_window': {
         const opening = kind === 'add_door' ? 'door' : 'window'
-        const out = { op: 'add_opening', room: room.id, kind: opening, side: op.side, label: (planned.has(raw) && raw.label) || `Add a ${opening} on the ${op.side} wall of ${room.name}` }
+        const open = opening === 'door' && !!(op.open || (planned.has(raw) && raw.open))
+        if (opening === 'door' && !planned.has(raw)) {
+          const why = doorProblem(room, op)
+          if (why) { skipped.push({ label: `Door on the ${op.side} wall of ${room.name}`, reason: why }); break }
+        }
+        const what = open ? 'an open archway' : `a ${opening}`
+        const out = { op: 'add_opening', room: room.id, kind: opening, side: op.side, label: (planned.has(raw) && raw.label) || `Add ${what} on the ${op.side} wall of ${room.name}` }
+        if (open) out.open = true
         // Plan feet to the editor's world x (top/bottom walls) or z (left/right walls).
-        if (planned.has(raw) && raw.widthFt) out.width = Math.round(raw.widthFt * FT * 1000) / 1000
+        const widthFt = planned.has(raw) ? raw.widthFt : op.width
+        if (widthFt) out.width = Math.round(widthFt * FT * 1000) / 1000
         if (op.at !== undefined) out.at = Math.round((['top', 'bottom'].includes(op.side) ? frame.minX + op.at * FT : frame.maxZ - op.at * FT) * 1000) / 1000
         operations.push(out)
         break
@@ -357,7 +399,10 @@ function expandLayouts(building, floorplan, frame, wallFt, rawOperations, skippe
         side: opening.side,
         ...(opening.at !== undefined ? { at: opening.at } : {}),
         ...(opening.width ? { widthFt: opening.width } : {}),
-        label: opening.width
+        ...(opening.open ? { open: true } : {}),
+        label: opening.open
+          ? `${fmt(opening.width)} ft open archway on the ${opening.side} wall of ${opening.room}`
+          : opening.width
           ? `${fmt(opening.width)} ft gate on the ${opening.side} wall of ${opening.room}`
           : `${opening.kind === 'door' ? 'Door' : 'Window'} on the ${opening.side} wall of ${opening.room}`
       })

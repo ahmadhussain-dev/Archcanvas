@@ -14,7 +14,7 @@
 //   add_furniture  { room, type, count? }       placed along the walls or centred
 //   furnish_room   { room, kind? }              a full set for the room's kind (roomKits.js)
 //   remove_furniture { room, type? }
-//   add_opening    { room, kind, side, at?, width? }  kind door|window, side top|right|bottom|left (as on the 2D plan),
+//   add_opening    { room, kind, side, at?, width?, open? }  kind door|window (open: an archway with no door leaf), side top|right|bottom|left (as on the 2D plan),
 //                                               at: where along the wall (world x, or z on a left/right wall), width in metres
 // Every operation may carry a `label` that is reported back as is.
 import { FloorplanDocument } from '../domain/FloorplanDocument.js';
@@ -328,7 +328,7 @@ export function applyAiOperations(floorplan, operations = []) {
           if (t !== null) { spot = { wall, t }; break; }
         }
         if (!spot) { skip(op, `That wall of ${room.name} has no room for another ${kind}.`); break; }
-        doc.addOpening({ wallId: spot.wall.id, type: kind, t: spot.t, width });
+        doc.addOpening({ wallId: spot.wall.id, type: kind, t: spot.t, width, ...(kind === 'door' && op.open ? { panelHidden: true } : {}) });
         done(op);
         break;
       }

@@ -178,6 +178,14 @@ test('a door goes where it is asked for', () => {
   assert.ok(Math.abs(x - 2) < 0.15, `door at x ${x}`);
 });
 
+test('an open archway is a door opening with no leaf', () => {
+  const plan = oneRoom('Lounge', 6, 4);
+  const { floorplan } = applyAiOperations(plan, [{ op: 'add_opening', room: 'r', kind: 'door', side: 'bottom', width: 1.8, open: true }]);
+  const arch = floorplan.openings.find((o) => o.type === 'door');
+  assert.equal(arch.panelHidden, true);
+  assert.equal(arch.width, 1.8);
+});
+
 test('a stair hall gets a flight of stairs up from its door', () => {
   const plan = oneRoom('Staircase', 1.4, 4, [['door', 'bottom']]);
   const { floorplan, applied } = furnish(plan);
