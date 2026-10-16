@@ -61,6 +61,13 @@ export function initAppEventBindings(Context) {
   undoButton?.addEventListener('click', Context.undo);
   redoButton?.addEventListener('click', Context.redo);
 
+  // Inside ArchCanvas the editor is an iframe, and the plan's pointer
+  // handlers stop the browser from focusing it on click. Take focus
+  // ourselves so the arrow keys and shortcuts reach the editor.
+  document.addEventListener('pointerdown', () => {
+    if (window.parent !== window && !document.hasFocus()) window.focus();
+  }, true);
+
   document.addEventListener('keydown', (event) => {
     if (smoothCameraKeyboard.handleKeyDown(event)) return;
     handleHotkeys(event, {
@@ -77,6 +84,7 @@ export function initAppEventBindings(Context) {
       testMap: Context.testMap,
       updateEditor: Context.updateEditor,
       selectedWallId: Context.selectedWallId,
+      selectWall: Context.selectWall,
       selectedRoomId: Context.selectedRoomId,
       showCustomConfirm: Context.showCustomConfirm,
       clearSelection: Context.clearSelection,

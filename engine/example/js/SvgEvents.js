@@ -1,5 +1,9 @@
 import { Topology } from '../../src/index.js';
 import * as DragHandler from './DragHandler.js';
+import { worldToSvg, createSvgElement, svgPointFromClient } from './Render2D.js';
+import { snapPlanPoint, updatePlanToolPreview, measureClick } from './PlanTools.js';
+
+const planApi = () => ({ ctx, worldToSvg, createSvgElement });
 import { createStoreProxy } from '../store/proxyHelper.js';
 import {
   commitFurniturePlacement,
@@ -84,9 +88,7 @@ function onWheel(event) {
 
   const svg = ctx.svg;
   const view = ctx.view;
-  const rect = svg.getBoundingClientRect();
-  const svgX = ((event.clientX - rect.left) / rect.width) * view.width;
-  const svgY = ((event.clientY - rect.top) / rect.height) * view.height;
+  const { x: svgX, y: svgY } = svgPointFromClient(event.clientX, event.clientY);
   const worldCenter = ctx.svgToWorld(svgX, svgY);
 
   const zoomStep = 0.08;
@@ -164,15 +166,13 @@ function onPointermove(event) {
   }
 
   if (isPanning2D && panStart2D) {
-    const dx = event.clientX - panStart2D.x;
-    const dy = event.clientY - panStart2D.y;
-    const svg = ctx.svg;
     const view = ctx.view;
-    const rect = svg.getBoundingClientRect();
     const innerW = view.width - view.pad * 2;
     const innerH = view.height - view.pad * 2;
-    const worldDx = (dx * (view.width / rect.width)) * (view.maxX - view.minX) / innerW * pan2DSpeed;
-    const worldDz = -(dy * (view.height / rect.height)) * (view.maxZ - view.minZ) / innerH * pan2DSpeed;
+    const from = svgPointFromClient(panStart2D.x, panStart2D.y);
+    const to = svgPointFromClient(event.clientX, event.clientY);
+    const worldDx = (to.x - from.x) * (view.maxX - view.minX) / innerW * pan2DSpeed;
+    const worldDz = -(to.y - from.y) * (view.maxZ - view.minZ) / innerH * pan2DSpeed;
 
     view.minX -= worldDx;
     view.maxX -= worldDx;
@@ -183,6 +183,7 @@ function onPointermove(event) {
     ctx.renderPlan();
     return;
   }
+  updatePlanToolPreview(planApi(), event);
 
   if (viewPointers.size === 2 && prevTouchCenter2D) {
     const pts = Array.from(viewPointers.values());
@@ -194,10 +195,7 @@ function onPointermove(event) {
       const svg = ctx.svg;
       const view = ctx.view;
       const rect = svg.getBoundingClientRect();
-      const centerPoint = {
-        x: ((center.x - rect.left) / rect.width) * view.width,
-        y: ((center.y - rect.top) / rect.height) * view.height
-      };
+      const centerPoint = svgPointFromClient(center.x, center.y);
       const worldCenter = ctx.svgToWorld(centerPoint.x, centerPoint.y);
 
       const currentSpanX = view.maxX - view.minX;
@@ -444,13 +442,22 @@ function onClick(event) {
   const snappedWorld = ctx.snapWorldPoint(world);
   const snapped = [snappedWorld.x, snappedWorld.z];
 
+  if (ctx.mode === 'measure') {
+    measureClick(planApi(), event);
+    return;
+  }
+
   if (ctx.mode === 'draw-wall') {
     const drawStart = ctx.getDrawStart();
+    // Ends land on other walls' ends and lines, so corners join cleanly.
+    const end = snapPlanPoint(planApi(), world, drawStart).point;
     if (!drawStart) {
-      ctx.setDrawStart(snapped);
+      ctx.setDrawStart(end);
+    } else if (Math.hypot(end[0] - drawStart[0], end[1] - drawStart[1]) < 0.05) {
+      return;
     } else {
       ctx.pushHistory();
-      ctx.testMap.addWall(drawStart, snapped);
+      ctx.testMap.addWall(drawStart, end);
       ctx.setDrawStart(null);
       ctx.refreshShadows();
     }

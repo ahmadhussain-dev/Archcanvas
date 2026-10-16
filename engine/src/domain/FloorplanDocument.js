@@ -933,13 +933,91 @@ export class FloorplanDocument {
 
   addWall(from, to) {
     const wall = normalizeWallDecorSettings({
-      id: `wall_${Date.now()}`,
+      // Two walls added in the same millisecond must not share an id.
+      id: `wall_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
       from,
       to,
       color: DEFAULT_WALL_COLOR,
       floorId: this.floorplan.currentFloorId
     });
     this.floorplan.walls.push(wall);
+    return wall;
+  }
+
+  /**
+   * Moves a wall by dx, dz (metres) without breaking its corners.
+   * A room's wall moves that room's edge (and the edge of any room sharing
+   * the wall), so the rooms resize and stay closed; it only moves across
+   * its own line. A loose wall moves with the ends of the loose walls joined
+   * to it, so those stretch to keep the corner.
+   * Returns the wall, or null when a room would get too small or is locked.
+   */
+  moveWall(wallId, dx, dz) {
+    const wall = this.getWall(wallId);
+    if (!wall) return null;
+    const floorId = wall.floorId ?? this.floorplan.currentFloorId;
+    const horizontal = Math.abs(wall.to[1] - wall.from[1]) < Math.abs(wall.to[0] - wall.from[0]);
+    const line = horizontal ? wall.from[1] : wall.from[0];
+    const span = horizontal ? [wall.from[0], wall.to[0]] : [wall.from[1], wall.to[1]];
+    const [spanLo, spanHi] = [Math.min(...span), Math.max(...span)];
+    // A shared wall is listed under only one of its rooms, so the rooms it
+    // bounds are also found by an edge lying along it.
+    const edgeOnWall = (room) => {
+      if (normalizeRoomShape(room.shape) !== 'square' || Number(room.rotation)) return false;
+      const size = horizontal ? room.depth : room.width;
+      const centre = horizontal ? room.z : room.x;
+      if (Math.abs(centre - size / 2 - line) > 0.01 && Math.abs(centre + size / 2 - line) > 0.01) return false;
+      const along = horizontal ? room.width : room.depth;
+      const mid = horizontal ? room.x : room.z;
+      return Math.min(spanHi, mid + along / 2) - Math.max(spanLo, mid - along / 2) > 0.01;
+    };
+    const rooms = this.floorplan.floor.rooms.filter((room) => (room.floorId ?? floorId) === floorId
+      && (Object.values(room.wallIds || {}).includes(wallId) || (wall.roomId && edgeOnWall(room))));
+    if (rooms.length) {
+      if (rooms.some((room) => room.locked || normalizeRoomShape(room.shape) !== 'square' || Number(room.rotation))) return null;
+      const shift = horizontal ? dz : dx;
+      if (!shift) return wall;
+      const patches = [];
+      for (const room of rooms) {
+        const size = horizontal ? room.depth : room.width;
+        let lo = (horizontal ? room.z : room.x) - size / 2;
+        let hi = lo + size;
+        if (Math.abs(lo - line) < Math.abs(hi - line)) lo += shift; else hi += shift;
+        if (hi - lo < 1.0) return null;
+        const centre = Number(((lo + hi) / 2).toFixed(3));
+        const length = Number((hi - lo).toFixed(3));
+        patches.push([room.id, horizontal ? { z: centre, depth: length } : { x: centre, width: length }]);
+      }
+      // Put the wall on its new line first: the room sync keeps a shared
+      // wall that already sits on a room's edge, and would otherwise leave
+      // it behind for the other room.
+      const across = (p) => (horizontal ? [p[0], Number((p[1] + shift).toFixed(3))] : [Number((p[0] + shift).toFixed(3)), p[1]]);
+      setWallEndpoints(wall, across(wall.from), across(wall.to));
+      patches.forEach(([roomId, patch]) => this.updateRoom(roomId, patch, { moveItems: false }));
+      // Rebuilding the room walls can hand the moved edge a new wall id
+      // (a shared wall belongs to whichever room claims it first), so return
+      // the wall that now sits on the moved line.
+      const target = line + shift;
+      for (const room of rooms) {
+        for (const id of Object.values(this.getRoom(room.id)?.wallIds || {})) {
+          const moved = this.getWall(id);
+          if (!moved) continue;
+          const movedHorizontal = Math.abs(moved.to[1] - moved.from[1]) < Math.abs(moved.to[0] - moved.from[0]);
+          if (movedHorizontal === horizontal && Math.abs((horizontal ? moved.from[1] : moved.from[0]) - target) < 0.005) return moved;
+        }
+      }
+      return this.getWall(wallId) ?? wall;
+    }
+    const joined = (p, q) => Math.hypot(p[0] - q[0], p[1] - q[1]) < 0.01;
+    const shifted = (p) => [Number((p[0] + dx).toFixed(3)), Number((p[1] + dz).toFixed(3))];
+    const ends = [[...wall.from], [...wall.to]];
+    for (const other of this.floorplan.walls) {
+      if (other === wall || other.roomId || (other.floorId ?? floorId) !== floorId) continue;
+      const from = ends.some((end) => joined(other.from, end)) ? shifted(other.from) : other.from;
+      const to = ends.some((end) => joined(other.to, end)) ? shifted(other.to) : other.to;
+      if (from !== other.from || to !== other.to) setWallEndpoints(other, from, to);
+    }
+    setWallEndpoints(wall, shifted(wall.from), shifted(wall.to));
     return wall;
   }
 

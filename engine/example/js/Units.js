@@ -12,7 +12,7 @@ const SQFT_PER_SQM = 1 / (M_PER_FT * M_PER_FT);
 const LENGTH_INPUT_IDS = new Set([
   'floor-wall-height', 'floor-height',
   'room-width', 'room-depth', 'room-elevation',
-  'wall-length', 'wall-baseboard-height', 'wall-wainscot-height',
+  'wall-length', 'wall-height', 'wall-baseboard-height', 'wall-wainscot-height',
   'fence-length', 'fence-height', 'fence-yoffset',
   'item-width', 'item-depth', 'item-height', 'item-elevation',
   'opening-width', 'opening-height', 'opening-sill-height',

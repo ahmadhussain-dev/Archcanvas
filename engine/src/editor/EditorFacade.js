@@ -413,6 +413,9 @@ export class EditorFacade {
       case 'deleteWall':
         result = this._document.deleteWall(args.wallId);
         break;
+      case 'moveWall':
+        result = this._document.moveWall(args.wallId, args.dx, args.dz);
+        break;
       case 'updateWallLength':
         result = this._document.updateWallLength(args.wallId, args.length);
         break;

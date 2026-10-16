@@ -51,6 +51,11 @@
                 <span class="mode-text">Erase Wall</span>
                 <span class="mode-shortcut">E</span>
               </button>
+              <button class="mode" type="button" data-mode="measure">
+                <svg class="mode-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.3 15.3a2.4 2.4 0 0 1 0 3.4l-2.6 2.6a2.4 2.4 0 0 1-3.4 0L2.7 8.7a2.41 2.41 0 0 1 0-3.4l2.6-2.6a2.41 2.41 0 0 1 3.4 0Z"/><path d="m14.5 12.5 2-2"/><path d="m11.5 9.5 2-2"/><path d="m8.5 6.5 2-2"/><path d="m17.5 15.5 2-2"/></svg>
+                <span class="mode-text">Measure</span>
+                <span class="mode-shortcut">M</span>
+              </button>
               <button class="mode hidden" type="button" data-mode="add-room">
                 <svg class="mode-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2"/></svg>
                 <span class="mode-text">Room</span>
@@ -560,6 +565,14 @@
                 <span>Rotation (°)</span>
                 <input id="wall-rotation" type="number" min="0" max="359" step="90" />
                 <input id="wall-rotation-range" type="range" min="0" max="360" step="1" />
+              </label>
+              <label class="check-field">
+                <input id="wall-own-height" type="checkbox" />
+                <span>Own height (e.g. a low boundary wall)</span>
+              </label>
+              <label class="field">
+                <span>Wall height (m)</span>
+                <input id="wall-height" type="number" min="0.3" step="0.1" />
               </label>
               <label class="check-field">
                 <input id="wall-baseboard-enabled" type="checkbox" />

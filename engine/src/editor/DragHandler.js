@@ -325,11 +325,22 @@ export class DragHandler {
 
   finishWallDrag() {
     if (!this.states.wallDrag) return;
-    const wallId = this.states.wallDrag.wallId;
+    const { wallId, originalFrom } = this.states.wallDrag;
     this.states.wallDrag = null;
-    this.ctx.testMap.commitEntityPreview('wall', wallId).then(() => {
+    const moved = this.ctx.testMap.getEntity('wall', wallId);
+    const dx = moved ? moved.from[0] - originalFrom[0] : 0;
+    const dz = moved ? moved.from[1] - originalFrom[1] : 0;
+    if (Math.hypot(dx, dz) < 1e-4) {
+      this.ctx.testMap.cancelEntityPreview('wall', wallId).then(() => this.ctx.selectWall(wallId));
+      return;
+    }
+    // Apply the move as a whole: a room's wall resizes its rooms, a loose wall
+    // takes the ends of the walls joined to it, so no corner comes apart.
+    Promise.resolve(this.ctx.testMap.cancelEntityPreview('wall', wallId)).then(() => {
+      const moved = this.ctx.testMap.executeCommand('moveWall', { wallId, dx, dz });
       this.ctx.refreshShadows?.();
-      this.ctx.selectWall(wallId);
+      this.ctx.selectWall(moved?.id || wallId);
+      this.ctx.renderPlan?.();
     });
   }
 
