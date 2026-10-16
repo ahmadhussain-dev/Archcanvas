@@ -924,8 +924,11 @@ function enterFirstPerson(Context, targetPuppetId = null) {
     radius: camera.radius,
     target: camera.target.clone(),
     minZ: camera.minZ,
-    maxZ: camera.maxZ
+    maxZ: camera.maxZ,
+    upperBetaLimit: camera.upperBetaLimit
   };
+  // Walking, you may look up at the ceiling.
+  camera.upperBetaLimit = null;
   // Walking, things are close and the house is small: a near clip of 5 cm and a
   // short far plane keep depth precise, so coplanar surfaces do not flicker.
   camera.minZ = 0.05;
@@ -1446,6 +1449,7 @@ export function exitFirstPerson(Context, { expandPanels = false } = {}) {
     camera.target.copyFrom(prevCameraState.target);
     camera.minZ = prevCameraState.minZ;
     camera.maxZ = prevCameraState.maxZ;
+    camera.upperBetaLimit = prevCameraState.upperBetaLimit;
   }
   camera.attachControl(canvas, true, false, 1);
 
