@@ -90,6 +90,9 @@ export function renderOpeningSymbols(r) {
       continue;
     }
 
+    // An open archway has no leaf to draw.
+    if (opening.panelHidden) continue;
+
     // Door: leaf drawn open at 90 degrees with its swing arc. The side and
     // hinge follow the 3D door (isFlippedIO / isFlippedLR).
     const side = opening.isFlippedIO ? -1 : 1;

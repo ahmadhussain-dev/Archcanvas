@@ -135,14 +135,16 @@ export function summarizePlan(building) {
   if (below) {
     const onBelow = (entity) => (entity.floorId ?? 'floor_1') === below.id
     const belowRooms = (floorplan.floor?.rooms ?? []).filter((room) => room.id !== 'plot' && onBelow(room) && isRect(room))
-    if (belowRooms.length) {
-      const rects = belowRooms.map((room) => fromWorld(frame, room))
+    // A lawn or terrace below is open to the sky, so nothing is built over it.
+    const builtBelow = belowRooms.filter((room) => roomKind(room.name) !== 'terrace')
+    if (builtBelow.length) {
+      const rects = builtBelow.map((room) => fromWorld(frame, room))
       const x = Math.min(...rects.map((r) => r.x))
       const y = Math.min(...rects.map((r) => r.y))
       floorBelow = {
         name: below.name ?? 'Ground',
         outline: { x, y, width: round1(Math.max(...rects.map((r) => r.x + r.width)) - x), depth: round1(Math.max(...rects.map((r) => r.y + r.depth)) - y) },
-        rooms: belowRooms.map((room, i) => ({ name: room.name || 'Room', ...rects[i] })),
+        rooms: builtBelow.map((room, i) => ({ name: room.name || 'Room', ...rects[i] })),
         stairs: stairsOf((floorplan.stairs ?? []).filter(onBelow))
       }
     }

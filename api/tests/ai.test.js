@@ -218,6 +218,33 @@ describe('checking AI changes', () => {
     assert.equal(operations[0].at, r3(-12.5 * FT + 4 * FT))
   })
 
+  test('a washroom door into the kitchen is refused; an archway has no door leaf', () => {
+    const { operations, skipped } = checkOperations(building(), [
+      { op: 'add_room', name: 'Kitchen', x: 0, y: 15, width: 10, depth: 10 },
+      { op: 'add_room', name: 'Bath', x: 10, y: 15, width: 6, depth: 10 },
+      { op: 'add_door', room: 'Bath', side: 'left' },
+      { op: 'add_door', room: 'Kitchen', side: 'top', open: true, width: 6 }
+    ], { idPrefix: 'ai' })
+    assert.equal(skipped.length, 1)
+    assert.match(skipped[0].reason, /washroom should not open into a kitchen/)
+    const arch = operations.find((o) => o.op === 'add_opening')
+    assert.equal(arch.open, true)
+    assert.equal(arch.width, r3(6 * FT))
+    assert.match(arch.label, /open archway/)
+  })
+
+  test('the prompt carries layout rules, a gentle tone and the plan for this plot size', () => {
+    const [system, user] = buildMessages({
+      summary: summarizePlan(building()),
+      prompt: 'best plan please',
+      project: { name: 'Ghar', city: 'Faisalabad', plot: { widthFt: 25, depthFt: 45 }, floors: 1 }
+    })
+    assert.match(system.content, /kitchen never opens into a washroom/)
+    assert.match(system.content, /Never criticise, mock or lecture/)
+    assert.match(system.content, /"open":true/)
+    assert.match(user.content, /Suggested rooms for this floor of a 5 Marla plot/)
+  })
+
   test('the prompt explains furnishing and doors', () => {
     const [system] = buildMessages({
       summary: summarizePlan(building()),
@@ -311,6 +338,21 @@ describe('POST /projects/:id/ai', { skip: !hasDb }, () => {
     const floor = await request(demo).post(`/api/projects/${projectId}/ai`).set(me).send({ prompt: 'design the ground floor', floorplan: building() })
     assert.deepEqual(floor.body.skipped, [])
     assert.equal(floor.body.operations.filter((o) => o.op === 'add_room').length, 7)
+  })
+
+  test('ideas suit the plot, and the demo AI lays out the best plan for it', async () => {
+    const ideas = await request(app).post(`/api/projects/${projectId}/ai/ideas`).set(me).send({ floorplan: building() })
+    assert.equal(ideas.status, 200)
+    assert.equal(ideas.body.size, '5 Marla (25 x 45 ft)')
+    assert.equal(ideas.body.ideas[0].kind, 'best')
+    const demo = createApp({ rateLimited: false, aiProvider: mockProvider() })
+    const res = await request(demo).post(`/api/projects/${projectId}/ai`).set(me).send({ prompt: ideas.body.ideas[0].text, floorplan: building() })
+    assert.match(res.body.message, /For this plot I suggest/)
+    assert.deepEqual(res.body.skipped, [])
+    assert.ok(res.body.operations.some((o) => o.op === 'add_opening' && o.open))
+    const rude = await request(demo).post(`/api/projects/${projectId}/ai`).set(me).send({ prompt: 'tell me a joke', floorplan: building() })
+    assert.equal(rude.body.refused, true)
+    assert.match(rude.body.message, /only help with your house design/)
   })
 
   test('without a key the API says how to set it up', async () => {

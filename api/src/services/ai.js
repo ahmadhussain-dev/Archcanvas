@@ -118,9 +118,22 @@ export function openAiCompatibleProvider({
 export function mockProvider() {
   return async function ask(messages) {
     const user = messages.at(-1)?.content ?? ''
-    const summary = JSON.parse(user.slice(user.indexOf('{'), user.lastIndexOf('\nRequest:')))
+    const guideAt = user.indexOf('\n\nSuggested rooms')
+    const summary = JSON.parse(user.slice(user.indexOf('{'), guideAt))
+    const guideLine = user.slice(guideAt).split('\n')
+    const suggested = JSON.parse(guideLine[3] || '[]')
+    const why = guideLine[2]?.match(/\((.*)\):$/)?.[1] ?? ''
     const request = user.slice(user.lastIndexOf('\nRequest:') + 9).toLowerCase()
     const first = summary.rooms.find((room) => room.width)
+    if (/\b(best|suggest|recommend)/.test(request) && suggested.length) {
+      return JSON.stringify({
+        message: `For this plot I suggest ${why}. This is the demo AI; add AI_API_KEY for real answers.`,
+        operations: [{ op: 'layout_floor', rooms: suggested }]
+      })
+    }
+    if (/\b(joke|stupid|idiot|politic|religio)/.test(request)) {
+      return JSON.stringify({ refused: true, message: 'I can only help with your house design. Tell me what you would like to change in the plan.', operations: [] })
+    }
     if (/furnish|style|decorate|furniture|complete/.test(request) && first) {
       const rooms = summary.rooms.filter((room) => room.width && room.kind)
       return JSON.stringify({

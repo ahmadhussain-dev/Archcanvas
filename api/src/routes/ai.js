@@ -6,6 +6,7 @@ import { validate } from '../middleware/validate.js'
 import { badRequest, HttpError } from '../lib/httpError.js'
 import { summarizePlan } from '../lib/planSummary.js'
 import { buildMessages, parseReply, checkOperations } from '../lib/aiPlan.js'
+import { promptIdeas } from '../lib/plotGuide.js'
 import { providerFromEnv } from '../services/ai.js'
 import { ownProject } from './projects.js'
 
@@ -13,6 +14,10 @@ const askSchema = z.object({
   prompt: z.string().trim().min(3, 'Tell ArchCanvas what to change').max(1000),
   // The plan as it is in the editor now (engine building file), saved or not.
   floorplan: z.union([z.string().max(1_500_000), z.record(z.string(), z.unknown())])
+})
+
+const ideasSchema = z.object({
+  floorplan: z.union([z.string().max(1_500_000), z.record(z.string(), z.unknown())]).optional()
 })
 
 // POST /api/projects/:id/ai  { prompt, floorplan }
@@ -26,6 +31,20 @@ export default function aiRoutes({ rateLimited = true, aiProvider } = {}) {
     ? rateLimit({ windowMs: 10 * 60_000, limit: 30, standardHeaders: 'draft-8', legacyHeaders: false,
         message: { error: 'Too many AI requests. Wait a few minutes and try again.' } })
     : (req, res, next) => next()
+
+  // POST /api/projects/:id/ai/ideas  { floorplan? }
+  //   -> { label, size, why, ideas: [{ kind: best|design|change, text }] }
+  // Prompt ideas that suit the plot size and the floor being edited.
+  router.post('/:id/ai/ideas', requireAuth, validate(ideasSchema), async (req, res) => {
+    const project = await ownProject(req)
+    let upstairs = false
+    try {
+      if (req.body.floorplan) upstairs = !!summarizePlan(req.body.floorplan).floorBelow
+    } catch {
+      // An unreadable plan just gets the ground floor ideas.
+    }
+    res.json(promptIdeas(project, { upstairs }))
+  })
 
   router.post('/:id/ai', requireAuth, limiter, validate(askSchema), async (req, res) => {
     const project = await ownProject(req)
@@ -52,7 +71,9 @@ export default function aiRoutes({ rateLimited = true, aiProvider } = {}) {
       ? { operations: [], skipped: [] }
       : checkOperations(req.body.floorplan, reply.operations)
     res.json({
-      message: reply.message || (operations.length ? 'Here is what I would change.' : 'I could not make that change.'),
+      message: reply.message || (operations.length
+        ? 'Here is what I would change. Have a look and apply it if you like it.'
+        : 'Sorry, I could not make that change on this plan. Try describing it another way, or pick one of the ideas.'),
       refused: reply.refused || operations.length === 0,
       operations,
       skipped
