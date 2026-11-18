@@ -134,6 +134,14 @@ export function roomLayout(doc, room) {
         : { minX: cx - DOOR_CLEARANCE, maxX: cx + DOOR_CLEARANCE, minZ: cz - half, maxZ: cz + half });
     }
   }
+  // A side whose walls were all taken out (an open plan) is kept clear like a doorway.
+  const bySide = {};
+  for (const wall of roomWalls(doc, room)) (bySide[wallSide(room, wall)] ||= []).push(wall);
+  for (const [name, walls] of Object.entries(bySide)) {
+    if (!walls.every((wall) => wall.removed)) continue;
+    const s = sides[name];
+    s.openings.push({ kind: 'door', at: (s.lo + s.hi) / 2, from: s.lo, to: s.hi });
+  }
   for (const s of Object.values(sides)) {
     s.doors = s.openings.filter((o) => o.kind === 'door');
     s.windows = s.openings.filter((o) => o.kind === 'window');

@@ -64,7 +64,7 @@ const STYLE_KEY = /color|material|paper|paint|texture/i;
 export function overlappedWallIds(floorplan) {
   const plot = (floorplan.floor?.rooms || []).find((room) => room.id === 'plot');
   const plotWalls = new Set(Object.values(plot?.wallIds || {}));
-  const info = (floorplan.walls || []).map((wall) => {
+  const info = (floorplan.walls || []).filter((wall) => !wall.removed).map((wall) => {
     const [x1, z1] = wall.from;
     const [x2, z2] = wall.to;
     const length = Math.hypot(x2 - x1, z2 - z1);
@@ -1503,7 +1503,13 @@ export class BabylonSceneRenderer {
 
   buildWalls(wallIds = null) {
     if (this.deferRenderWork()) return;
-    const visibleWalls = this.floorplan.walls.filter((wall) => this.document.isFloorVisible(wall.floorId));
+    // A room wall taken out for an open plan is not built.
+    const visibleWalls = this.floorplan.walls.filter((wall) => !wall.removed && this.document.isFloorVisible(wall.floorId));
+    this.floorplan.walls.forEach((wall) => {
+      if (!wall.removed || !this.wallNodes.has(wall.id)) return;
+      this.wallNodes.get(wall.id).dispose(false, true);
+      this.wallNodes.delete(wall.id);
+    });
     const getAdjacentWalls = (P, currentWallId) => {
       const threshold = 0.05;
       const adjs = [];

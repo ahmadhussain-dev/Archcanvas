@@ -531,7 +531,31 @@
               </div>
               <label class="field">
                 <span>Room name</span>
-                <input id="room-name" type="text" />
+                <input id="room-name" type="text" list="room-name-options" placeholder="e.g. Kitchen, Bedroom 1, Lawn" />
+                <datalist id="room-name-options">
+                  <option value="Bedroom"></option>
+                  <option value="Master Bedroom"></option>
+                  <option value="Attached Bath"></option>
+                  <option value="Washroom"></option>
+                  <option value="Kitchen"></option>
+                  <option value="TV Lounge"></option>
+                  <option value="Drawing Room"></option>
+                  <option value="Dining"></option>
+                  <option value="Car Porch"></option>
+                  <option value="Stairs"></option>
+                  <option value="Store"></option>
+                  <option value="Laundry"></option>
+                  <option value="Servant Room"></option>
+                  <option value="Study"></option>
+                  <option value="Lawn"></option>
+                  <option value="Terrace"></option>
+                  <option value="Balcony"></option>
+                  <option value="Passage"></option>
+                </datalist>
+              </label>
+              <label class="check-field" title="A named part of the house with a floor but no walls of its own, such as a lawn, a passage or an open dining area">
+                <input id="room-no-walls" type="checkbox" />
+                <span>Open section (no walls)</span>
               </label>
               <div class="fields-row">
                 <label class="field">
@@ -566,7 +590,10 @@
                   <option value="single">Single brick (4.5 in)</option>
                 </select>
               </label>
+              <p class="wall-info hidden" id="wall-shared-length"></p>
               <p class="hint hidden" id="wall-shared-hint">This wall follows its rooms. Move or resize a room, or drag the wall, to change it.</p>
+              <button id="btn-remove-wall" type="button" class="hidden" title="Takes this wall out, for an open plan (for example a lounge open to the dining). Doors and windows on it are removed.">Remove wall (open plan)</button>
+              <button id="btn-restore-wall" type="button" class="hidden">Put wall back</button>
               <label class="field" id="wall-length-field">
                 <span>Length (m)</span>
                 <input id="wall-length" type="number" min="0.2" step="0.1" />

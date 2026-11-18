@@ -229,3 +229,37 @@ test('Ask ArchCanvas rooms share walls and furniture stays clear of them', () =>
   }
   assert.ok(floorplan.items.some((i) => i.roomId === 'k'), 'the kitchen is furnished');
 });
+
+test('a shared wall can be taken out for an open plan and put back', () => {
+  const doc = plan();
+  room(doc, 'lounge', 0, 0, 4, 4);
+  room(doc, 'dining', 4, 0, 3, 4);
+  const shared = wallsOf(doc, 'inside')[0];
+  doc.addOpening({ wallId: shared.id, type: 'door', t: 0.5 });
+  doc.deleteWall(shared.id);
+  const removed = doc.getWall(shared.id);
+  assert.ok(removed?.removed, 'the wall is marked as taken out, not deleted');
+  assert.equal(doc.floorplan.openings.length, 0, 'its door goes with it');
+  const clear = roomClearBox(doc.floorplan, doc.getRoom('lounge'));
+  assert.ok(close(clear.maxX, 4), 'the lounge is open on that side');
+  // It stays out when the rooms change.
+  doc.updateRoom('dining', { depth: 5, z: 2.5 });
+  assert.ok(wallsOf(doc, 'inside').some((w) => w.removed), 'still open after a rebuild');
+  const again = wallsOf(doc, 'inside').find((w) => w.removed);
+  doc.updateWall(again.id, { removed: false });
+  assert.ok(!doc.getWall(again.id).removed, 'put back');
+});
+
+test('an open section has a name and no walls, and does not split the room walls', () => {
+  const doc = plan();
+  room(doc, 'house', 0, 0, 6, 6);
+  const before = wallsOf(doc).length;
+  doc.addRoom({ id: 'lawn', name: 'Lawn', x: 3, z: -2, width: 6, depth: 4, shape: 'square', noWalls: true, floorId: 'floor_1' });
+  assert.equal(wallsOf(doc).length, before, 'no walls added for the lawn');
+  assert.deepEqual(doc.getRoom('lawn').wallIds, {});
+  // Turning a room into an open section takes its walls away.
+  room(doc, 'porch', 6, 0, 3, 3);
+  doc.updateRoom('porch', { noWalls: true });
+  assert.ok(wallsOf(doc).every((w) => !w.roomId || w.roomId !== 'porch' || w.removed));
+  assert.equal(wallsOf(doc).length, before, 'back to the house walls only');
+});

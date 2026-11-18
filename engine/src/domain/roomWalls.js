@@ -52,7 +52,7 @@ export function wallThicknessOf(floorplan, wall) {
 
 /** A room whose walls are shared: a plain, unturned rectangle that is not the plot. */
 export function isSharedWallRoom(room) {
-  if (!room || room.id === 'plot') return false;
+  if (!room || room.id === 'plot' || room.noWalls) return false;
   const shape = String(room.shape || 'square').toLowerCase();
   return (shape === 'square' || shape === 'rect' || shape === 'rectangle') && !Number(room.rotation);
 }
@@ -381,6 +381,7 @@ export function rebuildSharedWalls(floorplan, floorId) {
   for (const { opening, x, z, dir } of openings) {
     let best = null;
     for (const wall of created) {
+      if (wall.removed) continue;
       const [ux, uz] = wallDirection(wall);
       const cross = ux * dir[1] - uz * dir[0];
       if (Math.abs(cross) > 0.01) continue;
@@ -420,8 +421,11 @@ export function roomWallInsets(floorplan, room) {
   const fallback = wallThicknessOf(floorplan, null) / 2;
   const insets = { top: 0, bottom: 0, left: 0, right: 0 };
   const r = rectOf(room);
-  const walls = Object.values(room.wallIds || {}).map((id) => (floorplan.walls || []).find((wall) => wall.id === id)).filter(Boolean);
-  if (!walls.length) return { top: fallback, bottom: fallback, left: fallback, right: fallback };
+  if (room.noWalls) return insets;
+  const listed = Object.values(room.wallIds || {}).map((id) => (floorplan.walls || []).find((wall) => wall.id === id)).filter(Boolean);
+  if (!listed.length) return { top: fallback, bottom: fallback, left: fallback, right: fallback };
+  // A wall taken out for an open plan leaves that side open.
+  const walls = listed.filter((wall) => !wall.removed);
   for (const wall of walls) {
     const t = wallThicknessOf(floorplan, wall);
     if (wallAxis(wall) === 'x') {
