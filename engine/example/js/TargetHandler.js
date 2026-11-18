@@ -876,6 +876,7 @@ export function deleteTarget(target) {
     return;
   }
   if (target.type === 'room') {
+    if (target.id === 'plot') { ctx.showToast?.("The plot boundary can't be deleted. Resize it instead."); return; } // ArchCanvas: keep the plot outline
     ctx.showCustomConfirm('Delete room', 'Delete the selected room? Furniture inside the room will also be deleted.').then((confirmed) => {
       if (confirmed) {
         ctx.pushHistory();

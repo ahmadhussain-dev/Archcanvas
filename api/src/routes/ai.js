@@ -4,7 +4,7 @@ import { rateLimit } from 'express-rate-limit'
 import { requireAuth } from '../middleware/auth.js'
 import { validate } from '../middleware/validate.js'
 import { badRequest, HttpError } from '../lib/httpError.js'
-import { summarizePlan } from '../lib/planSummary.js'
+import { summarizePlan, ensurePlot } from '../lib/planSummary.js'
 import { buildMessages, parseReply, checkOperations } from '../lib/aiPlan.js'
 import { promptIdeas } from '../lib/plotGuide.js'
 import { providerFromEnv } from '../services/ai.js'
@@ -52,8 +52,11 @@ export default function aiRoutes({ rateLimited = true, aiProvider } = {}) {
     if (!ask) throw new HttpError(503, 'Ask ArchCanvas is not set up yet. Add a free Gemini key as AI_API_KEY in api/.env and restart the API.')
 
     let summary
+    let plan
     try {
-      summary = summarizePlan(req.body.floorplan)
+      // A plan whose plot outline was deleted still gets the project's plot size.
+      plan = ensurePlot(req.body.floorplan, project.plot)
+      summary = summarizePlan(plan)
     } catch {
       throw badRequest('The plan could not be read')
     }
@@ -69,7 +72,7 @@ export default function aiRoutes({ rateLimited = true, aiProvider } = {}) {
 
     const { operations, skipped } = reply.refused
       ? { operations: [], skipped: [] }
-      : checkOperations(req.body.floorplan, reply.operations)
+      : checkOperations(plan, reply.operations)
     res.json({
       message: reply.message || (operations.length
         ? 'Here is what I would change. Have a look and apply it if you like it.'

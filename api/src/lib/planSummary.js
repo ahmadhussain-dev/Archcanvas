@@ -68,6 +68,31 @@ export function planFrame(floorplan) {
   return { minX, maxZ, widthFt: round1((maxX - minX) / FT), depthFt: round1((maxZ - minZ) / FT), hasPlot: !!plot }
 }
 
+/**
+ * A plan whose plot outline was deleted in the editor still belongs to a
+ * project with a plot size. Puts a stand-in plot of that size back (only for
+ * reading the plan, it is never saved): its top-left corner on the top-left of
+ * the ground floor rooms, or centred on the origin like a new project's plot.
+ */
+export function ensurePlot(building, plotFt) {
+  const floorplan = floorplanOf(building)
+  const rooms = floorplan.floor?.rooms ?? []
+  const widthFt = Number(plotFt?.widthFt)
+  const depthFt = Number(plotFt?.depthFt)
+  if (rooms.some((room) => room.id === 'plot') || !(widthFt > 0) || !(depthFt > 0)) return floorplan
+  const width = widthFt * FT
+  const depth = depthFt * FT
+  const levels = [...(floorplan.floors ?? [])].sort((a, b) => Number(a.level || 0) - Number(b.level || 0))
+  const groundId = levels[0]?.id ?? 'floor_1'
+  const rects = rooms.filter(isRect)
+  const ground = rects.filter((room) => (room.floorId ?? 'floor_1') === groundId)
+  const boxes = (ground.length ? ground : rects).map(worldBox)
+  const minX = boxes.length ? Math.min(...boxes.map((b) => b.minX)) : -width / 2
+  const maxZ = boxes.length ? Math.max(...boxes.map((b) => b.maxZ)) : depth / 2
+  const plot = { id: 'plot', name: 'Plot', shape: 'square', x: minX + width / 2, z: maxZ - depth / 2, width, depth, floorId: groundId }
+  return { ...floorplan, floor: { ...floorplan.floor, rooms: [plot, ...rooms] } }
+}
+
 export function fromWorld(frame, room) {
   const box = worldBox(room)
   return {
