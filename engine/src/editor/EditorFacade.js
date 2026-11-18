@@ -1,4 +1,5 @@
 import { FloorplanDocument } from '../domain/FloorplanDocument.js';
+import { outsideWallThickness, insideWallThickness, roomClearBox } from '../domain/roomWalls.js';
 import { BabylonSceneRenderer } from '../runtime/BabylonSceneRenderer.js';
 import { SelectionController } from './SelectionController.js';
 import { ExportService } from '../services/ExportService.js';
@@ -200,6 +201,9 @@ export class EditorFacade {
       unit: floorplan.unit || 'm',
       wallHeight: floorplan.wallHeight ?? 2.8,
       wallThickness: floorplan.wallThickness ?? 0.18,
+      wallModel: floorplan.wallModel || 'rooms',
+      outsideWallThickness: outsideWallThickness(floorplan),
+      insideWallThickness: insideWallThickness(floorplan),
       floorHeight: floorplan.floorHeight ?? 0.2,
       currentFloorId: floorplan.currentFloorId || 'floor_1'
     }));
@@ -275,6 +279,12 @@ export class EditorFacade {
   getRoomAt(x, z, options = {}) {
     const room = this._document.getRoomAt(x, z, options.floorId || this.getCurrentFloorId());
     return room ? JSON.parse(JSON.stringify(room)) : null;
+  }
+
+  /** A plain room's clear floor between its wall faces ({ minX, maxX, minZ, maxZ }), or null. */
+  getRoomClearBox(roomId) {
+    const room = this._document.getRoom(roomId);
+    return room ? roomClearBox(this._document.floorplan, room) : null;
   }
 
   getWallLength(wallId) {
@@ -415,6 +425,12 @@ export class EditorFacade {
         break;
       case 'moveWall':
         result = this._document.moveWall(args.wallId, args.dx, args.dz);
+        break;
+      case 'setRoomWallThickness':
+        result = this._document.setRoomWallThickness(args);
+        break;
+      case 'lineUpRooms':
+        result = this._document.lineUpRooms(args.floorId, args.step, args.origin);
         break;
       case 'updateWallLength':
         result = this._document.updateWallLength(args.wallId, args.length);
@@ -644,6 +660,10 @@ export class EditorFacade {
   addWall(from, to) { return this.executeCommand('addWall', { from, to }); }
   updateWall(wallId, patch, rebuild = true) { return this.executeCommand('updateWall', { wallId, patch, rebuild }); }
   deleteWall(wallId) { return this.executeCommand('deleteWall', { wallId }); }
+  /** Room wall thickness for the plan, in metres: { outside, inside }. */
+  setRoomWallThickness(thickness = {}) { return this.executeCommand('setRoomWallThickness', thickness); }
+  /** Moves the plain rooms of a floor onto the grid so near neighbours share walls. */
+  lineUpRooms(floorId = this.getCurrentFloorId(), step = 0.3048, origin = { x: 0, z: 0 }) { return this.executeCommand('lineUpRooms', { floorId, step, origin }); }
   setWallLength(wallId, length) { return this.executeCommand('updateWallLength', { wallId, length }); }
   addOpening(wallId, type = 'door', t = 0.5, shape = 'square') { return this.executeCommand('addOpening', { wallId, type, t, shape }); }
   updateOpening(openingId, patch, rebuild = true) { return this.executeCommand('updateOpening', { openingId, patch, rebuild }); }

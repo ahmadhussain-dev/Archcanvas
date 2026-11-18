@@ -43,7 +43,7 @@ const {
   currentOpenings, currentItems, currentRoofs, currentStairs, getFloorEntityCount,
   ensureVisibleCurrentFloor, makeButton, hideContextMenu, showIconMenu, cancelLongPress,
   handlePointerCancel, attachContextMenuTrigger, getSelectedTarget,
-  cancelObjectInteractions, snapRoomPosition, updateViewBounds
+  cancelObjectInteractions, snapRoomPosition, snapRoomEdge, updateViewBounds
 } = ViewController;
 const { showFloorContextMenu, moveFloorAction, deleteFloorAction, renameCurrentFloor, formatFloorDisplayName, syncFloorControls } = FloorManager;
 const {
@@ -580,7 +580,7 @@ Object.assign(appState, {
 
   svgPointFromEvent,
   svgToWorld,
-  snapRoomPosition,
+  snapRoomPosition, snapRoomEdge,
   snapWorldPoint,
   snapNumber,
   updateViewBounds,
@@ -1077,7 +1077,7 @@ initAppEventBindings(appState);
 
 initEmbedBridge({
   testMap,
-  store,
+  store, setSnapSize,
   loadBuildingText: (text) => FileManager.loadBuildingFile({ text: async () => text })
 });
 

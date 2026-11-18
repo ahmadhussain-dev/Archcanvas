@@ -2,6 +2,7 @@ import { CSG, Color3, MaterialPluginBase, Mesh, MeshBuilder, MirrorTexture, Plan
 const BABYLON = { CSG, Color3, MaterialPluginBase, Mesh, MeshBuilder, MirrorTexture, Plane, PointLight, ReflectionProbe, RenderTargetTexture, ShaderLanguage, SpotLight, Texture, TransformNode, Vector3, VertexBuffer, VertexData };
 import { createFlatMaterial, createBlueprintMaterial, materialPreviewColor, normalizeMaterialDescriptor } from '../core/materials.js';
 import { MaterialResolver } from '../domain/MaterialResolver.js';
+import { wallThicknessOf } from '../domain/roomWalls.js';
 import { createBox, createCylinder, createSphere } from '../core/primitives.js';
 import { FURNITURE_DEFINITIONS, FURNITURE_LIST, getFurnitureDefinition, isAppliancePowerOn } from '../furniture/index.js';
 import { healingMusic } from '../audio/healingMusic.js';
@@ -68,7 +69,7 @@ export function overlappedWallIds(floorplan) {
     const [x2, z2] = wall.to;
     const length = Math.hypot(x2 - x1, z2 - z1);
     const styled = Object.entries(wall).some(([key, value]) => STYLE_KEY.test(key) && value);
-    return { wall, x1, z1, length, ux: (x2 - x1) / (length || 1), uz: (z2 - z1) / (length || 1), styled };
+    return { wall, x1, z1, length, ux: (x2 - x1) / (length || 1), uz: (z2 - z1) / (length || 1), styled, thickness: wallThicknessOf(floorplan, wall) };
   }).filter((entry) => entry.length > 0.01);
   const rank = (entry) => [plotWalls.has(entry.wall.id) ? 0 : 1, entry.styled ? 1 : 0, entry.length];
   const beats = (a, b) => {
@@ -88,7 +89,11 @@ export function overlappedWallIds(floorplan) {
       const along = (x, z) => (x - a.x1) * a.ux + (z - a.z1) * a.uz;
       const across = (x, z) => Math.abs((x - a.x1) * a.uz - (z - a.z1) * a.ux);
       const [bx2, bz2] = b.wall.to;
-      if (across(b.x1, b.z1) > 0.01 || across(bx2, bz2) > 0.01) continue;
+      // Side by side counts too: a house wall set inside the plot edge still
+      // overlaps the plot's boundary wall centred on that edge.
+      const reach = Math.max(0.01, (a.thickness + b.thickness) / 2 - 0.02);
+      const offA = across(b.x1, b.z1);
+      if (offA > reach || Math.abs(across(bx2, bz2) - offA) > 0.01) continue;
       const t1 = along(b.x1, b.z1);
       const t2 = along(bx2, bz2);
       const overlap = Math.min(a.length, Math.max(t1, t2)) - Math.max(0, Math.min(t1, t2));
@@ -1547,7 +1552,7 @@ export class BabylonSceneRenderer {
       const wallFloor = this.document.getFloor(wall.floorId);
       // A wall lying on another one is drawn a hair thinner and lower, so the two never flicker.
       const yields = overlapped.has(wall.id);
-      const T = this.floorplan.wallThickness - (yields ? 0.01 : 0);
+      const T = wallThicknessOf(this.floorplan, wall) - (yields ? 0.01 : 0);
       let H = this.document.getFloorWallRenderHeight(wall.floorId);
       if (wallFloor && wallFloor.hideWall) {
         H = 0.2;
@@ -1971,7 +1976,7 @@ export class BabylonSceneRenderer {
         openingGroup.rotation.y = angle;
         openingGroup.metadata = { blueprintOpeningId: opening.id, type: opening.type, shape: opening.shape, wallId: opening.wallId, floorId: opening.floorId, locked: !!opening.locked };
 
-        const wallT = this.floorplan.wallThickness || 0.2;
+        const wallT = wallThicknessOf(this.floorplan, wall);
         const frameT = opening.frameT ?? (wallT + 0.01);
         const frameW = opening.frameW ?? (opening.type === 'door' ? 0.04 : 0.035);
         buildOpeningGeometry(this, opening, openingGroup, { width, height, frameT, frameW });
@@ -3096,7 +3101,7 @@ export class BabylonSceneRenderer {
         const angle = -Math.atan2(dz, dx);
         const nx = Math.sin(angle);
         const nz = Math.cos(angle);
-        const T = this.floorplan.wallThickness || 0.15;
+        const T = wallThicknessOf(this.floorplan, wall);
         const pos = mesh.getAbsolutePosition();
 
         const rx = pos.x - x1;
@@ -3126,7 +3131,7 @@ export class BabylonSceneRenderer {
         const nx = Math.sin(angle);
         const nz = Math.cos(angle);
         const sideSign = mesh.metadata.side === 'front' ? 1 : -1;
-        const T = this.floorplan.wallThickness || 0.15;
+        const T = wallThicknessOf(this.floorplan, wall);
         const meshPos = mesh.getAbsolutePosition();
 
         const checkX = meshPos.x + sideSign * T * nx;

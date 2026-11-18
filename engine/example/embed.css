@@ -273,7 +273,8 @@ html.archcanvas-embed {
 .archcanvas-embed .plan-drawing .opening-line { stroke: transparent; stroke-width: 10px; }
 .archcanvas-embed .plan-drawing .opening-line:hover,
 .archcanvas-embed .plan-drawing .opening-line.selected { stroke: rgba(30, 90, 168, 0.35); }
-.archcanvas-embed .plan-drawing .grid-line { stroke-opacity: 0.45; }
+.archcanvas-embed .plan-drawing .grid-line { stroke-opacity: 0.28; }
+.archcanvas-embed .plan-drawing .grid-line-major { stroke-opacity: 0.6; }
 .archcanvas-embed .plan-drawing .room-name-label { font-size: 10px; font-weight: 600; }
 .archcanvas-embed .plan-drawing .room-size-label { font-size: 9px; fill: var(--ac-ink-2); }
 .archcanvas-embed .plan-dimension-label {
@@ -357,3 +358,13 @@ html.archcanvas-embed {
 }
 .archcanvas-embed .plan-card,
 .archcanvas-embed .canvas-card { margin-bottom: 32px; }
+.archcanvas-embed .ac-status-select { gap: 6px; }
+.archcanvas-embed .ac-status-select select {
+  height: 22px;
+  padding: 0 4px;
+  border: 1px solid var(--ac-line);
+  border-radius: 4px;
+  background: #ffffff;
+  font-size: 12px;
+  color: var(--ac-ink);
+}

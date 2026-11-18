@@ -7,6 +7,7 @@
 // front is +z at rotation 0.
 import { getFurnitureDefinition } from '../domain/FurnitureCatalog.js';
 import { pointInRoom } from '../rooms/roomShapes.js';
+import { roomWallInsets } from '../domain/roomWalls.js';
 
 export const EPS = 1e-3;
 // Space kept clear inside a door, in metres.
@@ -88,10 +89,16 @@ export const isWallItem = (item) => getFurnitureDefinition(item.type).placeType 
  * spots already taken (furniture, stairs, the swing space inside doors).
  */
 export function roomLayout(doc, room) {
-  const wallThickness = Number(doc.floorplan.wallThickness) || 0.23;
   const box = rectOf(room);
-  const inset = wallThickness / 2 + WALL_GAP;
-  const clear = { minX: box.minX + inset, maxX: box.maxX - inset, minZ: box.minZ + inset, maxZ: box.maxZ - inset };
+  // Each side's wall face: a shared wall reaches half its thickness into the
+  // room, an outside wall (set inside the room) all of it.
+  const inset = roomWallInsets(doc.floorplan, room);
+  const clear = {
+    minX: box.minX + inset.left + WALL_GAP,
+    maxX: box.maxX - inset.right - WALL_GAP,
+    minZ: box.minZ + inset.bottom + WALL_GAP,
+    maxZ: box.maxZ - inset.top - WALL_GAP
+  };
   const wallHeight = Number((doc.floorplan.floors || []).find((f) => f.id === room.floorId)?.wallHeight ?? doc.floorplan.wallHeight ?? 2.8);
 
   const sides = {

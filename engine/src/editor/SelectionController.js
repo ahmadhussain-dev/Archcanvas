@@ -4,6 +4,7 @@ import { buildFenceGeometry } from '../geometry/fenceGeometry.js';
 import { createOpeningProfileMesh } from '../openings/geometry.js';
 import { triangulateRoom } from '../rooms/index.js';
 import { OpeningHolePreviewPlugin, FenceGateGapPreviewPlugin } from '../runtime/BabylonSceneRenderer.js';
+import { wallThicknessOf } from '../domain/roomWalls.js';
 
 function wallPoint(wall, t) {
   return {
@@ -265,7 +266,7 @@ export class SelectionController {
     root.position.set(x1 + dx * t, centerY, z1 + dz * t);
     root.rotation.y = -Math.atan2(dz, dx);
 
-    const wallT = this.document.floorplan.wallThickness;
+    const wallT = wallThicknessOf(this.document.floorplan, wall);
     const createFillFace = (side, material, z) => {
       if (!material) return;
       const mesh = createOpeningProfileMesh(this, `opening_drag_fill_${opening.id}_${side}`, opening, root, {

@@ -4,6 +4,7 @@ import { normalizeRoomShape, pointInRoom, getRoomVertices, getRoomWallKeys } fro
 import { normalizeOpeningShape } from '../openings/openingShapes.js';
 import { MaterialResolver } from './MaterialResolver.js';
 import { getStairsRailingSegments } from '../editor/Topology.js';
+import { usesSharedWalls, isSharedWallRoom, rebuildSharedWalls, rebuildAllSharedWalls, BRICK_THICKNESS, outsideWallThickness, insideWallThickness } from './roomWalls.js';
 
 const { materialPreviewColor, normalizeMaterialDescriptor } = MaterialResolver;
 
@@ -563,7 +564,29 @@ export class FloorplanDocument {
       });
     });
 
+    // Shared room walls are worked out from the rooms, which also brings an
+    // older plan (each room with its own four walls) up to date.
+    if (usesSharedWalls(normalized)) rebuildAllSharedWalls(normalized);
+
     return normalized;
+  }
+
+  /** Rebuilds the shared room walls of a floor (plans with wallModel 'shared'). */
+  rebuildRoomWalls(floorId = this.floorplan.currentFloorId) {
+    if (!usesSharedWalls(this.floorplan) || this._wallRebuildPaused) return;
+    rebuildSharedWalls(this.floorplan, floorId ?? DEFAULT_FLOOR_ID);
+  }
+
+  /** Runs `change` with wall rebuilds held back, then rebuilds the floor once. */
+  batchRoomWalls(floorId, change) {
+    const paused = this._wallRebuildPaused;
+    this._wallRebuildPaused = true;
+    try {
+      return change();
+    } finally {
+      this._wallRebuildPaused = paused;
+      if (!paused) this.rebuildRoomWalls(floorId);
+    }
   }
 
   // ---   ---
@@ -956,6 +979,7 @@ export class FloorplanDocument {
     const wall = this.getWall(wallId);
     if (!wall) return null;
     const floorId = wall.floorId ?? this.floorplan.currentFloorId;
+    if (wall.kind && usesSharedWalls(this.floorplan)) return this.moveSharedWall(wall, dx, dz);
     const horizontal = Math.abs(wall.to[1] - wall.from[1]) < Math.abs(wall.to[0] - wall.from[0]);
     const line = horizontal ? wall.from[1] : wall.from[0];
     const span = horizontal ? [wall.from[0], wall.to[0]] : [wall.from[1], wall.to[1]];
@@ -1021,6 +1045,59 @@ export class FloorplanDocument {
     return wall;
   }
 
+  /**
+   * Moves a shared room wall across its line: every room with an edge on it
+   * grows or shrinks by the same amount, and the walls are rebuilt.
+   * Returns the wall now on the moved edge, or null when a room is locked or
+   * would get too small.
+   */
+  moveSharedWall(wall, dx, dz) {
+    const floorId = wall.floorId ?? this.floorplan.currentFloorId;
+    const horizontal = Math.abs(wall.to[1] - wall.from[1]) < Math.abs(wall.to[0] - wall.from[0]);
+    const shift = horizontal ? dz : dx;
+    const rooms = this.floorplan.floor.rooms.filter((room) => (room.floorId ?? floorId) === floorId
+      && (isSharedWallRoom(room) || (wall.kind === 'plot' && room.id === 'plot'))
+      && Object.values(room.wallIds || {}).includes(wall.id));
+    if (!rooms.length || rooms.some((room) => room.locked)) return null;
+    if (!shift) return wall;
+    const across = horizontal ? (wall.from[1] + wall.to[1]) / 2 : (wall.from[0] + wall.to[0]) / 2;
+    const patches = [];
+    let edge = null;
+    for (const room of rooms) {
+      const size = horizontal ? room.depth : room.width;
+      let lo = (horizontal ? room.z : room.x) - size / 2;
+      let hi = lo + size;
+      const nearLo = Math.abs(lo - across) < Math.abs(hi - across);
+      edge ??= nearLo ? lo : hi;
+      if (nearLo) lo += shift; else hi += shift;
+      if (hi - lo < 1.0) return null;
+      const centre = Number(((lo + hi) / 2).toFixed(3));
+      const length = Number((hi - lo).toFixed(3));
+      patches.push([room.id, horizontal ? { z: centre, depth: length } : { x: centre, width: length }]);
+    }
+    this.batchRoomWalls(floorId, () => {
+      patches.forEach(([roomId, patch]) => this.updateRoom(roomId, patch, { moveItems: false }));
+    });
+    // The wall on the moved edge, matched by where it lies now.
+    const target = edge + shift;
+    const span = horizontal ? [Math.min(wall.from[0], wall.to[0]), Math.max(wall.from[0], wall.to[0])] : [Math.min(wall.from[1], wall.to[1]), Math.max(wall.from[1], wall.to[1])];
+    let best = null;
+    for (const id of new Set(rooms.flatMap((room) => Object.values(this.getRoom(room.id)?.wallIds || {})))) {
+      const moved = this.getWall(id);
+      if (!moved) continue;
+      const movedHorizontal = Math.abs(moved.to[1] - moved.from[1]) < Math.abs(moved.to[0] - moved.from[0]);
+      if (movedHorizontal !== horizontal) continue;
+      const line = horizontal ? moved.from[1] : moved.from[0];
+      const reach = (Number(moved.thickness) || 0.23) / 2 + 0.01;
+      if (Math.abs(line - target) > reach) continue;
+      const lo = Math.min(horizontal ? moved.from[0] : moved.from[1], horizontal ? moved.to[0] : moved.to[1]);
+      const hi = Math.max(horizontal ? moved.from[0] : moved.from[1], horizontal ? moved.to[0] : moved.to[1]);
+      const overlap = Math.min(hi, span[1]) - Math.max(lo, span[0]);
+      if (!best || overlap > best.overlap || moved.id === wall.id) best = { moved, overlap: moved.id === wall.id ? Infinity : overlap };
+    }
+    return best?.moved ?? this.getWall(wall.id) ?? null;
+  }
+
   getWallLength(wallId) {
     const wall = this.getWall(wallId);
     if (!wall) return 0;
@@ -1047,7 +1124,90 @@ export class FloorplanDocument {
     if (!wall) return null;
     Object.assign(wall, patch);
     normalizeWallDecorSettings(wall);
+    // A shared room wall set to single or double brick gets its new thickness
+    // (and its corners) from a rebuild.
+    if (wall.kind && 'brick' in (patch || {})) {
+      if (!BRICK_THICKNESS[wall.brick]) delete wall.brick;
+      this.rebuildRoomWalls(wall.floorId ?? this.floorplan.currentFloorId);
+      return this.getWall(wallId) ?? wall;
+    }
     return wall;
+  }
+
+  /**
+   * Sets the plan's room wall thickness in metres ({ outside, inside }) and
+   * rebuilds the walls on every floor. Walls set on their own keep their brick.
+   */
+  setRoomWallThickness({ outside, inside } = {}) {
+    if (Number(outside) > 0) this.floorplan.outsideWallThickness = Number(Number(outside).toFixed(4));
+    if (Number(inside) > 0) this.floorplan.insideWallThickness = Number(Number(inside).toFixed(4));
+    if (usesSharedWalls(this.floorplan)) rebuildAllSharedWalls(this.floorplan);
+    return { outside: outsideWallThickness(this.floorplan), inside: insideWallThickness(this.floorplan) };
+  }
+
+  /**
+   * Moves every plain room edge on a floor onto the nearest grid line
+   * (`step` metres from `origin`), so rooms that nearly touch end up sharing
+   * a wall. Locked rooms and the plot stay put. Returns how many rooms moved.
+   */
+  lineUpRooms(floorId = this.floorplan.currentFloorId, step = 0.3048, origin = { x: 0, z: 0 }) {
+    const onFloor = this.floorplan.floor.rooms.filter((room) => (room.floorId ?? DEFAULT_FLOOR_ID) === floorId);
+    const movable = onFloor.filter((room) => !room.locked && isSharedWallRoom(room));
+    const fixed = onFloor.filter((room) => !movable.includes(room) && !Number(room.rotation));
+    // Edges less than half a step apart are taken as the same line: they all
+    // go to one grid line, so near neighbours meet instead of overlapping.
+    // Edges of the plot and locked rooms stay where they are and pull the
+    // others onto them.
+    const lineMap = (axis) => {
+      const edges = [];
+      const add = (room, own) => {
+        const centre = axis === 'x' ? room.x : room.z;
+        const half = (axis === 'x' ? room.width : room.depth) / 2;
+        edges.push({ value: centre - half, own }, { value: centre + half, own });
+      };
+      movable.forEach((room) => add(room, false));
+      fixed.forEach((room) => add(room, true));
+      edges.sort((a, b) => a.value - b.value);
+      const map = new Map();
+      let group = [];
+      const close = () => {
+        if (!group.length) return;
+        const anchor = group.find((edge) => edge.own);
+        const mean = group.reduce((sum, edge) => sum + edge.value, 0) / group.length;
+        const o = axis === 'x' ? origin.x : origin.z;
+        const target = anchor ? anchor.value : o + Math.round((mean - o) / step) * step;
+        group.forEach((edge) => map.set(edge.value, Number(target.toFixed(3))));
+        group = [];
+      };
+      for (const edge of edges) {
+        if (group.length && edge.value - group[group.length - 1].value >= step / 2) close();
+        group.push(edge);
+      }
+      close();
+      return (value) => map.get(value) ?? value;
+    };
+    const snapX = lineMap('x');
+    const snapZ = lineMap('z');
+    let moved = 0;
+    this.batchRoomWalls(floorId, () => {
+      for (const room of movable) {
+        const minX = snapX(room.x - room.width / 2);
+        const maxX = Math.max(minX + step, snapX(room.x + room.width / 2));
+        const minZ = snapZ(room.z - room.depth / 2);
+        const maxZ = Math.max(minZ + step, snapZ(room.z + room.depth / 2));
+        const patch = {
+          x: Number(((minX + maxX) / 2).toFixed(3)),
+          z: Number(((minZ + maxZ) / 2).toFixed(3)),
+          width: Number((maxX - minX).toFixed(3)),
+          depth: Number((maxZ - minZ).toFixed(3))
+        };
+        if (['x', 'z', 'width', 'depth'].some((key) => Math.abs(patch[key] - room[key]) > 0.0005)) {
+          this.updateRoom(room.id, patch, { moveItems: true });
+          moved += 1;
+        }
+      }
+    });
+    return moved;
   }
 
   deleteWall(wallId) {
@@ -1062,6 +1222,19 @@ export class FloorplanDocument {
   }
 
   syncRoomWalls(room, createMissing = false) {
+    if (usesSharedWalls(this.floorplan)) {
+      const floorId = room.floorId ?? DEFAULT_FLOOR_ID;
+      if (isSharedWallRoom(room) || (room.id === 'plot' && !Number(room.rotation) && normalizeRoomShape(room.shape) === 'square')) {
+        this.rebuildRoomWalls(floorId);
+        return room;
+      }
+      // A turned or odd-shaped room keeps walls of its own: let go of the
+      // shared walls it was on, rebuild those for the others, then draw its own.
+      const own = Object.entries(room.wallIds || {}).filter(([, id]) => !this.getWall(id)?.kind);
+      if (own.length !== Object.keys(room.wallIds || {}).length) createMissing = true;
+      room.wallIds = Object.fromEntries(own);
+      this.rebuildRoomWalls(floorId);
+    }
     const vertices = getRoomVertices(room);
     const keys = getRoomWallKeys(room);
     const previousWallIds = { ...(room.wallIds || {}) };
@@ -1095,6 +1268,7 @@ export class FloorplanDocument {
       if (!isCurrentMatched) {
         const candidates = (this.floorplan.walls || []).filter((candidate) => {
           if (candidate.floorId && candidate.floorId !== room.floorId) return false;
+          if (candidate.kind) return false;
           return isWallOnEdge(candidate, edgeFrom, edgeTo);
         });
         if (candidates.length > 0) {
@@ -1251,6 +1425,7 @@ export class FloorplanDocument {
 
     const topologyChanged = room.shape !== previous.shape || room.floorId !== previous.floorId;
     this.syncRoomWalls(room, topologyChanged);
+    if (room.floorId !== previous.floorId) this.rebuildRoomWalls(previous.floorId);
     return room;
   }
 
@@ -1280,6 +1455,7 @@ export class FloorplanDocument {
       return true;
     });
     this.floorplan.floor.rooms = remainingRooms;
+    this.rebuildRoomWalls(room.floorId ?? DEFAULT_FLOOR_ID);
     return true;
   }
 
@@ -1812,9 +1988,13 @@ export class FloorplanDocument {
     const suffix = `${targetFloorId}_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
     const wallIdMap = new Map();
     const roomIdMap = new Map();
+    // With shared walls the plot outline stays on its own floor: a copy upstairs
+    // would be taken for a room around the whole house.
+    const shared = usesSharedWalls(this.floorplan);
+    const plotWalls = new Set(shared ? Object.values(this.getRoom('plot')?.wallIds || {}) : []);
 
     this.floorplan.walls
-      .filter((wall) => (wall.floorId || DEFAULT_FLOOR_ID) === sourceFloorId)
+      .filter((wall) => (wall.floorId || DEFAULT_FLOOR_ID) === sourceFloorId && !plotWalls.has(wall.id))
       .forEach((wall, index) => {
         const nextId = `wall_${suffix}_${index}`;
         wallIdMap.set(wall.id, nextId);
@@ -1828,7 +2008,7 @@ export class FloorplanDocument {
       });
 
     this.floorplan.floor.rooms
-      .filter((room) => (room.floorId || DEFAULT_FLOOR_ID) === sourceFloorId)
+      .filter((room) => (room.floorId || DEFAULT_FLOOR_ID) === sourceFloorId && !(shared && room.id === 'plot'))
       .forEach((room, index) => {
         const nextId = `room_${suffix}_${index}`;
         roomIdMap.set(room.id, nextId);
@@ -1856,6 +2036,7 @@ export class FloorplanDocument {
         });
       });
 
+    this.rebuildRoomWalls(targetFloorId);
     return { wallIdMap, roomIdMap };
   }
 

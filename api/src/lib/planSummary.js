@@ -9,6 +9,16 @@
 // draws +z at the top. toWorld/fromWorld convert between the two.
 export const FT = 0.3048
 
+/**
+ * Wall thickness in metres that a room loses each way. With shared walls
+ * (ArchCanvas plans) outside walls sit inside the rooms and inside walls are
+ * shared, so this is the outside wall (9 in unless set to 4.5 in).
+ */
+export function roomWallThickness(floorplan) {
+  if (floorplan?.wallModel === 'shared') return Number(floorplan.outsideWallThickness) || 0.2286
+  return Number(floorplan?.wallThickness) || 0.23
+}
+
 const round1 = (value) => Math.round(value * 10) / 10 + 0 // + 0 turns -0 into 0
 
 export function floorplanOf(building) {
@@ -154,7 +164,7 @@ export function summarizePlan(building) {
     units: 'feet',
     floor: floor?.name ?? 'Ground',
     plot: frame.hasPlot ? { width: frame.widthFt, depth: frame.depthFt } : null,
-    wallThicknessFt: Math.round((Number(floorplan.wallThickness) || 0.23) / FT * 100) / 100,
+    wallThicknessFt: Math.round(roomWallThickness(floorplan) / FT * 100) / 100,
     stairs: stairsOf((floorplan.stairs ?? []).filter(onFloor)),
     ...(floorBelow ? { floorBelow } : {}),
     rooms: rooms.map((room) => {

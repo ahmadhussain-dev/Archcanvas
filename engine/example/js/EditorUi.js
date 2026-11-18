@@ -367,7 +367,17 @@ export function updateEditor() {
     document.getElementById('btn-delete-room').disabled = !!room.locked;
   }
   if (wall) {
-    document.getElementById('selected-wall-name').textContent = 'Wall';
+    // A shared room wall follows its rooms: no length or turning of its own,
+    // but it can be single or double brick.
+    const roomWall = wall.kind === 'outside' || wall.kind === 'inside';
+    document.getElementById('selected-wall-name').textContent = roomWall ? (wall.kind === 'outside' ? 'Outside wall' : 'Inside wall') : 'Wall';
+    document.getElementById('wall-brick-field')?.classList.toggle('hidden', !roomWall);
+    document.getElementById('wall-shared-hint')?.classList.toggle('hidden', !roomWall);
+    document.getElementById('wall-length-field')?.classList.toggle('hidden', roomWall);
+    document.getElementById('wall-rotation-field')?.classList.toggle('hidden', roomWall);
+    document.getElementById('btn-delete-wall')?.classList.toggle('hidden', roomWall);
+    const brickInput = document.getElementById('wall-brick');
+    if (brickInput) brickInput.value = roomWall && wall.brick ? wall.brick : '';
     document.getElementById('wall-length').value = Number(testMap.getWallLength(wall.id).toFixed(2));
     const dx = wall.to[0] - wall.from[0];
     const dz = wall.to[1] - wall.from[1];
@@ -1463,6 +1473,10 @@ export function initUiEventListeners() {
     updateEditor();
     renderPlan();
   };
+
+  document.getElementById('wall-brick')?.addEventListener('change', (event) => {
+    updateSelectedWallDecor({ brick: event.target.value || null });
+  });
 
   document.getElementById('wall-own-height')?.addEventListener('change', (event) => {
     // Start a new own height at 5 ft, the usual front boundary wall.

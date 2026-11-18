@@ -173,11 +173,13 @@ function sideWalls(doc, room, side) {
   const overlap = (wall) => {
     const [x1, z1] = wall.from;
     const [x2, z2] = wall.to;
+    // Shared walls can sit up to a wall's thickness inside the room's edge.
+    const reach = Math.max(0.05, Number(wall.thickness) || 0);
     if (horizontal) {
-      if (Math.abs(z1 - edge) > 0.05 || Math.abs(z2 - edge) > 0.05) return 0;
+      if (Math.abs(z1 - edge) > reach || Math.abs(z2 - edge) > reach) return 0;
       return Math.min(box.maxX, Math.max(x1, x2)) - Math.max(box.minX, Math.min(x1, x2));
     }
-    if (Math.abs(x1 - edge) > 0.05 || Math.abs(x2 - edge) > 0.05) return 0;
+    if (Math.abs(x1 - edge) > reach || Math.abs(x2 - edge) > reach) return 0;
     return Math.min(box.maxZ, Math.max(z1, z2)) - Math.max(box.minZ, Math.min(z1, z2));
   };
   const others = (doc.floorplan.walls || [])

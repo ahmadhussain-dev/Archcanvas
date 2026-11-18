@@ -38,6 +38,7 @@ export function refresh3DGrid() {
     currentView: Context.currentView,
     snapEnabled: Context.snapEnabled,
     snapSize: Context.snapSize,
+    gridOrigin: gridOrigin(),
     walls: currentWalls(),
     rooms: currentRooms(),
     roofs: currentRoofs(),
@@ -136,7 +137,53 @@ export function setView(nextView) {
 }
 
 export function snapValue(value) { return Topology.snapValue(value, Context.snapEnabled, Context.snapSize); }
-export function snapWorldPoint(world) { return Topology.snapWorldPoint(world, Context.snapEnabled, Context.snapSize); }
+
+/**
+ * Where the grid starts: the plot's corner when there is a plot (so a 1 ft
+ * grid lines up with the plot edges), else the origin.
+ */
+export function gridOrigin() {
+  const plot = Context.testMap?.getEntity?.('room', 'plot');
+  if (!plot) return { x: 0, z: 0 };
+  return { x: plot.x - plot.width / 2, z: plot.z - plot.depth / 2 };
+}
+
+function snapOnGrid(value, origin) {
+  if (!Context.snapEnabled || !Context.snapSize) return value;
+  return origin + Math.round((value - origin) / Context.snapSize) * Context.snapSize;
+}
+
+export function snapWorldPoint(world) {
+  if (!Context.snapEnabled || !Context.snapSize) return Topology.snapWorldPoint(world, false, Context.snapSize);
+  const origin = gridOrigin();
+  return { x: Number(snapOnGrid(world.x, origin.x).toFixed(3)), z: Number(snapOnGrid(world.z, origin.z).toFixed(3)) };
+}
+
+// How close (metres) a room edge must come to another room's edge to snap onto it.
+const ROOM_EDGE_SNAP = 0.15;
+
+function roomEdgeLines(axis, exceptId) {
+  return currentRooms()
+    .filter((room) => room.id !== exceptId && !Number(room.rotation))
+    .flatMap((room) => (axis === 'x'
+      ? [room.x - room.width / 2, room.x + room.width / 2]
+      : [room.z - room.depth / 2, room.z + room.depth / 2]));
+}
+
+/**
+ * Snaps one edge of a room (an x or z value) onto a nearby edge of another
+ * room, so the two share a wall, else onto the grid.
+ */
+export function snapRoomEdge(axis, value, roomId) {
+  if (!Context.snapEnabled || !Context.snapSize) return Number(value.toFixed(3));
+  let best = null;
+  for (const line of roomEdgeLines(axis, roomId)) {
+    const d = Math.abs(line - value);
+    if (d < ROOM_EDGE_SNAP && (!best || d < best.d)) best = { line, d };
+  }
+  if (best) return Number(best.line.toFixed(3));
+  return Number(snapOnGrid(value, gridOrigin()[axis]).toFixed(3));
+}
 export function snapWorldPointForFurniture(type, x, z) {
   const definition = Context.testMap?.getFurnitureDefinition(type);
   if (!definition) {
@@ -233,7 +280,11 @@ export function snapWorldPointForFurniture(type, x, z) {
     z: Number(snapped.z.toFixed(3))
   };
 }
-export function snapToGridSegmentCenter(point) { return Topology.snapToGridSegmentCenter(point, Context.snapEnabled, Context.snapSize); }
+export function snapToGridSegmentCenter(point) {
+  const origin = gridOrigin();
+  const snapped = Topology.snapToGridSegmentCenter({ x: point.x - origin.x, z: point.z - origin.z }, Context.snapEnabled, Context.snapSize);
+  return { x: Number((snapped.x + origin.x).toFixed(3)), z: Number((snapped.z + origin.z).toFixed(3)) };
+}
 export function snapNumber(value) { return Topology.snapNumber(value, Context.snapEnabled, Context.snapSize); }
 export function currentRooms() { return Context.testMap.getCurrentFloorEntities('room'); }
 export function currentWalls() { return Context.testMap.getCurrentFloorEntities('wall'); }
@@ -324,10 +375,27 @@ export function cancelObjectInteractions() {
   Context.camera.attachControl(Context.canvas, true, false, 1);
 }
 
+/**
+ * Where a dragged room lands: an edge onto a nearby room's edge (so they share
+ * a wall), else its corner onto the grid.
+ */
 export function snapRoomPosition(room, x, z) {
-  const left = snapNumber(x - room.width / 2);
-  const top = snapNumber(z - room.depth / 2);
-  return { x: Number((left + room.width / 2).toFixed(3)), z: Number((top + room.depth / 2).toFixed(3)) };
+  if (!Context.snapEnabled || !Context.snapSize) return { x: Number(x.toFixed(3)), z: Number(z.toFixed(3)) };
+  const origin = gridOrigin();
+  const place = (axis, centre, size) => {
+    const lo = centre - size / 2;
+    const hi = centre + size / 2;
+    let best = null;
+    for (const line of roomEdgeLines(axis, room.id)) {
+      for (const [edge, toCentre] of [[lo, size / 2], [hi, -size / 2]]) {
+        const d = Math.abs(line - edge);
+        if (d < ROOM_EDGE_SNAP && (!best || d < best.d)) best = { centre: line + toCentre, d };
+      }
+    }
+    if (best) return Number(best.centre.toFixed(3));
+    return Number((snapOnGrid(lo, origin[axis]) + size / 2).toFixed(3));
+  };
+  return { x: place('x', x, room.width), z: place('z', z, room.depth) };
 }
 
 export function updateViewBounds() {

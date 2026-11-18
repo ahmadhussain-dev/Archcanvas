@@ -177,7 +177,34 @@ export class DragHandler {
     let localCenterX = 0;
     let localCenterZ = 0;
 
-    if (side === 'west') {
+    // An unturned room's edge snaps in plan coordinates: onto a nearby room's
+    // edge (so the two share a wall) or onto the grid.
+    const edgeSnap = !rotation && typeof this.ctx.snapRoomEdge === 'function'
+      && ['west', 'east', 'north', 'south'].includes(side);
+    if (edgeSnap) {
+      const alongX = side === 'west' || side === 'east';
+      const world = alongX
+        ? original.x + lx + this.states.roomResize.offsetX
+        : original.z + lz + this.states.roomResize.offsetZ;
+      const edge = this.ctx.snapRoomEdge(alongX ? 'x' : 'z', world, room.id) - (alongX ? original.x : original.z);
+      if (side === 'west') {
+        const nextLeft = Math.min(edge, right - 1.0);
+        nextWidth = Number((right - nextLeft).toFixed(3));
+        localCenterX = right - nextWidth / 2;
+      } else if (side === 'east') {
+        const nextRight = Math.max(edge, left + 1.0);
+        nextWidth = Number((nextRight - left).toFixed(3));
+        localCenterX = left + nextWidth / 2;
+      } else if (side === 'north') {
+        const nextTop = Math.min(edge, bottom - 1.0);
+        nextDepth = Number((bottom - nextTop).toFixed(3));
+        localCenterZ = bottom - nextDepth / 2;
+      } else {
+        const nextBottom = Math.max(edge, top + 1.0);
+        nextDepth = Number((nextBottom - top).toFixed(3));
+        localCenterZ = top + nextDepth / 2;
+      }
+    } else if (side === 'west') {
       const nextLeft = Math.min(this.ctx.snapNumber(lx + this.states.roomResize.offsetX), right - 1.0);
       nextWidth = this.ctx.snapNumber(right - nextLeft);
       localCenterX = right - nextWidth / 2;
