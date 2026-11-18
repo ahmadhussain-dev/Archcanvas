@@ -16,7 +16,7 @@ import { suggestedFloor } from './plotGuide.js'
 export const MIN_ROOM_SIZES = [
   { kind: 'bedroom', match: /bed\s*room|master|guest\s*room|kids?\s*room|children/i, min: [10, 10] },
   { kind: 'drawing room', match: /drawing|living|lounge|tv|family|sitting/i, min: [10, 12] },
-  { kind: 'dining room', match: /dining/i, min: [8, 10] },
+  { kind: 'dining room', match: /dining/i, min: [9, 10] },
   { kind: 'kitchen', match: /kitchen/i, min: [7, 8] },
   { kind: 'bathroom', match: /bath|wash\s*room|toilet|\bwc\b|powder/i, min: [5, 6] },
   { kind: 'car porch', match: /porch|garage|parking/i, min: [10, 16] },
@@ -90,6 +90,8 @@ Good Pakistani home layout (follow it unless the person asks otherwise):
 - Kitchen next to the dining area or lounge, on an outside wall for light and the exhaust. Stack bathrooms over bathrooms and stairs over stairs.
 - Keep open space at the back (a lawn) on big plots instead of making every room huge.
 - When asked for the best or a recommended plan, use layout_floor with the suggested rooms for this plot (in the request) adjusted to what the person said, and say in the message why it suits the plot.
+- For any whole floor, start from the suggested rooms for this plot and change only what the person asked for (for example one more bedroom, a dining area, no drawing room). Give every bedroom an attached bath ("attached_to") when the suggested rooms do. Name rooms so the name says what they are: Master Bedroom, Bedroom 2, Master Bath, Bath 2, Kitchen, TV Lounge, Drawing Room, Dining, Car Porch, Staircase, Store, Servant Room, Study, Laundry, Terrace. Never list a passage, corridor, lobby, open space or wall as a room: ArchCanvas joins the rooms itself, so they would only add walls.
+- layout_floor does the real-world details itself: a deep attached bath gets a dressing room in front of it, a store goes at the end of the kitchen, bands stay at normal depths with the extra depth left open at the back (a lawn downstairs, an open terrace upstairs), and every room on every floor gets its full set of fittings and furniture.
 - To plan, design or redo a whole floor (or a whole house), use one layout_floor listing the rooms you want, each with a zone: back (top of the plan), middle, or front (the street side). ArchCanvas works out the sizes and positions with no gaps and nothing undersized, then adds the doors, windows, stairs and furniture itself, replacing the rooms already on the floor. Do not add rooms one by one for a whole floor, and do not send doors or furnish_room for the rooms it creates. Give attached baths "attached_to" their bedroom. Every floor of a house with more than one floor needs a Staircase; upstairs, put a Terrace at the front over the car porch.
 - To furnish, decorate, style or "complete" a room, use furnish_room. It installs the complete, properly arranged set for the room's kind, sized to the room and kept clear of its doors, windows and stairs:
   kitchen: counter with sink (under the window), cooking range, cabinets, fridge, microwave, cooker hood; bathroom: shower, commode, wash basin with mirror, towel rail; bedroom: bed with two side tables, wardrobe, dressing table, AC (and a study desk when large); lounge: sofas facing a TV unit with TV, centre table, rug, AC; drawing room: sofa set, centre table, showcase; dining: table with chairs, sideboard; car porch: kept clear for the car, planters, shoe rack.
@@ -263,6 +265,14 @@ export function checkOperations(building, rawOperations, { idPrefix = `ai${Date.
     if (kind === 'delete_room' && planned.has(raw) && raw.wholeFloor) {
       for (const room of rooms.values()) operations.push({ op: 'delete_room', room: room.id, label: `Remove ${room.name}` })
       rooms.clear()
+      // Walls drawn on their own and old stairs would stand in the new rooms.
+      const owned = new Set((floorplan.floor?.rooms ?? []).flatMap((room) => Object.values(room.wallIds ?? {})))
+      const looseWalls = (floorplan.walls ?? []).filter((wall) => (wall.floorId ?? 'floor_1') === floorId && !owned.has(wall.id)).length
+      const oldStairs = (floorplan.stairs ?? []).filter((stairs) => (stairs.floorId ?? floorId) === floorId).length
+      if (looseWalls || oldStairs) {
+        const what = [looseWalls && `${looseWalls} loose wall${looseWalls === 1 ? '' : 's'}`, oldStairs && 'the old stairs'].filter(Boolean).join(' and ')
+        operations.push({ op: 'clear_floor', floorId, label: `Remove ${what}` })
+      }
       continue
     }
 
@@ -361,6 +371,34 @@ export function checkOperations(building, rawOperations, { idPrefix = `ai${Date.
   return { operations, skipped }
 }
 
+// Rooms that are only gaps between walls. layout_floor fills the floor
+// without gaps and opens the stairs and dining into the lounge, so these only
+// add walls nobody needs.
+const NOT_A_ROOM = /\b(passage|corridor|gallery|space|gap|void|open\s*area|empty|filler|wall)\b/i
+
+/**
+ * Cleans up the AI's room list for a whole floor: leaves out "rooms" that
+ * are just passages or space, and adds what every real floor needs and the
+ * AI forgot: a lounge to connect the rooms, and a staircase on a house with
+ * more than one floor.
+ */
+export function tidyProgram(rooms, { floors = 1, upstairs = false, stairsBelow = false, skipped = [] } = {}) {
+  const out = []
+  for (const room of rooms) {
+    if (NOT_A_ROOM.test(room.name) && !roomKind(room.name)) {
+      skipped.push({ label: `Add ${room.name}`, reason: 'ArchCanvas fills the floor without gaps and opens the stairs and dining into the lounge, so no separate passage is needed.' })
+      continue
+    }
+    if (out.some((other) => other.name.toLowerCase() === room.name.toLowerCase())) continue
+    out.push(room)
+  }
+  const has = (kind) => out.some((room) => roomKind(room.name) === kind)
+  const indoor = out.filter((room) => !['terrace', 'car porch'].includes(roomKind(room.name)))
+  if (indoor.length >= 3 && !has('lounge') && !has('drawing room')) out.push({ name: 'TV Lounge', zone: 'middle' })
+  if ((upstairs ? stairsBelow : floors > 1) && !has('staircase')) out.push({ name: 'Staircase', zone: 'middle' })
+  return out
+}
+
 // Operations made by layout_floor (not by the AI), which may carry extra fields.
 const planned = new WeakSet()
 
@@ -387,7 +425,8 @@ function expandLayouts(building, floorplan, frame, wallFt, rawOperations, skippe
     const stairsBelow = below
       ? below.stairs[0] ?? below.rooms.find((room) => roomKind(room.name) === 'staircase') ?? null
       : null
-    const layout = layoutFloor({ area, wallFt, rooms: parsed.data.rooms, stairsBelow, ground: !below, minSizeFor })
+    const program = tidyProgram(parsed.data.rooms, { floors: (floorplan.floors ?? []).length, upstairs: !!below, stairsBelow: !!stairsBelow, skipped })
+    const layout = layoutFloor({ area, wallFt, rooms: program, stairsBelow, ground: !below, minSizeFor })
     skipped.push(...layout.skipped)
     if (!layout.rooms.length) continue
     push({ op: 'delete_room', room: '*', wholeFloor: true })
@@ -402,7 +441,7 @@ function expandLayouts(building, floorplan, frame, wallFt, rawOperations, skippe
         ...(opening.open ? { open: true } : {}),
         label: opening.open
           ? `${fmt(opening.width)} ft open archway on the ${opening.side} wall of ${opening.room}`
-          : opening.width
+          : opening.width >= 6 && opening.kind === 'door'
           ? `${fmt(opening.width)} ft gate on the ${opening.side} wall of ${opening.room}`
           : `${opening.kind === 'door' ? 'Door' : 'Window'} on the ${opening.side} wall of ${opening.room}`
       })

@@ -24,7 +24,7 @@ export const ZONES = ['back', 'middle', 'front']
 
 // Usual floor area in square feet, which decides how space is shared out.
 const TARGET_AREA = {
-  bedroom: 180, bathroom: 45, kitchen: 100, lounge: 260, 'drawing room': 180, dining: 130,
+  bedroom: 180, bathroom: 45, kitchen: 100, lounge: 260, 'drawing room': 180, dining: 180,
   'car porch': 220, store: 40, staircase: 45, 'servant room': 80, laundry: 40, study: 100, terrace: 100
 }
 const SIZE = { small: 0.8, normal: 1, large: 1.25 }
@@ -41,8 +41,22 @@ const LIT = new Set(['bedroom', 'kitchen', 'lounge', 'drawing room', 'dining', '
 // Deepest a band usually gets (feet, centre lines). Deeper bands make long
 // thin baths and huge bedrooms, so on a big ground floor the extra depth
 // becomes a back lawn instead.
-const MAX_BAND_DEPTH = { back: 16, middle: 24, front: 24 }
-const MIN_LAWN_DEPTH = 6
+const MAX_BAND_DEPTH = { back: 16, middle: 20, front: 20 }
+// Bands from the back of the plan to the street. "street" is a front terrace
+// on its own across the whole width, in front of the front rooms upstairs.
+const BANDS = ['back', 'middle', 'front', 'street']
+// A washroom deeper than this (feet, centre lines) is split: the bath keeps
+// BATH_DEPTH and the rest becomes a dressing room (for a bedroom's bath) or
+// a store, the way Pakistani plans pair "dress + bath". A long thin bath the
+// depth of the bedroom is not something anyone builds.
+const BATH_DEPTH = 8
+const MIN_DRESSING_DEPTH = 5
+const MAX_DRESSING_DEPTH = 9
+// A kitchen deeper than this gives its far end to a store.
+const KITCHEN_SPLIT_OVER = 16
+const KITCHEN_DEPTH = 12
+const STORE_DEPTH = 6
+const MIN_LAWN_DEPTH = 4
 // Rooms that open into the lounge through a wide archway, not a door.
 const OPEN_TO_LOUNGE = new Set(['staircase', 'dining'])
 // Never connected by a door: cooking and washing stay apart.
@@ -92,6 +106,19 @@ export function layoutFloor({ area, wallFt, rooms: program, stairsBelow = null, 
     if (owner) { item.zone = owner.zone; item.owner = owner } else item.attachedTo = null
   }
 
+  // A store or laundry in the kitchen's zone is built at the end of the
+  // kitchen (one column, a door from the kitchen), not as a column of its own.
+  const kitchen = items.find((item) => item.kind === 'kitchen')
+  const stacked = []
+  for (const item of [...items]) {
+    if (!kitchen || !['store', 'laundry'].includes(item.kind) || item.owner) continue
+    if (item.attachedTo && item.attachedTo.toLowerCase() !== kitchen.name.toLowerCase()) continue
+    if (!item.attachedTo && item.zone !== kitchen.zone) continue
+    item.stackOn = kitchen
+    stacked.push(item)
+    items.splice(items.indexOf(item), 1)
+  }
+
   const drop = (item, reason) => {
     if (!items.includes(item)) return
     items.splice(items.indexOf(item), 1)
@@ -100,9 +127,17 @@ export function layoutFloor({ area, wallFt, rooms: program, stairsBelow = null, 
     for (const bath of items.filter((other) => other.owner === item)) drop(bath, `${item.name} is left out.`)
   }
 
+  // Upstairs, a front terrace with rooms beside it in the front band runs
+  // across the whole front instead, over the porch, and the rooms behind it
+  // keep a normal depth.
+  const frontRooms = items.filter((item) => item.zone === 'front')
+  if (!ground && area.width < 24.5 && frontRooms.some((item) => !['terrace', 'bathroom', 'store'].includes(item.kind))) {
+    for (const item of frontRooms) if (item.kind === 'terrace') item.zone = 'street'
+  }
+
   rebalance(items, area.width, drop)
   const bandMin = (band) => Math.max(...band.map((item) => (item.deep ? item.long : item.short)))
-  const bandsNow = () => ZONES.map((zone) => items.filter((item) => item.zone === zone)).filter((band) => band.length)
+  const bandsNow = () => BANDS.map((zone) => items.filter((item) => item.zone === zone)).filter((band) => band.length)
 
   // Depths: leave out the least important rooms until every band fits.
   let bands = bandsNow()
@@ -119,7 +154,7 @@ export function layoutFloor({ area, wallFt, rooms: program, stairsBelow = null, 
     want: Math.max(band.reduce((sum, item) => sum + item.weight, 0) / area.width,
       ...band.filter((item) => !CAPPED.has(item.kind)).map((item) => Math.sqrt(item.weight)))
   })))
-  if (ground) addBackLawn(bands, depths, bandMin, wallFt)
+  capBands(bands, depths, bandMin, wallFt, ground)
   alignStairs(bands, depths, stairsBelow, area, wallFt, bandMin)
 
   // Widths, band by band.
@@ -145,6 +180,7 @@ export function layoutFloor({ area, wallFt, rooms: program, stairsBelow = null, 
     y += depth
   })
 
+  splitDeepRooms(placed, area, stacked, skipped)
   const { openings, doorless } = openingsFor(placed, area, ground)
   for (const room of doorless) {
     skipped.push({
@@ -157,23 +193,31 @@ export function layoutFloor({ area, wallFt, rooms: program, stairsBelow = null, 
   return { rooms: placed.map(toRoom), openings, skipped }
 }
 
-// On a big ground floor, bands deeper than usual give their extra depth to an
-// open back lawn at the top of the plan (the rear open space houses keep).
-function addBackLawn(bands, depths, bandMin, wallFt) {
+// Bands deeper than usual (long thin baths, huge bedrooms) give their extra
+// depth to open space: a front terrace band upstairs when there is one, else
+// an open area at the back of the plan (a back lawn on the ground floor, an
+// open back terrace upstairs), the rear open space houses keep for light and
+// air. Too little for that goes back to the deepest band.
+function capBands(bands, depths, bandMin, wallFt, ground) {
+  const open = (band) => band.every((item) => item.kind === 'terrace')
   let spare = 0
   bands.forEach((band, b) => {
+    if (open(band)) return
     const cap = Math.max(bandMin(band), MAX_BAND_DEPTH[band[0].zone] ?? 24)
     if (depths[b] > cap) {
       spare += depths[b] - cap
       depths[b] = cap
     }
   })
-  if (spare < MIN_LAWN_DEPTH + wallFt) {
-    // Too little for a lawn: give it back to the deepest band.
+  if (spare <= 0) return
+  const terraceBand = bands.findIndex(open)
+  if (terraceBand >= 0) { depths[terraceBand] += spare; return }
+  if (spare < MIN_LAWN_DEPTH) {
     depths[depths.indexOf(Math.max(...depths))] += spare
     return
   }
-  const lawn = { name: 'Back Lawn', kind: 'terrace', order: -1, zone: 'back', weight: 100, short: 4, long: 6, deep: false }
+  const name = ground ? 'Back Lawn' : 'Back Terrace'
+  const lawn = { name, kind: 'terrace', order: -1, zone: 'back', weight: 100, short: 4, long: 4, deep: false }
   bands.unshift([lawn])
   depths.unshift(spare)
 }
@@ -232,6 +276,74 @@ function roundShare(sizes, mins, total, spare) {
 
 const toRoom = ({ name, kind, zone, x, y, width, depth }) => ({ name, kind, zone, x, y, width, depth })
 
+// A name for a room made by splitting another: "Master Bath" -> "Master
+// Dressing", "Bath 2" -> "Dressing 2", else "<word>" or "<word> 2".
+function splitName(placed, from, word) {
+  const fromBath = from.name.replace(/\b(bath\s*room|bath|wash\s*room|toilet)\b/i, word)
+  const base = fromBath !== from.name ? fromBath : word
+  let name = base
+  for (let n = 2; placed.some((room) => room.name.toLowerCase() === name.toLowerCase()); n += 1) name = `${base} ${n}`
+  return name
+}
+
+/**
+ * Splits rooms the band made too deep for what they are:
+ * - a washroom: the bath keeps BATH_DEPTH on the outside wall (for its
+ *   ventilator) and the rest becomes the bedroom's dressing room, which the
+ *   bath opens from, or a store when the bath is not a bedroom's;
+ * - a kitchen: its far end becomes the store or laundry stacked on it, or a
+ *   store when it is very deep.
+ * Everything is in place, so the floor still has no gaps.
+ */
+function splitDeepRooms(placed, area, stacked, skipped) {
+  const top = (room) => Math.abs(room.y - area.y) < 0.05
+  const bottom = (room) => Math.abs(room.y + room.depth - (area.y + area.depth)) < 0.05
+  const hub = placed.find((room) => room.kind === 'lounge')
+  // Cuts `room` across its depth: it keeps `keep` feet at the top or bottom, the rest is returned.
+  const cut = (room, keep, atTop) => {
+    const rest = { x: room.x, width: room.width, depth: room.depth - keep, zone: room.zone, order: room.order }
+    if (atTop) { rest.y = room.y + keep } else { rest.y = room.y; room.y += room.depth - keep }
+    room.depth = keep
+    return rest
+  }
+  for (const room of [...placed]) {
+    if (room.kind === 'bathroom' && room.depth >= BATH_DEPTH + MIN_DRESSING_DEPTH) {
+      const owner = room.owner && placed.find((other) => other.name === room.owner.name)
+      // A bedroom's bath goes on the outside wall; another washroom next to the lounge, so people can reach it.
+      let atTop = !owner || owner.kind !== 'bedroom' ? true : !(bottom(room) && !top(room))
+      if ((!owner || owner.kind !== 'bedroom') && hub) {
+        const edge = sharedEdge(room, hub)
+        if (edge && ['top', 'bottom'].includes(edge.side)) atTop = edge.side === 'top'
+        else if (hub.y + hub.depth / 2 > room.y + room.depth / 2) atTop = false
+      }
+      const rest = cut(room, Math.max(BATH_DEPTH, room.depth - MAX_DRESSING_DEPTH), atTop)
+      if (owner?.kind === 'bedroom') {
+        const dressing = { ...rest, name: splitName(placed, room, 'Dressing'), kind: 'dressing', attachedTo: owner.name, owner, short: 4, long: 4 }
+        placed.push(dressing)
+        // The bath now opens from the dressing room.
+        room.attachedTo = dressing.name
+        room.owner = dressing
+      } else {
+        placed.push({ ...rest, name: splitName(placed, room, 'Store'), kind: 'store', short: 4, long: 4 })
+      }
+    }
+  }
+  const kitchen = placed.find((room) => room.kind === 'kitchen')
+  for (const item of stacked) {
+    if (!kitchen || kitchen.depth < kitchen.long + item.short) {
+      skipped.push({ label: `Add ${item.name}`, reason: `The kitchen is not deep enough to have a ${item.kind} at its end.` })
+      continue
+    }
+    const keep = Math.max(kitchen.long, kitchen.depth - STORE_DEPTH)
+    const rest = cut(kitchen, keep, !bottom(kitchen) || top(kitchen))
+    placed.push({ ...item, ...rest, attachedTo: kitchen.name, owner: kitchen })
+  }
+  if (kitchen && !stacked.length && kitchen.depth > KITCHEN_SPLIT_OVER) {
+    const rest = cut(kitchen, Math.max(KITCHEN_DEPTH, kitchen.depth - STORE_DEPTH - 1), !bottom(kitchen) || top(kitchen))
+    placed.push({ ...rest, name: splitName(placed, kitchen, 'Store'), kind: 'store', attachedTo: kitchen.name, owner: kitchen, short: 4, long: 4 })
+  }
+}
+
 // Shares `total` between parts that each need `min` and would like `want`:
 // first up to what each wants, then the rest in proportion. Half-foot steps.
 function shareOut(total, parts) {
@@ -271,9 +383,12 @@ function alignStairs(bands, depths, stairsBelow, area, wallFt, bandMin) {
   }
 }
 
-// The band's rooms left to right: in the AI's order, each attached bath right after its bedroom.
+// The band's rooms left to right: in the AI's order, each attached bath right
+// after its bedroom. A terrace comes first, on the stairs and lounge side, so
+// it opens from the lounge (and sits over the car porch below).
 function orderBand(band) {
-  const free = band.filter((item) => !item.attachedTo).sort((a, b) => a.order - b.order)
+  const free = band.filter((item) => !item.attachedTo)
+    .sort((a, b) => (b.kind === 'terrace') - (a.kind === 'terrace') || a.order - b.order)
   const out = []
   for (const item of free) {
     out.push(item)
@@ -369,23 +484,31 @@ function openingsFor(rooms, area, ground) {
     ?? rooms.find((r) => r.kind === 'drawing room')
     ?? rooms.find((r) => r.zone === 'middle' && r.kind !== 'bathroom')
     ?? null
-  // Doors open near the corner of the shared stretch closest to the middle of the hub.
-  const doorAt = (edge) => {
+  // Doors open near the corner of the shared stretch closest to the middle of
+  // the hub, but a door into the hub itself goes near the hub's corner, so its
+  // walls keep their middles free for the sofa and the TV.
+  const doorAt = (edge, other, room) => {
+    // In a small wet room or dressing the door goes to one side, leaving a wall for the fittings.
+    if (['bathroom', 'dressing', 'store'].includes(room.kind) && edge.hi - edge.lo >= 4.5 && edge.hi - edge.lo < 6) return edge.lo + 1.75
     if (edge.hi - edge.lo < 6 || !hub) return (edge.lo + edge.hi) / 2
     const centre = ['top', 'bottom'].includes(edge.side) ? hub.x + hub.width / 2 : hub.y + hub.depth / 2
-    return Math.abs(edge.lo - centre) < Math.abs(edge.hi - centre) ? edge.lo + 2 : edge.hi - 2
+    const nearLo = Math.abs(edge.lo - centre) < Math.abs(edge.hi - centre)
+    return nearLo !== (other === hub) ? edge.lo + 2 : edge.hi - 2
   }
   for (const room of rooms) {
     if (room === hub) continue
     const owner = room.attachedTo && rooms.find((r) => r.name.toLowerCase() === room.attachedTo.toLowerCase())
-    const edgeTo = (other) => (other && !forbiddenDoor(room.kind, other.kind) ? sharedEdge(room, other) : null)
+    const edgeTo = (other) => {
+      const edge = other && !forbiddenDoor(room.kind, other.kind) ? sharedEdge(room, other) : null
+      return edge && { ...edge, other }
+    }
     let edge = edgeTo(owner)
     // The stairs and a dining area are open to the lounge: a wide archway, no wall in the way.
     if (!edge && hub && OPEN_TO_LOUNGE.has(room.kind) && hub.kind === 'lounge') {
       const open = edgeTo(hub)
       if (open) {
-        // Clear of the corners: about 9 inches of wall each side.
-        const width = Math.min(open.hi - open.lo - 1.5, room.kind === 'dining' ? 10 : 8)
+        // Clear of the corners: about a foot of wall each side.
+        const width = Math.min(open.hi - open.lo - 2, room.kind === 'dining' ? 10 : 8)
         if (width >= 2.75) {
           door(room, open.side, (open.lo + open.hi) / 2, width, true)
           continue
@@ -406,12 +529,15 @@ function openingsFor(rooms, area, ground) {
         // Only a washroom or the back lawn may open off a bedroom.
         .filter((other) => other.kind !== 'bedroom' || room.kind === 'bathroom' || room.kind === 'terrace')
         .filter((other) => other.zone === 'middle' || other.kind === 'staircase'
-          || (room.kind === 'bathroom' && other.kind === 'drawing room') || room.kind === 'terrace')
+          || (room.kind === 'bathroom' && other.kind === 'drawing room') || room.kind === 'terrace'
+          // A store opens from the porch, the drawing room or the dining area too.
+          || (room.kind === 'store' && ['car porch', 'drawing room', 'dining'].includes(other.kind)))
         .filter((other) => !(noKitchen && passing.has(other.kind)))
         .sort((a, b) => passing.has(a.kind) - passing.has(b.kind) || (b.kind === 'staircase') - (a.kind === 'staircase'))
       for (const other of through) { edge = edgeTo(other); if (edge) break }
     }
-    if (edge) door(room, edge.side, doorAt(edge))
+    // A narrow stretch (a small stair hall) gets a 2.5 ft door.
+    if (edge) door(room, edge.side, doorAt(edge, edge.other, room), edge.hi - edge.lo < 5 ? 2.5 : undefined)
     else if (room.kind !== 'car porch' && rooms.length > 1) doorless.push(room)
   }
   const bottom = area.y + area.depth
@@ -421,7 +547,9 @@ function openingsFor(rooms, area, ground) {
     const porch = front.find((r) => r.kind === 'car porch')
     const entry = porch ?? front.find((r) => r.kind === 'drawing room' || r.kind === 'lounge')
       ?? front.find((r) => !['bedroom', 'bathroom', 'kitchen', 'servant room', 'store'].includes(r.kind))
-    if (entry) door(entry, 'bottom', entry.x + entry.width / 2, porch ? Math.min(10, entry.width - 3) : undefined)
+    // A front door goes towards one side of the lounge or drawing room, so the
+    // rest of the front wall keeps a window; the porch gate is in the middle.
+    if (entry) door(entry, 'bottom', porch || entry.width < 10 ? entry.x + entry.width / 2 : entry.x + 3, porch ? Math.min(10, entry.width - 3) : undefined)
     // A drawing room has its own door for guests, from the porch or the street.
     const drawing = rooms.find((r) => r.kind === 'drawing room' && r !== entry)
     const guestEdge = drawing && porch && sharedEdge(drawing, porch)
@@ -434,8 +562,10 @@ function openingsFor(rooms, area, ground) {
   for (const room of rooms) {
     if (!LIT.has(room.kind)) continue
     const onLawn = rooms.some((other) => other.kind === 'terrace' && sharedEdge(room, other)?.side === 'top')
-    if (Math.abs(room.y - area.y) < 0.05 || onLawn) openings.push({ room: room.name, kind: 'window', side: 'top' })
-    else if (Math.abs(room.y + room.depth - bottom) < 0.05) openings.push({ room: room.name, kind: 'window', side: 'bottom' })
+    // A washroom gets a small high ventilator, other rooms a window sized to the wall.
+    const width = room.kind === 'bathroom' ? 2 : Math.min(5, Math.max(3, half(room.width - 5)))
+    if (Math.abs(room.y - area.y) < 0.05 || onLawn) openings.push({ room: room.name, kind: 'window', side: 'top', width })
+    else if (Math.abs(room.y + room.depth - bottom) < 0.05) openings.push({ room: room.name, kind: 'window', side: 'bottom', width })
   }
   return { openings, doorless }
 }

@@ -44,11 +44,20 @@ describe('laying out a whole floor', () => {
       const porch = named(result, 'Car Porch')
       assert.equal(porch.y + porch.depth, depth)
       assert.ok(result.openings.some((o) => o.room === 'Car Porch' && o.kind === 'door' && o.side === 'bottom'))
-      // Every room has a door (the lounge through its neighbours' doors); an attached bath opens into its bedroom.
+      // Every room has a door (the lounge through its neighbours' doors); an
+      // attached bath opens into its bedroom, or into the dressing room in
+      // front of it, which opens into the bedroom.
       for (const room of result.rooms.filter((r) => r.kind !== 'lounge')) assert.ok(result.openings.some((o) => o.room === room.name && o.kind === 'door'), `${room.name} has a door`)
       const bath = named(result, 'Master Bath')
+      const dressing = named(result, 'Master Dressing')
       const door = result.openings.find((o) => o.room === 'Master Bath' && o.kind === 'door')
-      assert.equal(door.side, bath.x > named(result, 'Master Bedroom').x ? 'left' : 'right')
+      const into = dressing ?? named(result, 'Master Bedroom')
+      assert.equal(door.side, dressing ? (dressing.y > bath.y ? 'bottom' : 'top') : bath.x > into.x ? 'left' : 'right')
+      if (dressing) {
+        const dressDoor = result.openings.find((o) => o.room === 'Master Dressing' && o.kind === 'door')
+        assert.equal(dressDoor.side, dressing.x > named(result, 'Master Bedroom').x ? 'left' : 'right')
+        assert.ok(bath.depth <= 11 && bath.width < 8, 'the bath is a normal size, not a long strip')
+      }
     })
   }
 

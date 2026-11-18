@@ -204,3 +204,37 @@ test('a terrace gets planters and a small sitting set', () => {
   assert.ok(count(floorplan, 'terracotta_flower_urn') >= 1 && count(floorplan, 'bistro_table') === 1);
   assertTidy(floorplan);
 });
+
+test('a small bath still gets its commode and basin; the shower cabin only when it fits', () => {
+  // About 4.7 x 7 ft inside, door at the bottom and a ventilator at the top.
+  const { floorplan, skipped } = furnish(oneRoom('Master Bath', 1.65, 2.35, [['door', 'bottom'], ['window', 'top']]));
+  assert.deepEqual(skipped, []);
+  assert.equal(count(floorplan, 'toilet'), 1);
+  assert.equal(count(floorplan, 'sink_bathroom'), 1);
+  assertTidy(floorplan);
+  assertDoorsClear(floorplan);
+});
+
+test('a dressing room gets wardrobes and a dressing table', () => {
+  assert.equal(roomKind('Master Dressing'), 'dressing');
+  assert.equal(roomKind('Dressing 2'), 'dressing');
+  const { floorplan, skipped } = furnish(oneRoom('Master Dressing', 1.8, 2.5, [['door', 'left'], ['door', 'top']]));
+  assert.deepEqual(skipped, []);
+  assert.ok(count(floorplan, 'wardrobe') >= 1);
+  assert.equal(count(floorplan, 'vanity'), 1);
+  assertTidy(floorplan);
+  assertDoorsClear(floorplan);
+});
+
+test('a bedroom too tight for a double bed gets a single bed, never none', () => {
+  // 10 x 10 ft with doors near two corners on the same side.
+  const plan = oneRoom('Master Bedroom', 3.05, 3.05);
+  const { floorplan } = applyAiOperations(plan, [
+    { op: 'add_opening', room: 'r', kind: 'door', side: 'right', at: 1.0 },
+    { op: 'add_opening', room: 'r', kind: 'door', side: 'right', at: -1.0 },
+    { op: 'add_opening', room: 'r', kind: 'door', side: 'left', at: 0 },
+    { op: 'furnish_room', room: 'r' }
+  ]);
+  assert.equal(count(floorplan, 'bed_double') + count(floorplan, 'bed_single'), 1);
+  assertTidy(floorplan);
+});

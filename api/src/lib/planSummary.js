@@ -32,6 +32,7 @@ export function floorplanOf(building) {
 export const ROOM_KINDS = [
   ['staircase', /stair/i],
   ['terrace', /terrace|balcony|lawn|garden|veranda/i],
+  ['dressing', /dress(?!ing\s*table)/i],
   ['bathroom', /bath|wash\s*room|toilet|\bwc\b|powder|rest\s*room/i],
   ['kitchen', /kitchen/i],
   ['dining', /dining/i],
@@ -103,13 +104,18 @@ export function ensurePlot(building, plotFt) {
   return { ...floorplan, floor: { ...floorplan.floor, rooms: [plot, ...rooms] } }
 }
 
+// Edges are rounded, and sizes taken between the rounded edges, so rooms that
+// touch in the editor still touch here (rounding x and width on their own
+// made a 25 ft row of rooms come out 25.1 ft wide).
 export function fromWorld(frame, room) {
   const box = worldBox(room)
+  const left = round1((box.minX - frame.minX) / FT)
+  const top = round1((frame.maxZ - box.maxZ) / FT)
   return {
-    x: round1((box.minX - frame.minX) / FT),
-    y: round1((frame.maxZ - box.maxZ) / FT),
-    width: round1(room.width / FT),
-    depth: round1(room.depth / FT)
+    x: left,
+    y: top,
+    width: round1(round1((box.maxX - frame.minX) / FT) - left),
+    depth: round1(round1((frame.maxZ - box.minZ) / FT) - top)
   }
 }
 
@@ -174,11 +180,15 @@ export function summarizePlan(building) {
     const builtBelow = belowRooms.filter((room) => roomKind(room.name) !== 'terrace')
     if (builtBelow.length) {
       const rects = builtBelow.map((room) => fromWorld(frame, room))
-      const x = Math.min(...rects.map((r) => r.x))
-      const y = Math.min(...rects.map((r) => r.y))
+      // Kept inside the plot: the floor above is built within it.
+      const limit = (value, max) => (frame.hasPlot ? Math.min(Math.max(value, 0), max) : value)
+      const x = limit(Math.min(...rects.map((r) => r.x)), frame.widthFt)
+      const y = limit(Math.min(...rects.map((r) => r.y)), frame.depthFt)
+      const right = limit(Math.max(...rects.map((r) => r.x + r.width)), frame.widthFt)
+      const bottom = limit(Math.max(...rects.map((r) => r.y + r.depth)), frame.depthFt)
       floorBelow = {
         name: below.name ?? 'Ground',
-        outline: { x, y, width: round1(Math.max(...rects.map((r) => r.x + r.width)) - x), depth: round1(Math.max(...rects.map((r) => r.y + r.depth)) - y) },
+        outline: { x, y, width: round1(right - x), depth: round1(bottom - y) },
         rooms: builtBelow.map((room, i) => ({ name: room.name || 'Room', ...rects[i] })),
         stairs: stairsOf((floorplan.stairs ?? []).filter(onBelow))
       }

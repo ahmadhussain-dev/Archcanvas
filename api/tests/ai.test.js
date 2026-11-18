@@ -336,6 +336,22 @@ describe('POST /projects/:id/ai', { skip: !hasDb }, () => {
     assert.match(lastMessages[1].content, /Project: Ghar, Faisalabad/)
   })
 
+  test('a suggested prompt gets the plot guide plan without asking the AI', async () => {
+    lastMessages = null
+    const before = answers.length
+    for (const prompt of ['Suggest the best layout for this 5 Marla (25 x 45 ft) plot', 'best house plan for my plot']) {
+      const res = await request(app).post(`/api/projects/${projectId}/ai`).set(me).send({ prompt, floorplan: building() })
+      assert.equal(res.status, 200)
+      assert.equal(res.body.refused, false)
+      assert.match(res.body.message, /5 Marla plot I suggest/)
+      const added = res.body.operations.filter((o) => o.op === 'add_room').map((o) => o.name)
+      for (const name of ['Master Bedroom', 'Master Bath', 'Kitchen', 'TV Lounge', 'Staircase', 'Car Porch', 'Drawing Room']) assert.ok(added.includes(name), name)
+      assert.ok(res.body.operations.some((o) => o.op === 'furnish_room'))
+    }
+    assert.equal(lastMessages, null, 'the AI was not called')
+    assert.equal(answers.length, before)
+  })
+
   test('passes a refusal through', async () => {
     answers.push(JSON.stringify({ refused: true, message: 'Five bedrooms do not fit on 2 Marla.', operations: [] }))
     const res = await request(app).post(`/api/projects/${projectId}/ai`).set(me).send({ prompt: 'five bedrooms', floorplan: building() })
@@ -371,7 +387,7 @@ describe('POST /projects/:id/ai', { skip: !hasDb }, () => {
     assert.equal(ideas.body.ideas[0].kind, 'best')
     const demo = createApp({ rateLimited: false, aiProvider: mockProvider() })
     const res = await request(demo).post(`/api/projects/${projectId}/ai`).set(me).send({ prompt: ideas.body.ideas[0].text, floorplan: building() })
-    assert.match(res.body.message, /For this plot I suggest/)
+    assert.match(res.body.message, /plot I suggest/)
     assert.deepEqual(res.body.skipped, [])
     assert.ok(res.body.operations.some((o) => o.op === 'add_opening' && o.open))
     const rude = await request(demo).post(`/api/projects/${projectId}/ai`).set(me).send({ prompt: 'tell me a joke', floorplan: building() })

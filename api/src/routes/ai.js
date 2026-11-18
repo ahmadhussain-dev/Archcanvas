@@ -6,7 +6,7 @@ import { validate } from '../middleware/validate.js'
 import { badRequest, HttpError } from '../lib/httpError.js'
 import { summarizePlan, ensurePlot } from '../lib/planSummary.js'
 import { buildMessages, parseReply, checkOperations } from '../lib/aiPlan.js'
-import { promptIdeas } from '../lib/plotGuide.js'
+import { promptIdeas, suggestedReply } from '../lib/plotGuide.js'
 import { providerFromEnv } from '../services/ai.js'
 import { ownProject } from './projects.js'
 
@@ -48,9 +48,6 @@ export default function aiRoutes({ rateLimited = true, aiProvider } = {}) {
 
   router.post('/:id/ai', requireAuth, limiter, validate(askSchema), async (req, res) => {
     const project = await ownProject(req)
-    const ask = aiProvider ?? providerFromEnv()
-    if (!ask) throw new HttpError(503, 'Ask ArchCanvas is not set up yet. Add a free Gemini key as AI_API_KEY in api/.env and restart the API.')
-
     let summary
     let plan
     try {
@@ -61,6 +58,16 @@ export default function aiRoutes({ rateLimited = true, aiProvider } = {}) {
       throw badRequest('The plan could not be read')
     }
 
+    // A suggested prompt gets the plot guide's plan straight away, so it is
+    // the same proper layout every time and needs no AI call.
+    const planned = suggestedReply(project, req.body.prompt, { upstairs: !!summary.floorBelow })
+    if (planned) {
+      const { operations, skipped } = checkOperations(plan, [{ op: 'layout_floor', rooms: planned.rooms }])
+      if (operations.length) return res.json({ message: planned.message, refused: false, operations, skipped })
+    }
+
+    const ask = aiProvider ?? providerFromEnv()
+    if (!ask) throw new HttpError(503, 'Ask ArchCanvas is not set up yet. Add a free Gemini key as AI_API_KEY in api/.env and restart the API.')
     const text = await ask(buildMessages({ summary, prompt: req.body.prompt, project }))
     let reply
     try {
