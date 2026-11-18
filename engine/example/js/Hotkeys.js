@@ -328,6 +328,8 @@ export function handleHotkeys(event, ctx) {
     if (ctx.selectedRoomId) {
       event.preventDefault();
       if (ctx.testMap.getEntity('room', ctx.selectedRoomId)?.locked) return;
+      // ArchCanvas: the plot outline is not a room; Ask ArchCanvas lays floors out inside it.
+      if (ctx.selectedRoomId === 'plot') { ctx.showToast?.("The plot boundary can't be deleted. Resize it instead."); return; }
       ctx.showCustomConfirm('Delete room', 'Delete the selected room? Furniture inside the room will also be deleted.').then((confirmed) => {
         if (confirmed) {
           ctx.pushHistory();

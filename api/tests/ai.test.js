@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import request from 'supertest'
 import { createApp } from '../src/app.js'
 import { connectTestDatabase, closeTestDatabase } from './helpers/db.js'
-import { summarizePlan, toWorld, planFrame } from '../src/lib/planSummary.js'
+import { summarizePlan, toWorld, planFrame, ensurePlot } from '../src/lib/planSummary.js'
 import { checkOperations, parseReply, buildMessages, minSizeFor } from '../src/lib/aiPlan.js'
 import { mockProvider } from '../src/services/ai.js'
 
@@ -182,6 +182,30 @@ describe('checking AI changes', () => {
     assert.equal(operations.at(-1).op, 'set_floor')
   })
 
+  test('a plan whose plot outline was deleted gets the project plot back for the layout', () => {
+    const noPlot = building()
+    noPlot.floorplan.floor.rooms = noPlot.floorplan.floor.rooms.filter((room) => room.id !== 'plot')
+    const without = checkOperations(noPlot, [{ op: 'layout_floor', rooms: [{ name: 'Bedroom' }, { name: 'Kitchen' }] }], { idPrefix: 'ai' })
+    assert.match(without.skipped[0].reason, /no plot/)
+    const fixed = ensurePlot(noPlot, { widthFt: 25, depthFt: 45 })
+    const plot = fixed.floor.rooms.find((room) => room.id === 'plot')
+    // Its top-left corner sits on the lounge's top-left corner, where the real plot's was.
+    assert.equal(r3(plot.x), 0)
+    assert.equal(r3(plot.z), 0)
+    assert.equal(summarizePlan(fixed).plot.width, 25)
+    const { operations, skipped } = checkOperations(fixed, [{ op: 'layout_floor', rooms: [{ name: 'Bedroom' }, { name: 'Kitchen' }] }], { idPrefix: 'ai' })
+    assert.ok(!skipped.some((s) => /no plot/.test(s.reason)))
+    const added = operations.filter((o) => o.op === 'add_room')
+    const area = added.reduce((sum, room) => sum + room.width * room.depth, 0)
+    assert.ok(Math.abs(area - 25 * 45 * FT * FT) < 0.05, 'the rooms fill the plot')
+    // A plan that still has its plot is left as it is; an empty plan gets a centred plot.
+    assert.equal(ensurePlot(building(), { widthFt: 30, depthFt: 60 }).floor.rooms[0].width, r3(25 * FT))
+    const empty = building()
+    empty.floorplan.floor.rooms = []
+    const centred = ensurePlot(empty, { widthFt: 25, depthFt: 45 }).floor.rooms[0]
+    assert.deepEqual([r3(centred.x), r3(centred.z)], [0, 0])
+  })
+
   test('layout_floor upstairs builds over the floor below; an attached bath is a bathroom', () => {
     const plan = building()
     plan.floorplan.floors.push({ id: 'floor_2', name: 'First', level: 1 })
@@ -353,6 +377,17 @@ describe('POST /projects/:id/ai', { skip: !hasDb }, () => {
     const rude = await request(demo).post(`/api/projects/${projectId}/ai`).set(me).send({ prompt: 'tell me a joke', floorplan: building() })
     assert.equal(rude.body.refused, true)
     assert.match(rude.body.message, /only help with your house design/)
+  })
+
+  test('a plan with its plot outline deleted still lays out on the project plot', async () => {
+    const noPlot = building()
+    noPlot.floorplan.floor.rooms = noPlot.floorplan.floor.rooms.filter((room) => room.id !== 'plot')
+    const demo = createApp({ rateLimited: false, aiProvider: mockProvider() })
+    const ideas = await request(app).post(`/api/projects/${projectId}/ai/ideas`).set(me).send({ floorplan: noPlot })
+    const res = await request(demo).post(`/api/projects/${projectId}/ai`).set(me).send({ prompt: ideas.body.ideas[0].text, floorplan: noPlot })
+    assert.equal(res.status, 200)
+    assert.ok(!res.body.skipped.some((s) => /no plot/.test(s.reason)), JSON.stringify(res.body.skipped))
+    assert.ok(res.body.operations.some((o) => o.op === 'add_room'))
   })
 
   test('without a key the API says how to set it up', async () => {

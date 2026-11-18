@@ -1771,6 +1771,7 @@ export function initUiEventListeners() {
   document.getElementById('btn-delete-room').addEventListener('click', () => {
     if (!selection.selectedRoomId) return;
     if (testMap.getEntity('room', selection.selectedRoomId)?.locked) return;
+    if (selection.selectedRoomId === 'plot') { showToast?.("The plot boundary can't be deleted. Resize it instead."); return; } // ArchCanvas: keep the plot outline
     showCustomConfirm('Delete room', 'Delete this room? Furniture in the room will also be deleted.').then((confirmed) => {
       if (confirmed) {
         pushHistory();
