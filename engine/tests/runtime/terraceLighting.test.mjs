@@ -9,6 +9,8 @@ test('isNoCeilingRoom correctly identifies terrace/balcony/outdoor rooms', () =>
  assert.equal(isNoCeilingRoom({ roomType: 'terrace' }), true);
  assert.equal(isNoCeilingRoom({ noCeiling: true }), true);
  assert.equal(isNoCeilingRoom({ isOutdoor: true }), true);
+ assert.equal(isNoCeilingRoom({ name: 'Front Lawn' }), true);
+ assert.equal(isNoCeilingRoom({ name: 'Back garden' }), true);
  assert.equal(isNoCeilingRoom({ name: 'Master Bedroom Bedroom' }), false);
  assert.equal(isNoCeilingRoom(null), false);
 });

@@ -7,7 +7,7 @@ import notFound from '../art/not-found.svg?raw'
 
 const LINKS = [
   ['Start a new plot', '/projects/new'],
-  ['Browse templates', '/#templates'],
+  ['Browse templates', '/templates'],
   ['How ArchCanvas works', '/#how-it-works']
 ]
 

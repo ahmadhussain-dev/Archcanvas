@@ -7,6 +7,7 @@ import { requireAuth } from '../middleware/auth.js'
 import { validate } from '../middleware/validate.js'
 import { badRequest, notFoundError } from '../lib/httpError.js'
 import { estimateFor } from '../services/estimate.js'
+import { getTemplate } from '../lib/templates.js'
 
 const plot = z.object({
   preset: z.string().trim().max(20).default('custom'),
@@ -42,6 +43,13 @@ const createSchema = z.object({
   thumbnail: projectFields.thumbnail.optional(),
   // Optional starting plan (engine building file JSON).
   floorplan: z.record(z.string(), z.unknown()).optional()
+})
+
+// A new project from a ready-made house (lib/templates.js).
+const fromTemplateSchema = z.object({
+  template: z.string().trim().min(1).max(40),
+  name: projectFields.name.optional(),
+  city: projectFields.city.optional()
 })
 
 const updateSchema = z
@@ -115,6 +123,22 @@ router.post('/', validate(createSchema), async (req, res) => {
   const { floorplan, ...fields } = req.body
   const project = await Project.create({ ...fields, owner: req.auth.userId })
   if (floorplan) await addVersion(project, { floorplan, source: 'template' }, req.auth.userId)
+  res.status(201).json({ project: await Project.findById(project._id) })
+})
+
+router.post('/from-template', validate(fromTemplateSchema), async (req, res) => {
+  const template = getTemplate(req.body.template)
+  if (!template) throw notFoundError('Template not found')
+  const { preset, widthFt, depthFt } = template.plot
+  const project = await Project.create({
+    name: req.body.name ?? template.name,
+    ...(req.body.city ? { city: req.body.city } : {}),
+    plot: { preset, widthFt, depthFt },
+    floors: template.floors,
+    requirements: { bedrooms: template.bedrooms, bathrooms: template.bathrooms },
+    owner: req.auth.userId
+  })
+  await addVersion(project, { floorplan: template.building, source: 'template', note: `From the ${template.name} template` }, req.auth.userId)
   res.status(201).json({ project: await Project.findById(project._id) })
 })
 
