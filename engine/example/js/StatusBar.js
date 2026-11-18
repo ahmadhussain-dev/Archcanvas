@@ -1,5 +1,6 @@
 // Bottom status bar for ArchCanvas (embed mode only): current floor, snapping,
 // units and the pointer position on the plan, measured from the plot corner.
+import { BRICK_THICKNESS } from '../../src/index.js';
 import { svgToWorld } from './Render2D.js';
 import { itemsOnPlan, setItemsOnPlan } from './PlanDrawing.js';
 
@@ -32,15 +33,59 @@ export function initStatusBar(ctx, store) {
   items.type = 'button';
   items.title = 'Show furniture and other items on the 2D plan';
   const units = el('span', 'ac-status-item', 'Units: ft-in');
+  // Room wall thickness for the whole plan: double (9 in) or single (4.5 in) brick.
+  const brickSelect = (label, title) => {
+    const wrap = el('label', 'ac-status-item ac-status-select', label);
+    wrap.title = title;
+    const select = el('select');
+    for (const [value, text] of [['double', '9 in'], ['single', '4.5 in']]) {
+      const option = el('option', null, text);
+      option.value = value;
+      select.appendChild(option);
+    }
+    wrap.appendChild(select);
+    return { wrap, select };
+  };
+  const outside = brickSelect('Outside walls', 'Outside walls: double brick (9 in) or single brick (4.5 in)');
+  const inside = brickSelect('Inside walls', 'Walls between rooms: single brick (4.5 in) or double brick (9 in)');
+  const lineUp = el('button', 'ac-status-item ac-status-toggle', 'Line up rooms');
+  lineUp.type = 'button';
+  lineUp.title = 'Move every room on this floor onto the 1 ft grid, so rooms that nearly touch share one wall';
   const pointer = el('span', 'ac-status-item ac-status-pointer');
-  bar.append(floor, snap, items, units, pointer);
+  bar.append(floor, snap, items, outside.wrap, inside.wrap, lineUp, units, pointer);
   stage.appendChild(bar);
+
+  const brickOf = (thickness) => (Math.abs(thickness - BRICK_THICKNESS.single) < 0.01 ? 'single' : 'double');
+  const afterChange = () => {
+    ctx.refreshShadows?.();
+    ctx.updateEditor?.();
+    ctx.renderPlan();
+    refresh();
+  };
+  const setThickness = (key, value) => {
+    ctx.pushHistory();
+    ctx.testMap.setRoomWallThickness({ [key]: BRICK_THICKNESS[value] });
+    afterChange();
+  };
+  outside.select.addEventListener('change', () => setThickness('outside', outside.select.value));
+  inside.select.addEventListener('change', () => setThickness('inside', inside.select.value));
+  lineUp.addEventListener('click', () => {
+    const plot = ctx.testMap.getEntity('room', 'plot');
+    const origin = plot ? { x: plot.x - plot.width / 2, z: plot.z - plot.depth / 2 } : { x: 0, z: 0 };
+    ctx.pushHistory();
+    const moved = ctx.testMap.lineUpRooms(ctx.testMap.getCurrentFloorId(), M_PER_FT, origin);
+    afterChange();
+    ctx.showToast?.(moved ? `Lined up ${moved} room${moved === 1 ? '' : 's'} on the 1 ft grid.` : 'All rooms are already on the grid.');
+  });
 
   function refresh() {
     const current = ctx.testMap.getFloor(ctx.testMap.getCurrentFloorId());
     const name = current?.name || 'Floor';
     floor.textContent = /floor/i.test(name) ? name : `${name} floor`;
-    snap.textContent = `Snap ${ctx.snapEnabled ? 'on' : 'off'}`;
+    snap.textContent = `Snap 1 ft: ${ctx.snapEnabled ? 'on' : 'off'}`;
+    const meta = ctx.testMap.getProjectMetadata?.() || {};
+    outside.select.value = brickOf(Number(meta.outsideWallThickness) || BRICK_THICKNESS.double);
+    inside.select.value = brickOf(Number(meta.insideWallThickness) || BRICK_THICKNESS.single);
     snap.setAttribute('aria-pressed', String(Boolean(ctx.snapEnabled)));
     items.textContent = `Furniture on plan: ${itemsOnPlan() ? 'on' : 'off'}`;
     items.setAttribute('aria-pressed', String(itemsOnPlan()));

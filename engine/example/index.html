@@ -558,11 +558,20 @@
 
             <div id="wall-editor" class="editor hidden">
               <strong id="selected-wall-name">Wall</strong>
-              <label class="field">
+              <label class="field hidden" id="wall-brick-field">
+                <span>Wall thickness</span>
+                <select id="wall-brick">
+                  <option value="">Plan setting</option>
+                  <option value="double">Double brick (9 in)</option>
+                  <option value="single">Single brick (4.5 in)</option>
+                </select>
+              </label>
+              <p class="hint hidden" id="wall-shared-hint">This wall follows its rooms. Move or resize a room, or drag the wall, to change it.</p>
+              <label class="field" id="wall-length-field">
                 <span>Length (m)</span>
                 <input id="wall-length" type="number" min="0.2" step="0.1" />
               </label>
-              <label class="field">
+              <label class="field" id="wall-rotation-field">
                 <span>Rotation (°)</span>
                 <input id="wall-rotation" type="number" min="0" max="359" step="90" />
                 <input id="wall-rotation-range" type="range" min="0" max="360" step="1" />

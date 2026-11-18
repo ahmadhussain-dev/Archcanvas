@@ -68,6 +68,19 @@ export {
 export {
   FloorplanDocument
 } from '../domain/FloorplanDocument.js';
+export {
+  BRICK_THICKNESS,
+  SHARED_WALLS,
+  usesSharedWalls,
+  isSharedWallRoom,
+  outsideWallThickness,
+  insideWallThickness,
+  wallThicknessOf,
+  rebuildSharedWalls,
+  rebuildAllSharedWalls,
+  roomWallInsets,
+  roomClearBox
+} from '../domain/roomWalls.js';
 
 export {
   MaterialResolver

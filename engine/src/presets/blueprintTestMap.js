@@ -4,6 +4,7 @@ import { BlueprintRegistry } from '../core/BlueprintRegistry.js';
 import { getFurnitureDefinition, FURNITURE_DEFINITIONS, FURNITURE_LIST } from '../furniture/index.js';
 import { FloorplanDocument, FENCE_SUBTYPE_DEFAULTS, STAIR_SUBTYPE_DEFAULTS } from '../domain/FloorplanDocument.js';
 import { ExportService } from '../services/ExportService.js';
+import { roomClearBox } from '../domain/roomWalls.js';
 import { BabylonSceneRenderer } from '../runtime/BabylonSceneRenderer.js';
 import { SelectionController } from '../editor/SelectionController.js';
 import { EditorFacade } from '../editor/EditorFacade.js';
@@ -1032,6 +1033,23 @@ export class Blueprint3DTestMap extends BlueprintRegistry {
   deleteWall(wallId) {
     this.document.deleteWall(wallId);
     this.build();
+  }
+
+  setRoomWallThickness(thickness = {}) {
+    const result = this.document.setRoomWallThickness(thickness);
+    this.build();
+    return result;
+  }
+
+  lineUpRooms(floorId = this.document.floorplan.currentFloorId, step = 0.3048, origin = { x: 0, z: 0 }) {
+    const result = this.document.lineUpRooms(floorId, step, origin);
+    this.build();
+    return result;
+  }
+
+  getRoomClearBox(roomId) {
+    const room = this.document.getRoom(roomId);
+    return room ? roomClearBox(this.document.floorplan, room) : null;
   }
 
   /**

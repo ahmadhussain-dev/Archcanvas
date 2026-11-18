@@ -100,17 +100,26 @@ export function renderPlan() {
 
   const grid = createSvgElement('g', { class: 'grid-layer' });
   const gridStep = ctx.snapEnabled ? ctx.snapSize : 1;
-  const startX = Math.ceil(ctx.view.minX / gridStep) * gridStep;
-  const startZ = Math.ceil(ctx.view.minZ / gridStep) * gridStep;
+  // The grid starts at the plot's corner when there is one, with a stronger
+  // line every 5 steps (every 5 ft on ArchCanvas's 1 ft grid).
+  const plot = ctx.testMap.getEntity?.('room', 'plot');
+  const originX = plot ? plot.x - plot.width / 2 : 0;
+  const originZ = plot ? plot.z - plot.depth / 2 : 0;
+  const lineClass = (value, origin) => {
+    if (Math.abs(value) < 0.001) return 'axis-line';
+    return Math.abs(Math.round((value - origin) / gridStep) % 5) === 0 ? 'grid-line grid-line-major' : 'grid-line';
+  };
+  const startX = originX + Math.ceil((ctx.view.minX - originX) / gridStep) * gridStep;
+  const startZ = originZ + Math.ceil((ctx.view.minZ - originZ) / gridStep) * gridStep;
   for (let x = startX; x <= ctx.view.maxX; x += gridStep) {
     const a = worldToSvg(x, ctx.view.minZ);
     const b = worldToSvg(x, ctx.view.maxZ);
-    grid.appendChild(createSvgElement('line', { x1: a.x, y1: a.y, x2: b.x, y2: b.y, class: Math.abs(x) < 0.001 ? 'axis-line' : 'grid-line' }));
+    grid.appendChild(createSvgElement('line', { x1: a.x, y1: a.y, x2: b.x, y2: b.y, class: lineClass(x, originX) }));
   }
   for (let z = startZ; z <= ctx.view.maxZ; z += gridStep) {
     const a = worldToSvg(ctx.view.minX, z);
     const b = worldToSvg(ctx.view.maxX, z);
-    grid.appendChild(createSvgElement('line', { x1: a.x, y1: a.y, x2: b.x, y2: b.y, class: Math.abs(z) < 0.001 ? 'axis-line' : 'grid-line' }));
+    grid.appendChild(createSvgElement('line', { x1: a.x, y1: a.y, x2: b.x, y2: b.y, class: lineClass(z, originZ) }));
   }
   ctx.svg.appendChild(grid);
 

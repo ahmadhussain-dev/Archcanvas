@@ -181,19 +181,30 @@ function uniqueSorted(values) {
   return sorted.filter((v, i) => i === 0 || v - sorted[i - 1] > 0.02);
 }
 
+/** A room's clear floor between its wall faces, as a box, or null. */
+export function roomClearRect(r, room) {
+  if (!roomBox(room)) return null;
+  return r.ctx.testMap.getRoomClearBox(room.id);
+}
+
 /** A room's clear inside size (between wall faces), or '' if not a rectangle. */
 export function roomClearSize(r, room) {
-  const box = roomBox(room);
+  const box = roomClearRect(r, room);
   if (!box) return '';
-  const t = wallThickness(r, null);
-  return `${formatLength(box.maxX - box.minX - t)} × ${formatLength(box.maxZ - box.minZ - t)}`;
+  return `${formatLength(box.maxX - box.minX)} × ${formatLength(box.maxZ - box.minZ)}`;
+}
+
+// How far the house's outside face is beyond the rooms' edges: nothing with
+// shared walls (the walls are inside the rooms), half a wall otherwise.
+function outsideFaceOffset(r) {
+  return r.ctx.testMap.getProjectMetadata?.()?.wallModel === 'shared' ? 0 : wallThickness(r, null) / 2;
 }
 
 /** Outside dimension lines for the house and the plot on the current floor. */
 export function renderDimensions(r) {
   const layer = r.createSvgElement('g', { class: 'plan-dimensions', style: 'pointer-events:none' });
-  const t = wallThickness(r, null);
-  const ht = t / 2;
+  const ht = outsideFaceOffset(r);
+  const plotHt = ht;
   const P = (x, z) => r.worldToSvg(x, z);
   const rooms = r.ctx.currentRooms().map((room) => ({ room, box: roomBox(room) })).filter((entry) => entry.box);
   const plot = rooms.find((entry) => entry.room.id === 'plot');
@@ -234,8 +245,8 @@ export function renderDimensions(r) {
   // The plot: its boundary size (wall centre lines) below and to the right.
   if (plot) {
     const { box } = plot;
-    dimension(r, layer, P(box.maxX, box.minZ - ht), P(box.minX, box.minZ - ht), 18, formatLength(box.maxX - box.minX));
-    dimension(r, layer, P(box.maxX + ht, box.maxZ), P(box.maxX + ht, box.minZ), 18, formatLength(box.maxZ - box.minZ));
+    dimension(r, layer, P(box.maxX, box.minZ - plotHt), P(box.minX, box.minZ - plotHt), 18, formatLength(box.maxX - box.minX));
+    dimension(r, layer, P(box.maxX + plotHt, box.maxZ), P(box.maxX + plotHt, box.minZ), 18, formatLength(box.maxZ - box.minZ));
   }
   r.ctx.svg.appendChild(layer);
 }

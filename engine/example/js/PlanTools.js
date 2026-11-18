@@ -6,7 +6,7 @@
 // - the clear inside width and depth of the selected room;
 // - drawing a roof: click two opposite corners to roof just that area.
 import { formatLength } from './Units.js';
-import { dimension, wallThickness } from './PlanDrawing.js';
+import { dimension, wallThickness, roomClearRect } from './PlanDrawing.js';
 import { getRoomVertices } from '../../src/index.js';
 
 const SNAP_PX = 12;
@@ -259,11 +259,9 @@ function renderInsideSizes(r, room) {
   const onBox = vertices.every((v) => (Math.abs(v.x - box.minX) < 1e-3 || Math.abs(v.x - box.maxX) < 1e-3)
     && (Math.abs(v.z - box.minZ) < 1e-3 || Math.abs(v.z - box.maxZ) < 1e-3));
   if (!onBox) return;
-  const t = wallThickness(r, null) / 2;
-  const minX = box.minX + t;
-  const maxX = box.maxX - t;
-  const minZ = box.minZ + t;
-  const maxZ = box.maxZ - t;
+  const clear = roomClearRect(r, room);
+  if (!clear) return;
+  const { minX, maxX, minZ, maxZ } = clear;
   if (maxX - minX < 0.3 || maxZ - minZ < 0.3) return;
   const layer = r.createSvgElement('g', { class: 'plan-dimensions plan-inside-sizes', style: 'pointer-events:none' });
   const P = (x, z) => r.worldToSvg(x, z);

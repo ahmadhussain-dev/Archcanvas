@@ -7,7 +7,7 @@
 // read. What passes is converted to editor operations in metres
 // (engine/src/ai/applyAiPlan.js).
 import { z } from 'zod'
-import { planFrame, floorplanOf, fromWorld, toWorld, summarizePlan, ROOM_KINDS, roomKind, FT } from './planSummary.js'
+import { planFrame, floorplanOf, fromWorld, toWorld, summarizePlan, ROOM_KINDS, roomKind, FT, roomWallThickness } from './planSummary.js'
 import { layoutFloor, ZONES, forbiddenDoor, sharedEdge } from './layoutFloor.js'
 import { suggestedFloor } from './plotGuide.js'
 
@@ -74,8 +74,8 @@ export function buildMessages({ summary, prompt, project }) {
 You change the person's 2D floor plan by returning JSON only, no other text.
 
 Plan coordinates are in feet. The origin is the plot's top-left corner on the 2D plan; x runs right, y runs down.
-A room is a rectangle {x, y, width, depth}: its top-left corner and size measured on wall centre lines.
-Neighbouring rooms share an edge (one room's x + width equals the next room's x). Walls are ${summary.wallThicknessFt} ft thick, so a room's clear inside size is ${summary.wallThicknessFt} ft less each way.
+A room is a rectangle {x, y, width, depth}: its top-left corner and overall size. The walls are inside that size: an outside wall sits just inside the room's edge, and neighbouring rooms share one wall on the line between them.
+Neighbouring rooms share an edge (one room's x + width equals the next room's x). Outside walls are ${summary.wallThicknessFt} ft thick, so a room's clear inside size is about ${summary.wallThicknessFt} ft less each way.
 
 Rules:
 - Rooms must stay inside the plot and must never overlap other rooms. Leave the plot boundary itself alone.
@@ -192,7 +192,7 @@ const overlaps = (a, b) =>
 export function checkOperations(building, rawOperations, { idPrefix = `ai${Date.now().toString(36)}` } = {}) {
   const floorplan = floorplanOf(building)
   const frame = planFrame(floorplan)
-  const wallFt = (Number(floorplan.wallThickness) || 0.23) / 0.3048
+  const wallFt = roomWallThickness(floorplan) / FT
   const floorId = floorplan.currentFloorId ?? 'floor_1'
   const rooms = new Map()
   for (const room of floorplan.floor?.rooms ?? []) {

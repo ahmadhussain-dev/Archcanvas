@@ -15,7 +15,7 @@
  *   editor -> app : aiPreviewed {requestId, applied, skipped} | error {requestId, message}
  * A preview is one undo step. Rejecting it puts the plan back as it was.
  */
-import { FloorplanDocument, stringifyBuildingFile, applyAiOperations } from '../../src/index.js';
+import { FloorplanDocument, stringifyBuildingFile, applyAiOperations, SHARED_WALLS, BRICK_THICKNESS } from '../../src/index.js';
 import { initDisplayUnits } from './Units.js';
 import { initSplitView, setEmbedView } from './SplitView.js';
 import { initStatusBar } from './StatusBar.js';
@@ -35,7 +35,11 @@ export function blankFloorplan({ floors = 1, roofHeightFt = 10.5, name = 'ArchCa
     name,
     unit: 'm',
     wallHeight,
-    wallThickness: 0.23, // 9 inch brick wall
+    wallThickness: 0.23, // 9 inch brick wall (the plot boundary)
+    // Rooms share walls, built inside their sizes: 9 in outside, 4.5 in inside.
+    wallModel: SHARED_WALLS,
+    outsideWallThickness: BRICK_THICKNESS.double,
+    insideWallThickness: BRICK_THICKNESS.single,
     floorHeight: 0.15,
     floor: { rooms: [] },
     walls: [],
@@ -69,14 +73,27 @@ export function plotBuildingFile({ widthFt, depthFt, floors, roofHeightFt, name 
 }
 
 /**
+ * A saved plan opened in ArchCanvas uses shared room walls. An older plan
+ * (every room with its own walls) is brought up to date as it loads.
+ */
+export function withSharedWalls(text) {
+  const data = JSON.parse(text);
+  const floorplan = data?.floorplan && typeof data.floorplan === 'object' ? data.floorplan : data;
+  if (floorplan && typeof floorplan === 'object') floorplan.wallModel = SHARED_WALLS;
+  return JSON.stringify(data);
+}
+
+/**
  * @param {object} ctx
  * @param {object} ctx.testMap the EditorFacade
  * @param {object} ctx.store the undo/redo Store
  * @param {(text: string) => Promise<void>} ctx.loadBuildingText loads a building file and refreshes the UI
  */
-export function initEmbedBridge({ testMap, store, loadBuildingText }) {
+export function initEmbedBridge({ testMap, store, setSnapSize, loadBuildingText }) {
   if (!EMBEDDED) return;
   document.documentElement.classList.add('archcanvas-embed');
+  // A 1 ft x 1 ft layout grid: rooms, walls and doors snap to whole feet.
+  setSnapSize?.(FT);
   initDisplayUnits();
   enablePlanDrawing();
   initSplitView(window.appState, store);
@@ -100,9 +117,9 @@ export function initEmbedBridge({ testMap, store, loadBuildingText }) {
       listening = false;
       aiPreview = null;
       try {
-        const text = msg.building
+        const text = withSharedWalls(msg.building
           ? (typeof msg.building === 'string' ? msg.building : JSON.stringify(msg.building))
-          : plotBuildingFile({ ...msg.plot, name: msg.name });
+          : plotBuildingFile({ ...msg.plot, name: msg.name }));
         await loadBuildingText(text);
         // A fresh project starts with an empty undo history.
         store.undoStack = [];

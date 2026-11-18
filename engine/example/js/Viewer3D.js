@@ -486,13 +486,16 @@ export class Viewer3D {
     const {
       currentView, snapEnabled, snapSize, walls, rooms, roofs, stairs, items,
       currentFloorId, floorElevation, inchesToWorld, hasTestMap = true,
-      isDeleteWallMode = false
+      isDeleteWallMode = false, gridOrigin = { x: 0, z: 0 }
     } = options;
 
     if (!this.show3DGrid || currentView !== '3d' || !this.scene || !hasTestMap) return;
 
     const step = Math.max(0.25, snapEnabled && snapSize ? snapSize : 1);
     const bounds = this._get3DGridBounds({ walls, rooms, roofs, stairs, items, snapEnabled, snapSize, inchesToWorld });
+    // Line the grid up with its origin (the plot corner in ArchCanvas).
+    bounds.minX = gridOrigin.x + Math.floor((bounds.minX - gridOrigin.x) / step) * step;
+    bounds.minZ = gridOrigin.z + Math.floor((bounds.minZ - gridOrigin.z) / step) * step;
     const y = floorElevation + 0.012;
     const lines = [];
     const axisLines = [];
