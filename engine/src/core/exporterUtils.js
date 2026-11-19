@@ -54,7 +54,9 @@ export function entityFloorId(floorplan, entity) {
 
 export function floorEntities(floorplan, collectionName, floorId) {
   const collection = collectionName === 'rooms' ? floorplan.floor?.rooms : floorplan[collectionName];
-  return (collection || []).filter((entity) => entityFloorId(floorplan, entity) === floorId);
+  // A room wall taken out for an open plan is not built.
+  return (collection || []).filter((entity) => entityFloorId(floorplan, entity) === floorId
+    && !(collectionName === 'walls' && entity.removed));
 }
 
 export function floorPrefix(index) {

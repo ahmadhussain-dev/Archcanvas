@@ -211,16 +211,30 @@ export function updateSelectedRoom() {
   const rotationDegrees = Number(document.getElementById('room-rotation').value || 0);
   const rotation = - (rotationDegrees * Math.PI / 180);
 
+  const width = Number(document.getElementById('room-width').value);
+  const depth = Number(document.getElementById('room-depth').value);
+  const patch = {
+    name: document.getElementById('room-name').value,
+    width,
+    depth,
+    elevation: elevation,
+    rotation: rotation
+  };
+  // A new size grows the room from its top-left corner on the plan, so its
+  // other edges stay on the grid and on the walls they share.
+  if (!Number(room.rotation) && !rotation && width > 0 && depth > 0) {
+    const left = room.x - room.width / 2;
+    const top = room.z + room.depth / 2;
+    patch.x = Number((left + width / 2).toFixed(3));
+    patch.z = Number((top - depth / 2).toFixed(3));
+  }
+  const noWallsInput = document.getElementById('room-no-walls');
+  if (noWallsInput && room.id !== 'plot' && !!noWallsInput.checked !== !!room.noWalls) patch.noWalls = !!noWallsInput.checked;
+
   Context.pushHistory();
   Context.testMap.executeCommand('updateRoom', {
     roomId: Context.selectedRoomId,
-    patch: {
-      name: document.getElementById('room-name').value,
-      width: Number(document.getElementById('room-width').value),
-      depth: Number(document.getElementById('room-depth').value),
-      elevation: elevation,
-      rotation: rotation
-    }
+    patch
   });
   Context.refreshShadows();
   Context.updateEditor();

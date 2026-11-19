@@ -66,7 +66,7 @@ import { toggleFirstPerson } from './FirstPersonController.js';
 import { getActiveMaterialDisplayName, getActiveMaterialArrayDisplayName } from './MaterialManager.js';
 import { getRoomVertices, MaterialResolver, resolveMaterialAssetDescriptor } from '../../src/index.js';
 import { startFurniturePlacement } from './FurniturePlacementController.js';
-import { formatArea } from './Units.js';
+import { formatArea, formatLength } from './Units.js';
 
 let lastActiveRoomId = null;
 
@@ -349,6 +349,12 @@ export function updateEditor() {
 
     document.getElementById('selected-room-name').textContent = `${room.name || 'Room'} (${formatArea(areaVal)})`;
     document.getElementById('room-name').value = room.name || '';
+    const noWallsInput = document.getElementById('room-no-walls');
+    if (noWallsInput) {
+      noWallsInput.checked = !!room.noWalls;
+      // The plot outline is not a room section.
+      noWallsInput.parentElement.classList.toggle('hidden', room.id === 'plot');
+    }
     document.getElementById('room-width').value = Number(room.width.toFixed(2));
     document.getElementById('room-depth').value = Number(room.depth.toFixed(2));
 
@@ -376,6 +382,17 @@ export function updateEditor() {
     document.getElementById('wall-length-field')?.classList.toggle('hidden', roomWall);
     document.getElementById('wall-rotation-field')?.classList.toggle('hidden', roomWall);
     document.getElementById('btn-delete-wall')?.classList.toggle('hidden', roomWall);
+    document.getElementById('btn-remove-wall')?.classList.toggle('hidden', !roomWall || !!wall.removed);
+    document.getElementById('btn-restore-wall')?.classList.toggle('hidden', !roomWall || !wall.removed);
+    const lengthInfo = document.getElementById('wall-shared-length');
+    if (lengthInfo) {
+      lengthInfo.classList.toggle('hidden', !roomWall);
+      const thickness = Number(wall.thickness) || 0;
+      lengthInfo.textContent = roomWall
+        ? `${wall.removed ? 'Taken out (open plan). ' : ''}Length ${formatLength(testMap.getWallLength(wall.id))} · ${Math.abs(thickness - 0.1143) < 0.01 ? '4.5 in' : '9 in'} thick`
+        : '';
+    }
+    if (roomWall) document.getElementById('selected-wall-name').textContent += wall.removed ? ' (removed)' : '';
     const brickInput = document.getElementById('wall-brick');
     if (brickInput) brickInput.value = roomWall && wall.brick ? wall.brick : '';
     document.getElementById('wall-length').value = Number(testMap.getWallLength(wall.id).toFixed(2));
@@ -1361,7 +1378,7 @@ export function initUiEventListeners() {
     if (item && room) testMap.assignItemToRoom(item.id, room.id);
   });
 
-  ['room-width', 'room-depth', 'room-name', 'room-elevation', 'room-rotation'].forEach((id) => {
+  ['room-width', 'room-depth', 'room-name', 'room-elevation', 'room-rotation', 'room-no-walls'].forEach((id) => {
     document.getElementById(id).addEventListener('change', updateSelectedRoom);
   });
   document.getElementById('room-rotation-range').addEventListener('input', (event) => {
@@ -1473,6 +1490,19 @@ export function initUiEventListeners() {
     updateEditor();
     renderPlan();
   };
+
+  document.getElementById('btn-remove-wall')?.addEventListener('click', () => {
+    if (!selection.selectedWallId) return;
+    pushHistory();
+    testMap.deleteWall(selection.selectedWallId);
+    refreshShadows();
+    updateEditor();
+    renderPlan();
+  });
+
+  document.getElementById('btn-restore-wall')?.addEventListener('click', () => {
+    updateSelectedWallDecor({ removed: false });
+  });
 
   document.getElementById('wall-brick')?.addEventListener('change', (event) => {
     updateSelectedWallDecor({ brick: event.target.value || null });

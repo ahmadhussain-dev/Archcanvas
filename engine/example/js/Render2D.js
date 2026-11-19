@@ -434,7 +434,7 @@ export function renderWall(wall) {
   const a = worldToSvg(wall.from[0], wall.from[1]);
   const b = worldToSvg(wall.to[0], wall.to[1]);
   const line = createSvgElement('line', {
-    class: `wall-line ${ctx.selectedWallId === wall.id ? 'selected' : ''}`,
+    class: `wall-line ${wall.removed ? 'wall-removed' : ''} ${ctx.selectedWallId === wall.id ? 'selected' : ''}`,
     x1: a.x,
     y1: a.y,
     x2: b.x,
@@ -442,7 +442,9 @@ export function renderWall(wall) {
     stroke: wall.color || '#f9fbff',
     'data-wall-id': wall.id
   });
-  if (isPlanDrawing()) line.setAttribute('style', wallStrokeStyle({ ctx, worldToSvg }, wall));
+  // A wall taken out for an open plan shows as a thin dashed line, so it can
+  // still be picked and put back.
+  if (isPlanDrawing() && !wall.removed) line.setAttribute('style', wallStrokeStyle({ ctx, worldToSvg }, wall));
   line.addEventListener('pointerdown', (event) => {
     ctx.beginWallDrag(event, wall.id);
   });

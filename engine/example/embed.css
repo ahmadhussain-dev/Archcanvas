@@ -368,3 +368,13 @@ html.archcanvas-embed {
   font-size: 12px;
   color: var(--ac-ink);
 }
+
+/* A room wall taken out for an open plan */
+.archcanvas-embed .wall-line.wall-removed { stroke: var(--ac-ink-2); stroke-width: 6px; stroke-opacity: 0.35; stroke-dasharray: 4 4; stroke-linecap: butt; }
+.archcanvas-embed .plan-drawing .wall-line.wall-removed { stroke: var(--ac-ink-2); stroke-linecap: butt; }
+.archcanvas-embed .wall-line.wall-removed:hover,
+.archcanvas-embed .wall-line.wall-removed.selected { stroke: var(--ac-blue); stroke-opacity: 0.8; }
+.archcanvas-embed .ac-status-item { flex-shrink: 0; }
+.archcanvas-embed .ac-status-pointer { flex-shrink: 1; min-width: 0; overflow: hidden; }
+.archcanvas-embed .ac-status-bar { overflow: hidden; }
+.archcanvas-embed .wall-info { margin: 0; font-size: 13px; color: var(--ac-ink); }

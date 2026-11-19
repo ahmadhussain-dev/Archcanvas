@@ -1126,6 +1126,7 @@ export class FloorplanDocument {
     normalizeWallDecorSettings(wall);
     // A shared room wall set to single or double brick gets its new thickness
     // (and its corners) from a rebuild.
+    if (wall.kind && 'removed' in (patch || {}) && !wall.removed) delete wall.removed;
     if (wall.kind && 'brick' in (patch || {})) {
       if (!BRICK_THICKNESS[wall.brick]) delete wall.brick;
       this.rebuildRoomWalls(wall.floorId ?? this.floorplan.currentFloorId);
@@ -1211,6 +1212,15 @@ export class FloorplanDocument {
   }
 
   deleteWall(wallId) {
+    // A shared room wall is worked out from the rooms, so deleting it would
+    // only bring it back on the next change. It is taken out instead (an open
+    // plan, e.g. lounge into dining) and can be put back.
+    const shared = this.getWall(wallId);
+    if (shared?.kind && usesSharedWalls(this.floorplan)) {
+      shared.removed = true;
+      this.floorplan.openings = this.floorplan.openings.filter((opening) => opening.wallId !== wallId);
+      return;
+    }
     this.floorplan.walls = this.floorplan.walls.filter((wall) => wall.id !== wallId);
     this.floorplan.openings = this.floorplan.openings.filter((opening) => opening.wallId !== wallId);
     this.floorplan.floor.rooms.forEach((room) => {
@@ -1225,6 +1235,17 @@ export class FloorplanDocument {
     if (usesSharedWalls(this.floorplan)) {
       const floorId = room.floorId ?? DEFAULT_FLOOR_ID;
       if (isSharedWallRoom(room) || (room.id === 'plot' && !Number(room.rotation) && normalizeRoomShape(room.shape) === 'square')) {
+        this.rebuildRoomWalls(floorId);
+        return room;
+      }
+      if (room.noWalls) {
+        // An open section (a lawn, an open dining area) has a name and a floor but no walls.
+        const own = Object.values(room.wallIds || {}).filter((id) => {
+          const wall = this.getWall(id);
+          return wall && !wall.kind && wall.roomId === room.id;
+        });
+        room.wallIds = {};
+        own.forEach((id) => this.deleteWall(id));
         this.rebuildRoomWalls(floorId);
         return room;
       }
@@ -1423,7 +1444,7 @@ export class FloorplanDocument {
       });
     }
 
-    const topologyChanged = room.shape !== previous.shape || room.floorId !== previous.floorId;
+    const topologyChanged = room.shape !== previous.shape || room.floorId !== previous.floorId || 'noWalls' in patch;
     this.syncRoomWalls(room, topologyChanged);
     if (room.floorId !== previous.floorId) this.rebuildRoomWalls(previous.floorId);
     return room;
