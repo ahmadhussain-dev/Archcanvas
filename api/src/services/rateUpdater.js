@@ -1,40 +1,73 @@
-// The daily online price check. For each source in rateSources.js it downloads
-// the page, reads the prices, and saves one price per city as verified, with
-// where it came from. Cities a page doesn't list use their nearest listed city
-// (see lib/cities.js), then the Pakistan average from the same page.
+// The daily price check, fully automatic. For each source in rateSources.js it
+// downloads the page, reads the prices, and saves one price per city as
+// verified, with where it came from. Cities a page doesn't list use their
+// nearest listed city (see lib/cities.js), then the Pakistan average from the
+// same page. Then every other material (bricks, sand, crush, labour, pipes) is
+// worked out for each city (lib/localPrices.js), and so are cement and steel
+// wherever the online check has no fresh price. Nobody has to type a price.
 import { MaterialRate, RateCheck } from '../models/index.js'
+import { STALE_AFTER_DAYS } from '../models/MaterialRate.js'
 import { DEFAULT_RATES } from '../seed/materialRates.js'
-import { CITIES, CITY_NAMES, DEFAULT_CITY } from '../lib/cities.js'
+import { CITIES, CITY_NAMES } from '../lib/cities.js'
+import { LIVE_KEYS, REGION_FACTORS, estimatedRate, marketFactor, regionOf } from '../lib/localPrices.js'
 import { RATE_SOURCES, fetchPage as downloadPage } from './rateSources.js'
 
 export const CHECK_EVERY_MS = 24 * 60 * 60 * 1000
 // After a failed check, try again sooner than the next day.
 export const RETRY_AFTER_MS = 3 * 60 * 60 * 1000
-// A price that moves more than this since yesterday's check is held for an admin.
+// An online price that moves more than this since yesterday waits one more
+// check: if the site still shows about the same price (within CONFIRM_WITHIN),
+// it is taken. A misread page rarely gives the same wrong number twice.
 export const MAX_DAILY_JUMP = 0.3
+export const CONFIRM_WITHIN = 0.05
+// An admin price overrides the automatic one for this long, then the automatic one takes over.
+export const OVERRIDE_DAYS = STALE_AFTER_DAYS
+const DAY_MS = 86_400_000
 const HISTORY_LIMIT = 50
 
-// Gives every city a row for every material. New rows start from Faisalabad's
-// current price (or the built-in starting value), marked unverified, so admins
-// can set local prices for materials no website lists. Existing rows are untouched.
-export async function ensureCityRates() {
-  const base = await MaterialRate.find({ city: DEFAULT_CITY })
+const isFresh = (rate, now) => rate.verifiedAt && now - rate.verifiedAt.getTime() <= OVERRIDE_DAYS * DAY_MS
+const isOverride = (rate, now) => rate.source?.origin === 'admin' && rate.status === 'verified' && isFresh(rate, now)
+
+function setPrice(rate, value, at, origin) {
+  if (value === rate.ratePkr) return false
+  rate.ratePkr = value
+  rate.history.push({ ratePkr: value, at, origin })
+  if (rate.history.length > HISTORY_LIMIT) rate.history.splice(0, rate.history.length - HISTORY_LIMIT)
+  return true
+}
+
+// Puts the automatic city price on a rate row. Returns true if the price changed.
+export function applyEstimate(rate, at, market = 1) {
+  const est = estimatedRate(rate.key, rate.city, market)
+  const changed = setPrice(rate, est.ratePkr, at, 'estimate')
+  rate.status = 'verified'
+  rate.verifiedAt = at
+  rate.verifiedBy = undefined
+  rate.pending = undefined
+  rate.source = { origin: 'estimate', name: 'ArchCanvas city prices', region: est.region, market: est.market }
+  return changed
+}
+
+// Gives every city a row for every material, starting at the automatic price
+// for that city. Existing rows are untouched.
+export async function ensureCityRates(at = new Date()) {
   const ops = []
   for (const city of CITIES) {
     for (const fallback of DEFAULT_RATES) {
-      const from = base.find((b) => b.key === fallback.key)
+      const est = estimatedRate(fallback.key, city.name)
       ops.push({
         updateOne: {
           filter: { key: fallback.key, city: city.name },
           update: {
             $setOnInsert: {
               key: fallback.key,
-              name: from?.name ?? fallback.name,
-              unit: from?.unit ?? fallback.unit,
-              ratePkr: from?.ratePkr ?? fallback.ratePkr,
+              name: fallback.name,
+              unit: fallback.unit,
+              ratePkr: est.ratePkr,
               city: city.name,
-              status: 'unverified',
-              source: { origin: 'seed', basedOn: city.name === DEFAULT_CITY ? undefined : DEFAULT_CITY },
+              status: 'verified',
+              verifiedAt: at,
+              source: { origin: 'estimate', name: 'ArchCanvas city prices', region: est.region, market: 1 },
               history: []
             }
           },
@@ -45,6 +78,41 @@ export async function ensureCityRates() {
   }
   const res = await MaterialRate.bulkWrite(ops, { ordered: false })
   return res.upsertedCount
+}
+
+// Today's online cement price in Faisalabad terms (each city's price divided by
+// its regional factor, then the median), or null when no fresh online price exists.
+export function cementIndex(cementRates, now = Date.now()) {
+  const values = cementRates
+    .filter((r) => r.source?.origin === 'auto' && isFresh(r, now))
+    .map((r) => r.ratePkr / (REGION_FACTORS[regionOf(r.city)].cement ?? 1))
+    .sort((a, b) => a - b)
+  if (!values.length) return null
+  const mid = Math.floor(values.length / 2)
+  return values.length % 2 ? values[mid] : (values[mid - 1] + values[mid]) / 2
+}
+
+// Works out every price that has no fresh online or admin price.
+export async function updateCityPrices(at = new Date()) {
+  const now = at.getTime()
+  const rates = await MaterialRate.find({ city: { $in: CITY_NAMES } })
+  const market = marketFactor(cementIndex(rates.filter((r) => r.key === 'cement'), now))
+  const result = { key: 'city', source: 'ArchCanvas city prices', ok: true, changed: 0, unchanged: 0, held: [] }
+  let kept = 0
+  for (const rate of rates) {
+    if (isOverride(rate, now)) {
+      kept++
+      continue
+    }
+    if (LIVE_KEYS.includes(rate.key) && rate.source?.origin === 'auto' && isFresh(rate, now)) continue
+    if (applyEstimate(rate, at, market)) result.changed++
+    else result.unchanged++
+    await rate.save()
+  }
+  const nudge = market === 1 ? '' : ` Market change since the reference prices: ${market > 1 ? '+' : ''}${Math.round((market - 1) * 1000) / 10}%.`
+  const admin = kept ? ` ${kept} admin prices kept.` : ''
+  result.message = `${result.changed + result.unchanged} prices worked out for ${CITIES.length} cities, ${result.changed} changed.${nudge}${admin}`
+  return result
 }
 
 // Price lists name cities loosely ("Islamabad/Rawalpindi", " Lahore "), so index every part.
@@ -88,24 +156,27 @@ async function checkSource(source, fetchPage, at) {
     const rate = rates.find((r) => r.city === city.name)
     if (!price || !rate) continue
     found++
+    // An admin price is kept for 30 days, then the online price takes over.
+    if (isOverride(rate, at.getTime())) continue
     const old = rate.ratePkr
-    // A big overnight move from yesterday's automatic price is more likely a misread
-    // page than the market. Keep the old price; an admin saving a price accepts it.
+    // A big overnight move from yesterday's online price is more likely a misread
+    // page than the market. Wait for the next check to show the same price.
     if (rate.source?.origin === 'auto' && old > 0 && Math.abs(price.value - old) / old > MAX_DAILY_JUMP) {
-      result.held.push(city.name)
-      continue
+      const waiting = rate.pending?.ratePkr
+      const confirmed = waiting > 0 && Math.abs(price.value - waiting) / waiting <= CONFIRM_WITHIN
+      if (!confirmed) {
+        rate.pending = { ratePkr: price.value, at }
+        await rate.save()
+        result.held.push(city.name)
+        continue
+      }
     }
-    if (price.value !== old) {
-      rate.ratePkr = price.value
-      rate.history.push({ ratePkr: price.value, at, origin: 'auto' })
-      if (rate.history.length > HISTORY_LIMIT) rate.history.splice(0, rate.history.length - HISTORY_LIMIT)
-      result.changed++
-    } else {
-      result.unchanged++
-    }
+    if (setPrice(rate, price.value, at, 'auto')) result.changed++
+    else result.unchanged++
     rate.status = 'verified'
     rate.verifiedAt = at
     rate.verifiedBy = undefined
+    rate.pending = undefined
     rate.source = { origin: 'auto', name: source.name, url: source.url, basedOn: price.basedOn }
     await rate.save()
   }
@@ -115,7 +186,7 @@ async function checkSource(source, fetchPage, at) {
     return result
   }
   result.ok = true
-  const held = result.held.length ? `, ${result.held.length} held for review` : ''
+  const held = result.held.length ? `, ${result.held.length} big jumps waiting for the next check to confirm` : ''
   result.message = `${result.changed} cities changed, ${result.unchanged} the same${held}.`
   return result
 }
@@ -124,6 +195,8 @@ async function runCheck({ fetchPage = downloadPage, sources = RATE_SOURCES, trig
   const check = await RateCheck.create({ trigger, startedAt: new Date() })
   await ensureCityRates()
   for (const source of sources) check.results.push(await checkSource(source, fetchPage, new Date()))
+  // Always runs, even when every website failed, so no city is left on a starting value.
+  check.results.push(await updateCityPrices(new Date()))
   check.finishedAt = new Date()
   await check.save()
   return check

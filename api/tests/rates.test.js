@@ -75,11 +75,38 @@ describe('rates and estimate', { skip: !hasDb }, () => {
     assert.equal(unverify.body.rate.ratePkr, 1500)
   })
 
-  test('another city falls back to Faisalabad rates', async () => {
-    await MaterialRate.create({ key: 'bricks', name: 'Bricks', unit: 'brick', ratePkr: 20, city: 'Lahore' })
+  test("a city uses its own prices, never another city's", async () => {
+    const lahoreBricks = await MaterialRate.create({ key: 'bricks', name: 'Bricks', unit: 'brick', ratePkr: 20, city: 'Lahore' })
+    await request(app).patch(`/api/admin/rates/${lahoreBricks.id}`).set(admin).send({ ratePkr: 20 })
     const res = await request(app).post('/api/estimate').send({ widthFt: 25, depthFt: 45, city: 'Lahore' })
-    const lines = Object.fromEntries(res.body.estimate.lines.map((l) => [l.key, l.ratePkr]))
-    assert.equal(lines.bricks, 20)
-    assert.equal(lines.cement, 1500)
+    const lines = Object.fromEntries(res.body.estimate.lines.map((l) => [l.key, l]))
+    assert.equal(lines.bricks.ratePkr, 20)
+    assert.equal(lines.bricks.rateStatus, 'verified')
+    // Faisalabad's admin cement price (1,500) is not borrowed: Lahore gets its own automatic price.
+    assert.equal(lines.cement.ratePkr, 1450)
+    assert.equal(lines.cement.rateStatus, 'estimated')
+    assert.equal(lines.cement.rateSource.city, 'Lahore')
+  })
+
+  test('Karachi gets Karachi prices for every material, not Faisalabad starting values', async () => {
+    const res = await request(app).post('/api/estimate').send({ widthFt: 50, depthFt: 45, floors: 2, city: 'Karachi' })
+    const { estimate } = res.body
+    assert.equal(estimate.city, 'Karachi')
+    for (const line of estimate.lines) {
+      assert.equal(line.rateSource.city, 'Karachi')
+      assert.notEqual(line.rateSource.origin, 'seed')
+    }
+    const sand = estimate.lines.find((l) => l.key === 'sand')
+    assert.equal(sand.rateSource.region, 'karachi')
+    assert.ok(sand.ratePkr < 75)
+  })
+
+  test('an admin price can be dropped to go back to the automatic one', async () => {
+    const lahoreBricks = await MaterialRate.findOne({ key: 'bricks', city: 'Lahore' })
+    const res = await request(app).patch(`/api/admin/rates/${lahoreBricks.id}`).set(admin).send({ automatic: true })
+    assert.equal(res.status, 200)
+    assert.equal(res.body.rate.ratePkr, 17)
+    assert.equal(res.body.rate.source.origin, 'estimate')
+    assert.equal(res.body.rate.displayStatus, 'estimated')
   })
 })

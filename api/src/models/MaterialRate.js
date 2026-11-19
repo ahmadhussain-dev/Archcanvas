@@ -2,8 +2,9 @@ import mongoose from 'mongoose'
 
 export const MATERIAL_KEYS = ['steel', 'cement', 'bricks', 'sand', 'crush', 'labour', 'pipes']
 export const RATE_STATUSES = ['unverified', 'verified']
-// Where a price came from: the built-in starting value, an admin, or the daily online check.
-export const RATE_ORIGINS = ['seed', 'admin', 'auto']
+// Where a price came from: the built-in starting value, an admin override, the
+// daily online check, or the automatic city price (lib/localPrices.js).
+export const RATE_ORIGINS = ['seed', 'admin', 'auto', 'estimate']
 export const STALE_AFTER_DAYS = 30
 
 const historySchema = new mongoose.Schema(
@@ -22,13 +23,17 @@ const sourceSchema = new mongoose.Schema(
     name: { type: String, trim: true, maxlength: 80 },
     url: { type: String, trim: true, maxlength: 300 },
     // The city whose listed price this one uses, or 'Pakistan average'.
-    basedOn: { type: String, trim: true, maxlength: 60 }
+    basedOn: { type: String, trim: true, maxlength: 60 },
+    // For automatic city prices: the region and how far the market nudged it.
+    region: { type: String, trim: true, maxlength: 40 },
+    market: { type: Number }
   },
   { _id: false }
 )
 
-// Grey structure material prices, one per material per city. Cement and steel
-// are refreshed by the daily online check; admins edit the rest on /admin/prices.
+// Grey structure material prices, one per material per city, all kept up to
+// date by the daily check: cement and steel from websites, the rest worked out
+// for the city. An admin price on /admin/prices is an optional override.
 const materialRateSchema = new mongoose.Schema(
   {
     key: { type: String, enum: MATERIAL_KEYS, required: true },
@@ -40,18 +45,23 @@ const materialRateSchema = new mongoose.Schema(
     verifiedAt: { type: Date },
     verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
     source: { type: sourceSchema, default: () => ({ origin: 'seed' }) },
-    history: { type: [historySchema], default: [] }
+    history: { type: [historySchema], default: [] },
+    // An online price that jumped a lot overnight waits here; the next check
+    // accepts it if the site still shows about the same price.
+    pending: { ratePkr: { type: Number }, at: { type: Date } }
   },
   { timestamps: true }
 )
 
 materialRateSchema.index({ key: 1, city: 1 }, { unique: true })
 
-// What the UI shows: grey = unverified, green = verified, amber = stale.
+// What the UI shows: green = verified (online or admin), blue = estimated for
+// the city automatically, amber = older than 30 days, grey = unverified.
 materialRateSchema.virtual('displayStatus').get(function () {
   if (this.status !== 'verified' || !this.verifiedAt) return 'unverified'
   const ageDays = (Date.now() - this.verifiedAt.getTime()) / 86_400_000
-  return ageDays > STALE_AFTER_DAYS ? 'stale' : 'verified'
+  if (ageDays > STALE_AFTER_DAYS) return 'stale'
+  return this.source?.origin === 'estimate' ? 'estimated' : 'verified'
 })
 
 materialRateSchema.set('toJSON', {

@@ -2,30 +2,43 @@ import { MaterialRate } from '../models/index.js'
 import { DEFAULT_RATES } from '../seed/materialRates.js'
 import { calculateEstimate } from '../lib/estimate.js'
 import { DEFAULT_CITY, findCity } from '../lib/cities.js'
+import { estimatedRate } from '../lib/localPrices.js'
 
 export { DEFAULT_CITY }
 
-// Rates for a city. A material the city has no price for falls back to its
-// nearest listed cities, then Faisalabad, then the built-in starting rates
-// (always shown as unverified).
+const fromEstimate = (key, city, market, at = null) => {
+  const est = estimatedRate(key, city, market)
+  return {
+    name: est.name,
+    unit: est.unit,
+    ratePkr: est.ratePkr,
+    status: 'estimated',
+    checkedAt: at,
+    source: { origin: 'estimate', region: est.region, market: est.market, city }
+  }
+}
+
+// Rates for a city, always the city's own. A material with no saved price, a
+// price older than 30 days, or an old starting value copied from another city
+// uses the automatic price for this city (lib/localPrices.js) instead.
 export async function ratesForCity(city = DEFAULT_CITY) {
-  const known = findCity(city)
-  const name = known?.name ?? city
-  const cities = [...new Set([name, ...(known?.near ?? []), DEFAULT_CITY])]
-  const docs = await MaterialRate.find({ city: { $in: cities } })
+  const name = findCity(city)?.name ?? city
+  const docs = await MaterialRate.find({ city: name })
+  const market = docs.find((d) => d.source?.origin === 'estimate' && d.source.market)?.source.market ?? 1
   const rates = {}
-  for (const fallback of DEFAULT_RATES) rates[fallback.key] = { ...fallback, status: 'unverified', source: { origin: 'seed' } }
-  for (const target of [...cities].reverse()) {
-    for (const doc of docs.filter((d) => d.city === target)) {
-      rates[doc.key] = {
-        name: doc.name,
-        unit: doc.unit,
-        ratePkr: doc.ratePkr,
-        status: doc.displayStatus,
-        checkedAt: doc.verifiedAt ?? null,
-        source: { ...doc.source?.toObject?.(), city: doc.city }
-      }
-    }
+  for (const { key } of DEFAULT_RATES) {
+    const doc = docs.find((d) => d.key === key)
+    const usable = doc && doc.source?.origin !== 'seed' && ['verified', 'estimated'].includes(doc.displayStatus)
+    rates[key] = usable
+      ? {
+          name: doc.name,
+          unit: doc.unit,
+          ratePkr: doc.ratePkr,
+          status: doc.displayStatus,
+          checkedAt: doc.verifiedAt ?? null,
+          source: { ...doc.source?.toObject?.(), city: doc.city }
+        }
+      : fromEstimate(key, name, market)
   }
   return rates
 }
