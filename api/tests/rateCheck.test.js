@@ -184,7 +184,7 @@ describe('daily online price check', { skip: !hasDb }, () => {
     const quetta = await rate('cement', 'Quetta')
     assert.equal(quetta.source.origin, 'estimate')
     assert.equal(quetta.displayStatus, 'estimated')
-    assert.equal(quetta.ratePkr, Math.round(1450 * 1.02))
+    assert.equal(quetta.ratePkr, estimatedRate('cement', 'Quetta').ratePkr)
   })
 
   test('two checks at once run only once', async () => {

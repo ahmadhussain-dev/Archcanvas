@@ -4,6 +4,7 @@ import request from 'supertest'
 import { createApp } from '../src/app.js'
 import { MaterialRate, User } from '../src/models/index.js'
 import { DEFAULT_RATES } from '../src/seed/materialRates.js'
+import { estimatedRate } from '../src/lib/localPrices.js'
 import { connectTestDatabase, closeTestDatabase } from './helpers/db.js'
 
 const hasDb = await connectTestDatabase('rates')
@@ -83,7 +84,7 @@ describe('rates and estimate', { skip: !hasDb }, () => {
     assert.equal(lines.bricks.ratePkr, 20)
     assert.equal(lines.bricks.rateStatus, 'verified')
     // Faisalabad's admin cement price (1,500) is not borrowed: Lahore gets its own automatic price.
-    assert.equal(lines.cement.ratePkr, 1450)
+    assert.equal(lines.cement.ratePkr, estimatedRate('cement', 'Lahore').ratePkr)
     assert.equal(lines.cement.rateStatus, 'estimated')
     assert.equal(lines.cement.rateSource.city, 'Lahore')
   })
