@@ -9,6 +9,7 @@ import Laptop from '../../components/Laptop.jsx'
 import Logo from '../../components/Logo.jsx'
 import StepCards from './StepCards.jsx'
 import HeroVisual from './HeroVisual.jsx'
+import TemplateGallery from '../templates/TemplateGallery.jsx'
 import thumbHouse from '../../art/thumb-house.svg?raw'
 import iso from '../../art/iso-house.svg?raw'
 import aiBefore from '../../art/thumb-ai-before.svg?raw'
@@ -19,12 +20,6 @@ import preset10 from '../../art/preset-10-marla.svg?raw'
 import planCheck from '../../art/plan-check.svg?raw'
 import screenHowto from '../../art/screen-howto.html?raw'
 import screenSheet from '../../art/screen-sheet.html?raw'
-import tpl3 from '../../art/template-3-marla.svg?raw'
-import tpl5 from '../../art/template-5-marla.svg?raw'
-import tpl7 from '../../art/template-7-marla.svg?raw'
-import tpl10 from '../../art/template-10-marla.svg?raw'
-import tplCorner from '../../art/template-corner.svg?raw'
-import tplNarrow from '../../art/template-narrow.svg?raw'
 
 const START = '/register?next=/projects/new'
 const section = 'mx-auto max-w-[1280px] px-4 sm:px-6'
@@ -299,39 +294,19 @@ function Present() {
   )
 }
 
-const TEMPLATES = [
-  ['3 Marla', "22'-6\" × 30'-0\"", tpl3],
-  ['5 Marla', "25'-0\" × 45'-0\"", tpl5],
-  ['7 Marla', "35'-0\" × 45'-0\"", tpl7],
-  ['10 Marla', "30'-0\" × 75'-0\"", tpl10],
-  ['Corner plot', "30'-0\" × 50'-0\"", tplCorner],
-  ['Narrow plot', "18'-0\" × 50'-0\"", tplNarrow]
-]
-
 function Templates() {
   return (
     <section id="templates" className={`${section} flex scroll-mt-4 flex-col gap-6 py-16`}>
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <h2 className={h2}>Start from a Pakistani template</h2>
-        <Link to={START} className="inline-flex items-center gap-1 font-semibold no-underline">
+        <div className="flex flex-col gap-2">
+          <h2 className={h2}>Start from a Pakistani template</h2>
+          <span className="text-base text-muted">A furnished double-storey house for every plot from 2 Marla to 2 Kanal.</span>
+        </div>
+        <Link to="/templates" className="inline-flex items-center gap-1 font-semibold no-underline">
           All templates <Icon name="arrow_r" size={16} />
         </Link>
       </div>
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-        {TEMPLATES.map(([name, size, svg]) => (
-          <Link
-            key={name}
-            to={START}
-            className="flex flex-col items-center gap-2.5 rounded-card border border-line bg-white p-4 text-navy no-underline hover:border-blueprint hover:text-navy"
-          >
-            <div className="flex h-[120px] items-center">
-              <Art svg={svg} className="h-[110px] [&_svg]:h-full [&_svg]:w-auto" />
-            </div>
-            <b className="text-sm">{name}</b>
-            <span className="font-mono text-[11.5px] text-muted">{size}</span>
-          </Link>
-        ))}
-      </div>
+      <TemplateGallery />
     </section>
   )
 }

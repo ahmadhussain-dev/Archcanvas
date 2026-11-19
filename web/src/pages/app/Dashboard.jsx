@@ -9,7 +9,8 @@ import FullPageSpinner from '../../components/FullPageSpinner.jsx'
 import { api } from '../../lib/api.js'
 import { useApi } from '../../lib/useApi.js'
 import { ftin, marla, timeAgo } from '../../lib/format.js'
-// Quick starts. Ready-made room layouts come with the AI step.
+import TemplateGallery from '../templates/TemplateGallery.jsx'
+// Quick starts: an empty plot of a common size.
 const SIZES = [
   ['3 Marla', '3-marla', 22.5, 30],
   ['5 Marla', '5-marla', 25, 45],
@@ -167,7 +168,7 @@ export default function Dashboard() {
             text="Start with your plot size, or pick a Pakistani template."
             actions={[
               { label: 'Start a new plot', to: '/projects/new', variant: 'primary' },
-              { label: 'Browse templates', to: '/#templates' }
+              { label: 'Browse templates', to: '/templates' }
             ]}
           />
         </div>
@@ -180,6 +181,19 @@ export default function Dashboard() {
           ))}
         </div>
       )}
+
+      <div className="flex flex-col gap-3.5">
+        <div className="flex flex-wrap items-end justify-between gap-2">
+          <div className="flex flex-col gap-1">
+            <h2 className="m-0 text-xl font-semibold">Start from a ready-made house</h2>
+            <span className="text-sm text-muted">Furnished double-storey templates. Use one and change anything you like.</span>
+          </div>
+          <Link to="/templates" className="inline-flex items-center gap-1 text-sm font-semibold no-underline">
+            All templates <Icon name="arrow_r" size={15} />
+          </Link>
+        </div>
+        <TemplateGallery quickUse />
+      </div>
 
       <div className="flex flex-col gap-3.5">
         <h2 className="m-0 text-xl font-semibold">Start from a plot size</h2>

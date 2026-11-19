@@ -47,7 +47,8 @@ export function isNoCeilingRoom(room) {
   if (room.hasCeiling === false || room.noCeiling === true || room.isOutdoor === true || room.isTerrace === true || room.isBalcony === true) return true;
   if (room.roomType === 'terrace' || room.roomType === 'balcony' || room.roomType === 'outdoor') return true;
   if (room.type === 'terrace' || room.type === 'balcony' || room.type === 'outdoor') return true;
-  if (room.name && /Terrace|Balcony|terrace|balcony|outdoor|open[_\s]?air/i.test(room.name)) return true;
+  // A lawn or garden is open ground with a low boundary wall, like a terrace.
+  if (room.name && /terrace|balcony|lawn|garden|outdoor|open[_\s]?air/i.test(room.name)) return true;
   return false;
 }
 

@@ -8,6 +8,8 @@ import { GuestOnly, RequireAdmin, RequireAuth } from './auth/guards.jsx'
 const Landing = lazy(() => import('./pages/landing/Landing.jsx'))
 const Login = lazy(() => import('./pages/auth/Login.jsx'))
 const Register = lazy(() => import('./pages/auth/Register.jsx'))
+const Templates = lazy(() => import('./pages/templates/Templates.jsx'))
+const TemplateDetail = lazy(() => import('./pages/templates/TemplateDetail.jsx'))
 const NotFound = lazy(() => import('./pages/NotFound.jsx'))
 const Dashboard = lazy(() => import('./pages/app/Dashboard.jsx'))
 const NewProject = lazy(() => import('./pages/app/NewProject.jsx'))
@@ -21,6 +23,8 @@ export default function App() {
     <Suspense fallback={<FullPageSpinner />}>
       <Routes>
         <Route path="/" element={<Landing />} />
+        <Route path="/templates" element={<Templates />} />
+        <Route path="/templates/:key" element={<TemplateDetail />} />
         <Route element={<GuestOnly />}>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />

@@ -14,6 +14,7 @@
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
+    "blueprint3d-babylon": "*",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "express": "^5.1.0",

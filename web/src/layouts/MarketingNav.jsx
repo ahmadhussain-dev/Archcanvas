@@ -7,7 +7,7 @@ import { useAuth } from '../auth/AuthContext.jsx'
 
 const LINKS = [
   { label: 'Product', href: '/#product' },
-  { label: 'Templates', href: '/#templates' },
+  { label: 'Templates', href: '/templates' },
   { label: 'Learn', href: '/#how-it-works' },
   { label: 'Pricing', href: '/#pricing' }
 ]
