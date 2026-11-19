@@ -18,6 +18,7 @@ import {
 export const ROOM_KINDS = [
   ['staircase', /stair/i],
   ['terrace', /terrace|balcony|lawn|garden|veranda/i],
+  ['dressing', /dress(?!ing\s*table)/i],
   ['bathroom', /bath|wash\s*room|toilet|\bwc\b|powder|rest\s*room/i],
   ['kitchen', /kitchen/i],
   ['dining', /dining/i],
@@ -136,18 +137,28 @@ function planner(doc, room) {
 
   const blocksWindow = (s, at, width) => s.windows.some((w) => at + width / 2 > w.from + EPS && at - width / 2 < w.to - EPS);
 
-  /** Places `type` against the first side in `onSides` with a free spot. */
+  /**
+   * Places `type` against the first side in `onSides` with a free spot. A
+   * piece the room must have (not `optional`) that does not fit is tried
+   * again with less space kept in front of it, then, for a tall piece, in
+   * front of a window too, so a small room still gets its bed or fridge.
+   */
   const place = (type, { onSides, pref = 'centre', tall = false, front = 0, pad = 0, width, optional = false } = {}) => {
     const size = itemSize(type);
     if (width) size.width = width;
     const taken = layout.floorTaken();
-    for (const name of onSides) {
-      const s = sides[name];
-      if (!s) continue;
-      for (const at of positions(s, size.width + pad * 2, pref, taken)) {
-        if (tall && blocksWindow(s, at, size.width)) continue;
-        const spot = againstWall(s, at, size, type);
-        if (fits(spot, taken, { front, pad })) return add(spot, width ? { width: round3(width) } : {});
+    const tries = [{ tall, front, pad }];
+    if (!optional && front > 0.3) tries.push({ tall, front: 0.3, pad: 0 });
+    if (!optional && tall) tries.push({ tall: false, front: Math.min(front, 0.3), pad: 0 });
+    for (const t of tries) {
+      for (const name of onSides) {
+        const s = sides[name];
+        if (!s) continue;
+        for (const at of positions(s, size.width + t.pad * 2, pref, taken)) {
+          if (t.tall && blocksWindow(s, at, size.width)) continue;
+          const spot = againstWall(s, at, size, type);
+          if (fits(spot, taken, { front: t.front, pad: t.pad })) return add(spot, width ? { width: round3(width) } : {});
+        }
       }
     }
     if (!optional) missing.push(type);
@@ -257,7 +268,10 @@ function bedroom(p, { kids = false, servant = false } = {}) {
     beds = first ? [first, p.place('bed_single', { onSides: [p.sideOf(first).side, ...bedSides], pref: 'corner', front: 0.6 })].filter(Boolean) : [];
   } else {
     const type = servant || p.shortSide < 2.6 ? 'bed_single' : 'bed_double';
-    beds = [p.place(type, { onSides: bedSides, pref: 'centre', front: 0.6 })].filter(Boolean);
+    // A double bed that cannot fit anywhere becomes a single, so no bedroom is left without a bed.
+    let bed = p.place(type, { onSides: bedSides, pref: 'centre', front: 0.6, optional: type === 'bed_double' });
+    if (!bed && type === 'bed_double') bed = p.place('bed_single', { onSides: bedSides, pref: 'centre', front: 0.6 });
+    beds = [bed].filter(Boolean);
   }
   const bed = beds[0];
   const bedSide = bed ? p.sideOf(bed)?.side : null;
@@ -326,13 +340,16 @@ function kitchen(p) {
 }
 
 function bathroom(p) {
-  p.place('shower_cabin', { onSides: [p.far, ...p.across], pref: 'far', tall: true });
-  p.place('toilet', { onSides: [...p.across, p.far], pref: 'far', pad: 0.15, front: 0.5 });
+  // The commode and the wash basin come first; a shower cabin only when it
+  // still fits (a small Pakistani bath has an open shower corner instead).
+  // The ventilator sits high above the shower, so a shower may stand under it.
+  p.place('toilet', { onSides: [p.far, ...p.across], pref: 'far', pad: 0.15, front: 0.5 });
   const basin = p.place('sink_bathroom', { onSides: [...p.across, p.doorSide, p.far], pref: 'near', pad: 0.1, front: 0.5 });
   if (basin) {
     const where = p.sideOf(basin);
     p.hang('mirror_bathroom', { onSides: [where.side], pref: where.at, elevation: 1.2 });
   }
+  p.place('shower_cabin', { onSides: [p.far, ...p.across, p.doorSide], pref: 'corner', optional: true });
   p.hang('towel_rack', { onSides: p.allSides, pref: 'centre', elevation: 1.3 });
   if (p.layout.area >= 5) p.place('bathroom_shelf', { onSides: p.allSides, pref: 'corner', tall: true, front: 0.4, optional: true });
 }
@@ -389,35 +406,45 @@ function lounge(p, { tv = true } = {}) {
 
 function dining(p) {
   const { clear } = p.layout;
-  const cx = (clear.minX + clear.maxX) / 2;
-  const cz = (clear.minZ + clear.maxZ) / 2;
   const alongX = clear.maxX - clear.minX >= clear.maxZ - clear.minZ;
-  let table = null;
-  if (p.shortSide >= 2.4 && p.longSide >= 3.2) {
-    table = p.placeAt('dining_table_long', cx, cz, alongX ? 0 : Math.PI / 2, { quiet: true });
-    if (table) {
-      // Two chairs along each long side, one at each end.
-      for (const [along, across] of [[-0.45, 1], [0.45, 1], [-0.45, -1], [0.45, -1]]) {
-        const offset = 0.45 + 0.3;
-        const x = alongX ? cx + along : cx + across * offset;
-        const z = alongX ? cz + across * offset : cz + along;
-        p.placeAt('chair', x, z, alongX ? (across > 0 ? Math.PI : 0) : (across > 0 ? -Math.PI / 2 : Math.PI / 2));
-      }
-      for (const end of [-1, 1]) {
-        const reach = 0.925 + 0.3;
-        p.placeAt('chair', alongX ? cx + end * reach : cx, alongX ? cz : cz + end * reach,
-          alongX ? (end > 0 ? -Math.PI / 2 : Math.PI / 2) : (end > 0 ? Math.PI : 0), { quiet: true });
-      }
+  const mid = { x: (clear.minX + clear.maxX) / 2, z: (clear.minZ + clear.maxZ) / 2 };
+  // The table goes in the middle, or slides along the room to keep clear of
+  // a door's swing; it needs at least four chairs around it.
+  const reachLong = Math.max(0, (p.longSide - 2.6) / 2);
+  const offsets = [0];
+  for (let d = 0.2; d <= reachLong + 1e-6; d += 0.2) offsets.push(-d, d);
+  const centres = offsets.map((d) => (alongX ? { x: mid.x + d, z: mid.z } : { x: mid.x, z: mid.z + d }));
+  const longChairs = (cx, cz) => {
+    const out = [];
+    for (const [along, across] of [[-0.45, 1], [0.45, 1], [-0.45, -1], [0.45, -1]]) {
+      const offset = 0.45 + 0.3;
+      out.push([alongX ? cx + along : cx + across * offset, alongX ? cz + across * offset : cz + along,
+        alongX ? (across > 0 ? Math.PI : 0) : (across > 0 ? -Math.PI / 2 : Math.PI / 2)]);
     }
-  }
-  if (!table) {
-    table = p.placeAt('round_table', cx, cz, 0);
-    if (table) {
-      for (const [dx, dz, r] of [[0, 1, Math.PI], [0, -1, 0], [1, 0, -Math.PI / 2], [-1, 0, Math.PI / 2]]) {
-        p.placeAt('chair', cx + dx * 0.95, cz + dz * 0.95, r);
-      }
+    for (const end of [-1, 1]) {
+      const reach = 0.925 + 0.3;
+      out.push([alongX ? cx + end * reach : cx, alongX ? cz : cz + end * reach,
+        alongX ? (end > 0 ? -Math.PI / 2 : Math.PI / 2) : (end > 0 ? Math.PI : 0)]);
     }
+    return out;
+  };
+  const roundChairs = (cx, cz) => [[0, 1, Math.PI], [0, -1, 0], [1, 0, -Math.PI / 2], [-1, 0, Math.PI / 2]]
+    .map(([dx, dz, r]) => [cx + dx * 0.95, cz + dz * 0.95, r]);
+  const sets = [];
+  if (p.shortSide >= 2.4 && p.longSide >= 3.2) sets.push(['dining_table_long', alongX ? 0 : Math.PI / 2, longChairs]);
+  sets.push(['round_table', 0, roundChairs]);
+  let done = false;
+  for (const [type, rotation, chairs] of sets) {
+    for (const c of centres) {
+      const table = p.placeAt(type, c.x, c.z, rotation, { quiet: true });
+      if (!table) continue;
+      const placed = chairs(c.x, c.z).map(([x, z, r]) => p.placeAt('chair', x, z, r, { quiet: true })).filter(Boolean);
+      if (placed.length >= 4) { done = true; break; }
+      for (const item of [table, ...placed]) p.remove(item);
+    }
+    if (done) break;
   }
+  if (!done) p.missing.push('round_table');
   p.place('sideboard', { onSides: p.byLength(p.withoutDoor(p.allSides)), pref: 'centre', optional: true });
 }
 
@@ -449,6 +476,18 @@ function laundry(p) {
   p.place('cabinet_kitchen', { onSides: p.byLength(p.allSides), pref: 'far', front: 0.6 });
 }
 
+function dressing(p) {
+  // A walk-through dressing room between the bedroom and its bath: wardrobes
+  // along the walls without doors, a dressing table with a mirror.
+  const walls = p.byLength(p.withoutDoor(p.allSides));
+  const sides = walls.length ? walls : p.byLength(p.allSides);
+  if (!p.place('wardrobe', { onSides: sides, pref: 'corner', tall: true, front: 0.6 })) return;
+  for (let i = 0; i < 3; i += 1) {
+    if (!p.place('wardrobe', { onSides: sides, pref: 'corner', tall: true, front: 0.6, optional: true })) break;
+  }
+  p.place('vanity', { onSides: [...sides, ...p.allSides], pref: 'centre', front: 0.5, optional: true });
+}
+
 function terrace(p) {
   // Plants in the corners and a small sitting set, the rest left open.
   p.place('terracotta_flower_urn', { onSides: p.byLength(p.allSides), pref: 'corner' });
@@ -476,6 +515,7 @@ const KITS = {
   store,
   laundry,
   terrace,
+  dressing,
   staircase: (p, room, doc) => flight(p, room, doc)
 };
 

@@ -141,3 +141,15 @@ test('never edits the plot boundary as a room', () => {
   const { skipped } = applyAiOperations(plotPlan(), [{ op: 'delete_room', room: 'plot' }]);
   assert.equal(skipped.length, 1);
 });
+
+test('clear_floor removes loose walls and old stairs on the floor, not room walls', () => {
+  const doc = new FloorplanDocument(plotPlan());
+  doc.addWall({ id: 'loose', from: [0, 0], to: [2, 0], floorId: 'floor_1' });
+  doc.addStairs({ id: 'old_stairs', floorId: 'floor_1', x: 0, z: 0, width: 1, depth: 3, height: 3, steps: 16, subtype: 'straight', rotation: 0 });
+  const plotWalls = Object.values(doc.getRoom('plot').wallIds);
+  const { floorplan, skipped } = applyAiOperations(doc.floorplan, [{ op: 'clear_floor', floorId: 'floor_1', label: 'Remove 1 loose wall and the old stairs' }]);
+  assert.deepEqual(skipped, []);
+  assert.ok(!floorplan.walls.some((w) => w.id === 'loose'));
+  assert.equal((floorplan.stairs || []).length, 0);
+  for (const id of plotWalls) assert.ok(floorplan.walls.some((w) => w.id === id), 'the plot boundary stays');
+});

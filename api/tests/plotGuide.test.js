@@ -1,8 +1,8 @@
 import { describe, test } from 'node:test'
 import assert from 'node:assert/strict'
-import { suggestedFloor, promptIdeas } from '../src/lib/plotGuide.js'
+import { suggestedFloor, promptIdeas, suggestedReply } from '../src/lib/plotGuide.js'
 import { layoutFloor, sharedEdge, forbiddenDoor } from '../src/lib/layoutFloor.js'
-import { minSizeFor } from '../src/lib/aiPlan.js'
+import { minSizeFor, tidyProgram } from '../src/lib/aiPlan.js'
 
 const wallFt = 0.75
 const PLOTS = [[15, 30], [22.5, 30], [25, 45], [35, 45], [30, 60], [35, 65], [50, 90], [100, 90]]
@@ -69,5 +69,49 @@ describe('best plan for a plot size', () => {
     assert.equal(ideas.ideas[0].kind, 'best')
     assert.match(ideas.ideas[0].text, /best layout for this 5 Marla/)
     assert.ok(promptIdeas({ plot: { widthFt: 25, depthFt: 45 } }, { upstairs: true }).ideas.some((i) => /terrace/i.test(i.text)))
+  })
+
+  test('suggested prompts are recognised; requests with their own rooms go to the AI', () => {
+    const project = { plot: { widthFt: 25, depthFt: 45 } }
+    for (const idea of promptIdeas(project).ideas.filter((i) => i.kind !== 'change')) assert.ok(suggestedReply(project, idea.text), idea.text)
+    assert.ok(suggestedReply(project, 'Give me the best layout'))
+    assert.ok(suggestedReply(project, 'suggest the best layout for this plot', { upstairs: true }).rooms.some((r) => r.name === 'Terrace'))
+    assert.equal(suggestedReply(project, 'best layout with 4 bedrooms'), null)
+    assert.equal(suggestedReply(project, 'Add a guest bath near the drawing room'), null)
+    assert.equal(suggestedReply(project, 'Furnish every room with proper furniture'), null)
+  })
+
+  test('a 5 to 8 Marla plot keeps its kitchen at the back beside the master suite', () => {
+    for (const [width, depth] of [[25, 45], [30, 60]]) {
+      const plan = suggestedFloor({ widthFt: width, depthFt: depth })
+      assert.equal(plan.rooms.find((r) => r.name === 'Kitchen').zone, 'back')
+      const result = layoutFloor({ area: { x: 0, y: 0, width, depth }, wallFt, rooms: plan.rooms, minSizeFor, ground: true })
+      const bedroom = result.rooms.find((r) => r.name === 'Master Bedroom')
+      assert.ok(bedroom.width <= 17, `the master bedroom is ${bedroom.width} ft wide, not the whole plot`)
+    }
+  })
+
+  test('every room is a sensible shape: no long thin baths, stores or kitchens', () => {
+    for (const [width, depth] of PLOTS) {
+      for (const upstairs of [false, true]) {
+        const plan = suggestedFloor({ widthFt: width, depthFt: depth }, { upstairs })
+        const stairsBelow = upstairs ? layoutFloor({ area: { x: 0, y: 0, width, depth }, wallFt, rooms: suggestedFloor({ widthFt: width, depthFt: depth }).rooms, minSizeFor, ground: true }).rooms.find((r) => r.kind === 'staircase') : null
+        const result = layoutFloor({ area: { x: 0, y: 0, width, depth }, wallFt, rooms: plan.rooms, minSizeFor, ground: !upstairs, stairsBelow })
+        for (const room of result.rooms) {
+          const long = Math.max(room.width, room.depth)
+          if (room.kind === 'bathroom') assert.ok(long <= 13, `${width}x${depth} ${room.name} is ${room.width} x ${room.depth}`)
+          if (room.kind === 'store') assert.ok(long <= 12 || long / Math.min(room.width, room.depth) <= 3, `${width}x${depth} ${room.name} is ${room.width} x ${room.depth}`)
+          if (room.kind === 'kitchen') assert.ok(long <= 18, `${width}x${depth} ${room.name} is ${room.width} x ${room.depth}`)
+          if (room.kind === 'dressing') assert.ok(room.depth >= 5 && result.openings.some((o) => o.room === room.name && o.kind === 'door'), `${room.name} opens into its bedroom`)
+        }
+      }
+    }
+  })
+
+  test('the AI\'s room list loses passages and gains a lounge and stairs when missing', () => {
+    const skipped = []
+    const rooms = tidyProgram([{ name: 'Bedroom 1', zone: 'back' }, { name: 'Passage', zone: 'middle' }, { name: 'Kitchen' }, { name: 'Bath 1', attached_to: 'Bedroom 1' }], { floors: 2, skipped })
+    assert.deepEqual(rooms.map((r) => r.name), ['Bedroom 1', 'Kitchen', 'Bath 1', 'TV Lounge', 'Staircase'])
+    assert.deepEqual(skipped.map((s) => s.label), ['Add Passage'])
   })
 })

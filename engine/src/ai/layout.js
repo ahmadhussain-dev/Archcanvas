@@ -129,9 +129,11 @@ export function roomLayout(doc, room) {
       side.openings.push({ kind, at, from: at - width / 2, to: at + width / 2 });
       if (kind !== 'door') continue;
       const half = Math.max(width, DOOR_CLEARANCE) / 2 + 0.1;
+      // An open archway has no leaf to swing: only a short walkway is kept clear.
+      const reach = opening.panelHidden ? 0.5 : DOOR_CLEARANCE;
       doorZones.push(side.axis === 'x'
-        ? { minX: cx - half, maxX: cx + half, minZ: cz - DOOR_CLEARANCE, maxZ: cz + DOOR_CLEARANCE }
-        : { minX: cx - DOOR_CLEARANCE, maxX: cx + DOOR_CLEARANCE, minZ: cz - half, maxZ: cz + half });
+        ? { minX: cx - half, maxX: cx + half, minZ: cz - reach, maxZ: cz + reach }
+        : { minX: cx - reach, maxX: cx + reach, minZ: cz - half, maxZ: cz + half });
     }
   }
   // A side whose walls were all taken out (an open plan) is kept clear like a doorway.

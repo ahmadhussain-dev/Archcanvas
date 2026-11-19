@@ -9,6 +9,7 @@
 //   add_room       { id, name, x, z, width, depth }
 //   update_room    { room, name?, x?, z?, width?, depth? }
 //   delete_room    { room }
+//   clear_floor    { floorId? }                 removes loose walls (not a room's) and stairs, before a whole floor is laid out again
 //   set_floor      { room, material }           material id from the catalog
 //   paint_walls    { room, color }              '#rrggbb', inside faces only
 //   add_furniture  { room, type, count? }       placed along the walls or centred
@@ -141,10 +142,10 @@ function freeT(doc, room, wall, kind, width, near = null) {
   const ends = Math.abs(ux) > Math.abs(uz)
     ? [along(box.minX, z1), along(box.maxX, z1)]
     : [along(x1, box.minZ), along(x1, box.maxZ)];
-  const corner = Number(doc.floorplan.wallThickness || 0.23) / 2 + 0.1;
-  // The engine keeps openings between 8% and 92% of the wall.
-  const lo = Math.max(Math.max(0, Math.min(...ends)) + corner, 0.08 * length) + width / 2;
-  const hi = Math.min(Math.min(length, Math.max(...ends)) - corner, 0.92 * length) - width / 2;
+  const corner = Number(doc.floorplan.wallThickness || 0.23) / 2;
+  // The engine keeps an opening's centre between 8% and 92% of the wall.
+  const lo = Math.max(Math.max(0, Math.min(...ends)) + corner + width / 2, 0.08 * length);
+  const hi = Math.min(Math.min(length, Math.max(...ends)) - corner - width / 2, 0.92 * length);
   if (hi < lo - EPS) return null;
   const others = (doc.floorplan.openings || []).filter((o) => o.wallId === wall.id);
   const fits = (a) => others.every((o) => Math.abs(o.t * length - a) >= (width + (Number(o.width) || 0.9)) / 2 + 0.15);
@@ -211,6 +212,18 @@ export function applyAiOperations(floorplan, operations = []) {
   const skip = (op, reason) => skipped.push({ op: op.op, label: op.label || op.op, reason });
 
   for (const op of operations) {
+    if (op.op === 'clear_floor') {
+      const floorId = op.floorId || doc.floorplan.currentFloorId;
+      const owned = new Set(doc.floorplan.floor.rooms.flatMap((r) => Object.values(r.wallIds || {})));
+      const loose = new Set(doc.floorplan.walls
+        .filter((wall) => (wall.floorId ?? 'floor_1') === floorId && !owned.has(wall.id) && !wall.locked)
+        .map((wall) => wall.id));
+      doc.floorplan.walls = doc.floorplan.walls.filter((wall) => !loose.has(wall.id));
+      doc.floorplan.openings = doc.floorplan.openings.filter((opening) => !loose.has(opening.wallId));
+      doc.floorplan.stairs = (doc.floorplan.stairs || []).filter((s) => (s.floorId ?? floorId) !== floorId || s.locked);
+      done(op);
+      continue;
+    }
     const room = resolveRoom(doc, op.room);
     const needsRoom = op.op !== 'add_room';
     if (needsRoom && !room) {
