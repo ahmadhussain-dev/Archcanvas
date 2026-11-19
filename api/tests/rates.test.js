@@ -106,7 +106,7 @@ describe('rates and estimate', { skip: !hasDb }, () => {
     const lahoreBricks = await MaterialRate.findOne({ key: 'bricks', city: 'Lahore' })
     const res = await request(app).patch(`/api/admin/rates/${lahoreBricks.id}`).set(admin).send({ automatic: true })
     assert.equal(res.status, 200)
-    assert.equal(res.body.rate.ratePkr, 17)
+    assert.equal(res.body.rate.ratePkr, estimatedRate('bricks', 'Lahore').ratePkr)
     assert.equal(res.body.rate.source.origin, 'estimate')
     assert.equal(res.body.rate.displayStatus, 'estimated')
   })
