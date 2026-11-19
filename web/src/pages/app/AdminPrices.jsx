@@ -9,7 +9,8 @@ import { api } from '../../lib/api.js'
 import { useApi } from '../../lib/useApi.js'
 import { formatDate, num, timeAgo } from '../../lib/format.js'
 
-const STATUS = { verified: ['Verified', 'green'], stale: ['Stale', 'amber'], unverified: ['Unverified', 'grey'] }
+const STATUS = { verified: ['Verified', 'green'], estimated: ['City price', 'blue'], stale: ['Stale', 'amber'], unverified: ['Unverified', 'grey'] }
+const CHECK_LABELS = { cement: 'Cement', steel: 'Steel', city: 'City prices' }
 
 function Spark({ values }) {
   if (values.length < 2) return <span className="text-xs text-muted">—</span>
@@ -38,7 +39,8 @@ function check(rate, text) {
 function sourceLabel(r, city) {
   const src = r.source ?? {}
   if (src.origin === 'auto') return { text: `Online${src.basedOn && src.basedOn !== city ? `, ${src.basedOn} price` : ''}`, url: src.url, title: src.name }
-  if (src.origin === 'admin') return { text: 'Admin' }
+  if (src.origin === 'admin') return { text: 'Admin override' }
+  if (src.origin === 'estimate') return { text: `Automatic (${src.region ?? 'regional'} prices)` }
   return { text: src.basedOn ? `Starting value (${src.basedOn})` : 'Starting value' }
 }
 
@@ -68,14 +70,14 @@ function PriceCheck({ onChecked }) {
       <div className="flex min-w-0 flex-col gap-1.5">
         <b className="text-sm">Online price check</b>
         <span className="text-[13px] text-muted">
-          Cement and steel prices for all 40 cities are read from online price lists once a day and approved automatically.
+          Every price for all 40 cities updates by itself once a day. Cement and steel are read from online price lists; bricks, sand, crush, labour and pipes are worked out for each city from regional prices and today's cement price.
           {check?.finishedAt ? ` Last check ${timeAgo(check.finishedAt)}.` : check ? ' A check is running.' : ' No check has run yet.'}
         </span>
         {check?.results?.map((r) => (
           <span key={r.key} className={`flex flex-wrap items-center gap-1.5 text-[13px] ${r.ok ? '' : 'text-red'}`}>
-            <Chip tone={r.ok ? 'green' : 'red'} icon={r.ok ? 'check' : 'error'}>{r.key === 'steel' ? 'Steel' : 'Cement'}</Chip>
+            <Chip tone={r.ok ? 'green' : 'red'} icon={r.ok ? 'check' : 'error'}>{CHECK_LABELS[r.key] ?? r.key}</Chip>
             {r.message}
-            {r.held?.length > 0 && <span className="text-amber">Held: {r.held.join(', ')}. Save a price to accept it.</span>}
+            {r.held?.length > 0 && <span className="text-amber">Waiting to confirm: {r.held.join(', ')}. The next check accepts the price if the site still shows it.</span>}
             {r.url && (
               <a href={r.url} target="_blank" rel="noreferrer" className="text-blueprint">
                 {r.source}
@@ -156,13 +158,26 @@ export default function AdminPrices() {
     }
   }
 
+  async function switchToAutomatic(r) {
+    setBusy(true)
+    setMessage(null)
+    try {
+      replace([(await api.patch(`/admin/rates/${r.id}`, { automatic: true })).rate])
+      setMessage({ tone: 'green', text: `${r.name} is back on the automatic price.` })
+    } catch (err) {
+      setMessage({ tone: 'red', text: err.message })
+    } finally {
+      setBusy(false)
+    }
+  }
+
   const th = 'px-3 py-2.5 text-left text-xs font-semibold text-muted'
   return (
     <main className="mx-auto flex w-full max-w-[1280px] flex-col gap-[18px] px-4 py-7 sm:px-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="flex flex-col gap-1">
           <h1 className="m-0 text-2xl font-bold">Material prices</h1>
-          <span className="text-[13.5px] text-muted">These rates drive every grey structure estimate. Cement and steel update online every day; check the others against the market at least every 30 days.</span>
+          <span className="text-[13.5px] text-muted">These rates drive every grey structure estimate and update automatically every day. Typing a price here is optional: it overrides the automatic one for 30 days.</span>
         </div>
         <div className="flex flex-wrap gap-2">
           <CitySelect
@@ -189,12 +204,13 @@ export default function AdminPrices() {
           compact
           kind="empty"
           title={`No prices for ${city} yet`}
-          text={city === 'Faisalabad' ? 'Run the seed script to add the starting prices: npm run seed -w @archcanvas/api' : `Estimates for ${city} use nearby city or Faisalabad prices until it has its own. "Check prices now" adds prices for all 40 cities.`}
+          text={city === 'Faisalabad' ? 'Run the seed script to add the starting prices: npm run seed -w @archcanvas/api' : `Estimates for ${city} already use automatic city prices. "Check prices now" saves them here for all 40 cities.`}
         />
       ) : (
         <>
           <div className="flex flex-wrap gap-2">
             {counts.verified > 0 && <Chip tone="green" icon="check">{counts.verified} verified</Chip>}
+            {counts.estimated > 0 && <Chip tone="blue">{counts.estimated} automatic city prices</Chip>}
             {counts.stale > 0 && <Chip tone="amber" icon="warn">{counts.stale} stale</Chip>}
             {counts.unverified > 0 && <Chip>{counts.unverified} unverified</Chip>}
             {Object.keys(errors).length > 0 && <Chip tone="red" icon="error">{Object.keys(errors).length} to check</Chip>}
@@ -285,6 +301,16 @@ export default function AdminPrices() {
                       <td className="px-3 py-2.5 text-[13px]">
                         {(() => {
                           const src = sourceLabel(r, city)
+                          if (r.source?.origin === 'admin') {
+                            return (
+                              <span className="flex flex-col items-start gap-1">
+                                <span className="text-muted">{src.text}</span>
+                                <button type="button" className="text-xs text-blueprint hover:underline" onClick={() => switchToAutomatic(r)} disabled={busy}>
+                                  Use automatic price
+                                </button>
+                              </span>
+                            )
+                          }
                           return src.url ? (
                             <a href={src.url} target="_blank" rel="noreferrer" title={src.title} className="text-blueprint">
                               {src.text}
@@ -307,7 +333,7 @@ export default function AdminPrices() {
             </table>
           </div>
           <span className="text-[12.5px] text-muted">
-            Grey means unverified, green verified, amber older than 30 days, red a price to check before saving. Saving a new price marks it as checked today. The next online check replaces cement and steel prices again.
+            Green means read online or set by an admin, blue an automatic city price, amber older than 30 days, red a price to check before saving. A saved price overrides the automatic one for 30 days; "Use automatic price" ends it sooner.
           </span>
         </>
       )}

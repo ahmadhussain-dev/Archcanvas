@@ -3,7 +3,7 @@ import mongoose from 'mongoose'
 import { z } from 'zod'
 import { MaterialRate } from '../models/index.js'
 import { CITIES, findCity } from '../lib/cities.js'
-import { checkRates, latestCheck } from '../services/rateUpdater.js'
+import { applyEstimate, checkRates, latestCheck } from '../services/rateUpdater.js'
 import { requireAuth, requireRole } from '../middleware/auth.js'
 import { validate } from '../middleware/validate.js'
 import { notFoundError } from '../lib/httpError.js'
@@ -33,7 +33,9 @@ const rateUpdateSchema = z
     ratePkr: z.number().min(0).max(10_000_000).optional(),
     name: z.string().trim().min(1).max(60).optional(),
     unit: z.string().trim().min(1).max(30).optional(),
-    verified: z.boolean().optional()
+    verified: z.boolean().optional(),
+    // Drop an admin price and go back to the automatic one.
+    automatic: z.literal(true).optional()
   })
   .refine((body) => Object.keys(body).length > 0, 'Nothing to update')
 
@@ -58,7 +60,7 @@ publicRates.post('/estimate', validate(estimateSchema), async (req, res) => {
   res.json({ estimate: await estimateFor(req.body) })
 })
 
-// Admin: edit and verify prices on /admin/prices.
+// Admin: optional overrides on /admin/prices. Prices are automatic without them.
 export const adminRates = Router()
 adminRates.use(requireAuth, requireRole('admin'))
 
@@ -80,14 +82,26 @@ adminRates.patch('/rates/:id', validate(rateUpdateSchema), async (req, res) => {
   if (!mongoose.isValidObjectId(req.params.id)) throw notFoundError('Rate not found')
   const rate = await MaterialRate.findById(req.params.id)
   if (!rate) throw notFoundError('Rate not found')
-  const { ratePkr, name, unit, verified } = req.body
+  const { ratePkr, name, unit, verified, automatic } = req.body
   const by = req.auth.userId
 
-  if (ratePkr !== undefined && ratePkr !== rate.ratePkr) {
-    rate.ratePkr = ratePkr
-    rate.history.push({ ratePkr, at: new Date(), by, origin: 'admin' })
+  if (automatic) {
+    // The next daily check puts an online price back on cement and steel.
+    const sibling = await MaterialRate.findOne({ city: rate.city, 'source.origin': 'estimate', 'source.market': { $gt: 0 } })
+    applyEstimate(rate, new Date(), sibling?.source.market ?? 1)
+    await rate.save()
+    return res.json({ rate })
+  }
+
+  if (ratePkr !== undefined) {
+    if (ratePkr !== rate.ratePkr) {
+      rate.ratePkr = ratePkr
+      rate.history.push({ ratePkr, at: new Date(), by, origin: 'admin' })
+      if (rate.history.length > 50) rate.history.splice(0, rate.history.length - 50)
+    }
+    // Saving a price, even the same one, makes it an admin override.
     rate.source = { origin: 'admin' }
-    if (rate.history.length > 50) rate.history.splice(0, rate.history.length - 50)
+    rate.pending = undefined
   }
   if (name !== undefined) rate.name = name
   if (unit !== undefined) rate.unit = unit

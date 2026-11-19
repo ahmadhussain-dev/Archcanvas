@@ -136,7 +136,11 @@ describe('projects', { skip: !hasDb }, () => {
     assert.equal(estimate.coveredAreaSqft, 2250)
     assert.equal(estimate.lines.length, 7)
     assert.ok(estimate.totalPkr > 0)
-    assert.equal(estimate.hasUnverifiedRates, true)
+    // No prices saved yet: every material uses the automatic price for the city.
+    assert.ok(estimate.lines.every((l) => l.rateStatus === 'estimated'))
+    assert.equal(estimate.hasUnverifiedRates, false)
+    assert.ok(estimate.extras.some((x) => x.key === 'contingency'))
+    assert.ok(estimate.range.lowPkr < estimate.totalPkr && estimate.totalPkr < estimate.range.highPkr)
   })
 
   test('delete removes the project and its versions', async () => {

@@ -9,8 +9,8 @@ import { api } from '../../lib/api.js'
 import { useApi } from '../../lib/useApi.js'
 import { ftin, num, num2, pkrShort, timeAgo } from '../../lib/format.js'
 
-const COLORS = { steel: '#13202C', cement: '#1E5AA8', bricks: '#B2441C', labour: '#6E8FB8', crush: '#A9BCD4', sand: '#C9B48F', pipes: '#D8CDB8' }
-const STATUS = { verified: ['Verified', 'green'], stale: ['Stale', 'amber'], unverified: ['Unverified', 'grey'] }
+const COLORS = { steel: '#13202C', cement: '#1E5AA8', bricks: '#B2441C', labour: '#6E8FB8', crush: '#A9BCD4', sand: '#C9B48F', pipes: '#D8CDB8', other: '#8A96A3' }
+const STATUS = { verified: ['Verified', 'green'], estimated: ['City price', 'blue'], stale: ['Stale', 'amber'], unverified: ['Unverified', 'grey'] }
 const SHORT = { bag: 'bag', 'bag (50 kg)': 'bag', brick: 'brick', ton: 'ton', cft: 'cft', 'sq ft': 'sq ft' }
 
 function qty(line) {
@@ -27,6 +27,10 @@ function sourceText(line, city) {
     return `Online${borrowed}${from}${line.rateCheckedAt ? `, checked ${timeAgo(line.rateCheckedAt)}` : ''}`
   }
   if (src.origin === 'admin') return `Set by admin${from}`
+  if (src.origin === 'estimate') {
+    const nudged = src.market && src.market !== 1 ? ', follows today\'s cement price' : ''
+    return `Worked out for ${src.city ?? city}${nudged}${line.rateCheckedAt ? `, updated ${timeAgo(line.rateCheckedAt)}` : ''}`
+  }
   return `Starting value${src.basedOn ? ` (${src.basedOn})` : from}`
 }
 
@@ -60,6 +64,9 @@ export default function Estimate() {
   const p = project.data.project
   const e = estimate.data.estimate
   const lines = [...e.lines].sort((a, b) => b.amountPkr - a.amountPkr)
+  const extras = e.extras ?? []
+  const otherPkr = extras.reduce((s, x) => s + x.amountPkr, 0)
+  const bars = otherPkr > 0 ? [...lines, { key: 'other', name: 'Other costs', amountPkr: otherPkr }] : lines
   const counts = lines.reduce((c, l) => ({ ...c, [l.rateStatus]: (c[l.rateStatus] ?? 0) + 1 }), {})
   const pct = (l) => (e.totalPkr ? (l.amountPkr / e.totalPkr) * 100 : 0)
   const th = 'px-4 py-2.5 text-xs font-semibold text-muted'
@@ -94,23 +101,34 @@ export default function Estimate() {
             <span className="text-[13px] text-[#b8c4cf]">Total grey structure cost</span>
             <b className="font-mono text-[34px] font-medium">{pkrShort(e.totalPkr)}</b>
             <span className="font-mono text-[13px] text-[#b8c4cf]">{num(e.totalPkr)}</span>
+            {e.range && (
+              <span className="text-[12.5px] text-[#b8c4cf]">
+                Likely figure. Expect <span className="font-mono">{pkrShort(e.range.lowPkr)}</span> to <span className="font-mono">{pkrShort(e.range.highPkr)}</span>
+              </span>
+            )}
           </div>
           <div className="flex flex-col gap-1.5 rounded-card border border-line bg-white p-5">
             <span className="text-[13px] text-muted">Cost per sq ft</span>
             <b className="font-mono text-[30px] font-medium">PKR {num(e.perSqftPkr)}</b>
-            <span className="text-[12.5px] text-muted">Over {num(e.coveredAreaSqft)} sq ft covered area</span>
+            <span className="text-[12.5px] text-muted">
+              Over {num(e.coveredAreaSqft)} sq ft covered area
+              {e.range && (
+                <>
+                  , range <span className="font-mono">{num(e.range.lowPerSqftPkr)}</span> to <span className="font-mono">{num(e.range.highPerSqftPkr)}</span>
+                </>
+              )}
+            </span>
           </div>
           <div className="flex flex-col gap-2 rounded-card border border-line bg-white p-5">
             <span className="text-[13px] text-muted">Rates used</span>
             <div className="flex flex-wrap gap-1.5">
-              {counts.verified > 0 && <Chip tone="green" icon="check">{counts.verified} verified</Chip>}
+              {counts.verified > 0 && <Chip tone="green" icon="check">{counts.verified} checked online</Chip>}
+              {counts.estimated > 0 && <Chip tone="blue">{counts.estimated} city prices</Chip>}
               {counts.stale > 0 && <Chip tone="amber" icon="warn">{counts.stale} stale</Chip>}
               {counts.unverified > 0 && <Chip>{counts.unverified} unverified</Chip>}
             </div>
             <span className="text-[12.5px] leading-[1.45] text-muted">
-              {e.hasUnverifiedRates
-                ? 'Some prices are starting values or older than 30 days. An admin can check them against the market.'
-                : 'Every price was checked in the last 30 days. Cement and steel are checked online every day.'}
+              {e.checkedSharePct ?? 0}% of the material and labour cost uses prices read online. The rest are worked out for {e.city} automatically and updated every day.
             </span>
           </div>
         </div>
@@ -118,12 +136,12 @@ export default function Estimate() {
         <div className="flex flex-col gap-3.5 rounded-card border border-line bg-white p-5">
           <b className="text-[15px]">Where the money goes</b>
           <div className="flex h-3.5 gap-0.5 overflow-hidden rounded">
-            {lines.map((l) => (
+            {bars.map((l) => (
               <span key={l.key} title={l.name} style={{ width: `${pct(l)}%`, background: COLORS[l.key] }} />
             ))}
           </div>
           <div className="flex flex-wrap gap-x-5 gap-y-2">
-            {lines.map((l) => (
+            {bars.map((l) => (
               <div key={l.key} className="flex items-center gap-2 text-[13px]">
                 <span className="size-2.5 rounded-sm" style={{ background: COLORS[l.key] }} />
                 <span>{l.name.split(' (')[0]}</span>
@@ -177,6 +195,22 @@ export default function Estimate() {
                     <td className="px-4 py-3 text-right font-mono">{num(l.amountPkr)}</td>
                   </tr>
                 ))}
+                {extras.length > 0 && (
+                  <tr className="border-t border-line bg-paper">
+                    <td colSpan={5} className="px-4 py-2 text-xs font-semibold text-muted">Other costs</td>
+                  </tr>
+                )}
+                {extras.map((x) => (
+                  <tr key={x.key} className="border-t border-[#eef1f3]">
+                    <td className="px-4 py-3 font-medium">{x.name}</td>
+                    <td className="px-4 py-3 text-right font-mono">{x.basis}</td>
+                    <td />
+                    <td className="px-4 py-3 text-right">
+                      <Chip>Rule of thumb</Chip>
+                    </td>
+                    <td className="px-4 py-3 text-right font-mono">{num(x.amountPkr)}</td>
+                  </tr>
+                ))}
                 <tr className="border-t-2 border-navy">
                   <td className="px-4 py-3.5 font-bold">Total</td>
                   <td colSpan={3} />
@@ -188,7 +222,10 @@ export default function Estimate() {
           <div className="flex flex-col gap-2 rounded-card border border-line bg-white px-5 py-4">
             <b className="text-[15px]">How this is worked out</b>
             <span className="text-[13.5px] leading-normal text-muted">
-              Covered area is the plot ({ftin(p.plot.widthFt)} × {ftin(p.plot.depthFt)}) times {e.floors} floor{e.floors === 1 ? '' : 's'}. Quantities use rules of thumb per sq ft for a brick and RCC house. Walls get taller with the roof height, so bricks, cement and sand go up with it.
+              Covered area is the plot ({ftin(p.plot.widthFt)} × {ftin(p.plot.depthFt)}) times {e.floors} floor{e.floors === 1 ? '' : 's'}. Quantities use rules of thumb per sq ft for a brick and RCC house. Walls get taller with the roof height, so bricks, cement and sand go up with it. Groundwork, frames, tanks, wastage, transport and a contingency are added as separate lines. The range is 10% below to 15% above the likely figure.
+            </span>
+            <span className="text-[13.5px] leading-normal text-muted">
+              Prices update on their own every day. Cement and steel are read from price websites. Bricks, sand, crush, labour and pipes are worked out for {e.city} from regional prices and follow the market. No one has to type them in.
             </span>
             {e.missingRates.length > 0 && (
               <span className="text-[13px] text-amber">No price set for: {e.missingRates.join(', ')}.</span>
