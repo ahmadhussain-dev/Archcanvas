@@ -19,6 +19,7 @@ test('cities fall in the right region', () => {
   assert.equal(regionOf('Peshawar'), 'kp')
   assert.equal(regionOf('Quetta'), 'balochistan')
   assert.equal(regionOf('Faisalabad'), 'central-punjab')
+  assert.equal(regionOf('Lahore'), 'lahore')
   assert.equal(regionOf('Somewhere new'), 'central-punjab')
 })
 
@@ -31,11 +32,15 @@ test('regional differences: Islamabad bricks dearer, Karachi sand cheaper', () =
 
 test('the live cement price nudges local materials, within limits', () => {
   assert.equal(marketFactor(null), 1)
-  assert.equal(marketFactor(1450), 1)
-  assert.equal(marketFactor(1595), 1.05) // cement +10% => local +5%
+  assert.equal(marketFactor(1560), 1)
+  assert.equal(marketFactor(1716), 1.05) // cement +10% => local +5%
   assert.equal(marketFactor(100000), MARKET_LIMITS.max)
   assert.equal(marketFactor(1), MARKET_LIMITS.min)
   for (const key of LOCAL_KEYS) assert.ok(estimatedRate(key, 'Lahore', 1.1).ratePkr >= estimatedRate(key, 'Lahore').ratePkr)
   // Cement and steel themselves are not nudged by their own index.
-  assert.equal(estimatedRate('cement', 'Lahore', 1.2).ratePkr, 1450)
+  assert.equal(estimatedRate('cement', 'Lahore', 1.2).ratePkr, estimatedRate('cement', 'Lahore').ratePkr)
+})
+
+test('every reference price says when it was checked', () => {
+  for (const r of REFERENCE_RATES) assert.match(r.checked, /^\d{4}-\d{2}-\d{2}$/, r.key)
 })

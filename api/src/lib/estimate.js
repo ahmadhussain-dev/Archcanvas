@@ -5,17 +5,26 @@
 // scale fully with it and cement and sand scale half (the other half goes into
 // slabs, floors and plaster that do not change with height). Steel and crush
 // are mostly in the roof slab, beams and foundation, so they stay the same.
-// These are planning numbers, not a bill of quantities. They are a little above
-// the old flat figures so that plaster, masonry joints and the foundation are
-// counted; site wastage and transport are separate lines below.
+// These are planning numbers, not a bill of quantities. They follow published
+// Pakistani take-offs for double storey houses (see docs/price-sources.md):
+//   Zameen 10 Marla A-category (3,300 sq ft): 90,000 bricks, 8,200 cft sand,
+//     2,600 cft crush, 800 bags, 5 t steel;
+//   Zameen 5 Marla (1,975 sq ft, Oct 2023): 56,000 bricks, 3,052 cft sand,
+//     1,721 cft crush, 605 bags, 3 t steel;
+//   Glorious Builders 10 Marla (3,400 sq ft, Nov 2026): 88,000 bricks,
+//     7,200 cft sand, 3,200 cft crush, 1,200 bags, 6 t steel.
+// Per sq ft that is 26-28 bricks, 1.5-2.5 cft sand, 0.8-0.95 cft crush,
+// 0.24-0.35 bags and 1.5-1.8 kg steel. We take the upper half so foundations,
+// a framed (column and beam) structure and plaster are covered; site wastage
+// and transport are separate lines below.
 export const BASE_ROOF_HEIGHT_FT = 10.5
 
 export const QUANTITY_PER_SQFT = {
-  steel: { quantity: 0.0035, heightShare: 0 }, // ton (3.5 kg per sq ft)
-  cement: { quantity: 0.44, heightShare: 0.5 }, // 50 kg bags
-  bricks: { quantity: 23, heightShare: 1 }, // bricks (9 in walls)
-  sand: { quantity: 1.9, heightShare: 0.5 }, // cft
-  crush: { quantity: 1.1, heightShare: 0 }, // cft
+  steel: { quantity: 0.0018, heightShare: 0 }, // ton (1.8 kg per sq ft)
+  cement: { quantity: 0.34, heightShare: 0.5 }, // 50 kg bags
+  bricks: { quantity: 27, heightShare: 1 }, // bricks (9 in outer walls, 4.5 in some partitions)
+  sand: { quantity: 2.2, heightShare: 0.5 }, // cft
+  crush: { quantity: 0.9, heightShare: 0 }, // cft
   labour: { quantity: 1, heightShare: 0 }, // rate is per sq ft
   pipes: { quantity: 1, heightShare: 0 } // rate is per sq ft
 }

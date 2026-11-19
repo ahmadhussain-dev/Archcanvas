@@ -11,7 +11,7 @@ test('5 Marla, 2 floors, standard roof', () => {
   const est = calculateEstimate(fiveMarlaTwoFloors, rates)
   assert.equal(est.coveredAreaSqft, 2250)
   const qty = Object.fromEntries(est.lines.map((l) => [l.key, l.quantity]))
-  assert.deepEqual(qty, { steel: 7.88, cement: 990, bricks: 51750, sand: 4275, crush: 2475, labour: 2250, pipes: 2250 })
+  assert.deepEqual(qty, { steel: 4.05, cement: 765, bricks: 60750, sand: 4950, crush: 2025, labour: 2250, pipes: 2250 })
   const all = [...est.lines, ...est.extras]
   assert.equal(est.totalPkr, all.reduce((s, l) => s + l.amountPkr, 0))
   assert.equal(est.perSqftPkr, Math.round(est.totalPkr / 2250))
@@ -54,7 +54,7 @@ test('cost grows with floors and roof height', () => {
   assert.ok(tall.totalPkr > two.totalPkr)
   const bricks = (e) => e.lines.find((l) => l.key === 'bricks').quantity
   const steel = (e) => e.lines.find((l) => l.key === 'steel').quantity
-  assert.equal(bricks(tall), Math.round(51750 * 12 / 10.5))
+  assert.equal(bricks(tall), Math.round(60750 * 12 / 10.5))
   assert.equal(steel(tall), steel(two))
 })
 
