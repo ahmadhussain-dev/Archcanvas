@@ -236,7 +236,7 @@ test('Room Duplicate： Room 、 、 Furniture ', () => {
  northWall.baseboardMaterialFront = { textureUrl: 'wood_skirting.jpg' };
  }
 
- const opening = doc.addOpening({
+ doc.addOpening({
  wallId: northWallId,
  type: 'window',
  shape: 'round-arch',
@@ -246,7 +246,7 @@ test('Room Duplicate： Room 、 、 Furniture ', () => {
  doubleDoor: true
  });
 
- const item = doc.addItem({
+ doc.addItem({
  name: 'Double Bed',
  type: 'bed',
  x: 1.0,

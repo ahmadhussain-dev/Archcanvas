@@ -65,10 +65,6 @@ export function setEmbedView(view) {
   relayout();
 }
 
-export function getEmbedView() {
-  return mode;
-}
-
 export function initSplitView(appContext, store) {
   ctx = appContext;
   stage = document.getElementById('stage');

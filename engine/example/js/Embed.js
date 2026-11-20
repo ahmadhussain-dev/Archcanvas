@@ -57,7 +57,7 @@ export function blankFloorplan({ floors = 1, roofHeightFt = 10.5, name = 'ArchCa
 }
 
 /** A new project: the plot boundary as one room with four walls on the ground floor. */
-export function plotBuildingFile({ widthFt, depthFt, floors, roofHeightFt, name }) {
+function plotBuildingFile({ widthFt, depthFt, floors, roofHeightFt, name }) {
   const doc = new FloorplanDocument(blankFloorplan({ floors, roofHeightFt, name }));
   doc.addRoom({
     id: 'plot',
@@ -76,7 +76,7 @@ export function plotBuildingFile({ widthFt, depthFt, floors, roofHeightFt, name 
  * A saved plan opened in ArchCanvas uses shared room walls. An older plan
  * (every room with its own walls) is brought up to date as it loads.
  */
-export function withSharedWalls(text) {
+function withSharedWalls(text) {
   const data = JSON.parse(text);
   const floorplan = data?.floorplan && typeof data.floorplan === 'object' ? data.floorplan : data;
   if (floorplan && typeof floorplan === 'object') floorplan.wallModel = SHARED_WALLS;

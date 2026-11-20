@@ -1,4 +1,4 @@
-import { Color3, TransformNode } from '../../src/index.js';
+import { TransformNode } from '../../src/index.js';
 import { createSvgElement, worldToSvg } from './Render2D.js';
 
 let Context = null;

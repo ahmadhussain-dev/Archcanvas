@@ -11,10 +11,6 @@ export function isBuildingPlacementActive() {
   return !!activePlacement;
 }
 
-export function getBuildingPlacement() {
-  return activePlacement;
-}
-
 /**
  *   3D/2D  （  draw-fence）
  */
@@ -196,7 +192,7 @@ export function startBuildingPlacement(mode) {
 
 export function updateBuildingPlacement(point, pickTarget = null) {
   if (!activePlacement || !point) return;
-  const { type, id, mode } = activePlacement;
+  const { type, id } = activePlacement;
   const map = Context.testMap;
   if (!map) return;
 

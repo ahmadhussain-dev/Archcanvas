@@ -6,7 +6,7 @@ import * as Drag3DContext from './js/Drag3DContext.js';
 import * as SelectionManager from './js/SelectionManager.js';
 import { initAppEventBindings } from './js/AppEventBindings.js';
 import * as DesignController from './js/DesignController.js';
-import { initCanvas3DController, begin3DDrag, move3DDrag, end3DDrag, getCanvasPickFromEvent } from './js/Canvas3DController.js';
+import { initCanvas3DController, end3DDrag, getCanvasPickFromEvent } from './js/Canvas3DController.js';
 import * as ViewController from './js/ViewController.js';
 import * as InteractionHelpers from './js/InteractionHelpers.js';
 import { set2DPanSpeed } from './js/SvgEvents.js';
@@ -14,10 +14,10 @@ import { updateFirstPersonConfig } from './js/FirstPersonController.js';
 
 const {
   getFreeFloorEdges, clear2DFloorEdgeRailingPreview, clear3DFloorEdgeRailingPreview,
-  update2DFloorEdgeRailingPreview, update3DFloorEdgeRailingPreview,
+  update2DFloorEdgeRailingPreview,
   clear2DStairsRailingPreview, clear3DStairsRailingPreview,
-  update2DStairsRailingPreview, update3DStairsRailingPreview,
-  addRailingToStairs, clearDrawWallPreview, updateDrawWallPreview
+  update2DStairsRailingPreview,
+  addRailingToStairs, clearDrawWallPreview
 } = RailingPreview;
 const {
   selectTarget, clearSelection, selectRoom, selectWall, selectItem,
@@ -25,80 +25,62 @@ const {
 } = SelectionManager;
 const {
   syncRotationInputs, previewSelectedStructureRotation,
-  commitSelectedStructureRotation, getRotatedWallEndpoints,
-  previewSelectedWallRotation, previewSelectedFenceRotation, updateSelectedStructure,
-  updateSelectedStructureRotation, deleteSelectedStructure, updateSelectedRoom,
+  commitSelectedStructureRotation,
+  previewSelectedWallRotation, updateSelectedStructure, deleteSelectedStructure, updateSelectedRoom,
   updateSelectedFloor, updateSkyboxFromCurrentFloor, updateSelectedFenceSubtype,
-  updateSelectedFenceLength, updateSelectedFenceRotation, updateSelectedFenceHeight,
-  updateSelectedFenceYOffset, updateSelectedFenceColor, deleteSelectedFence,
+  updateSelectedFenceLength, updateSelectedFenceHeight,
+  updateSelectedFenceYOffset, updateSelectedFenceColor,
   updateSelectedWallLength, updateSelectedWallRotation, updateSelectedRotation,
   updateSelectedScale, updateSelectedSize, updateSelectedPose, updateSelectedOpening
 } = PropertyManager;
-const normalizeRotationDegrees = (degrees, useSnap = snapEnabled) => PropertyManager.normalizeRotationDegrees(degrees, useSnap);
 const { isAddRoomMode, roomShapeFromMode, getOpeningModeInfo, isAddOpeningMode, handleModeChange, switchToSelectMode, setDesignMode, getPickedColorFromTarget, executeDesignTool } = DesignController;
 const {
-  updateHistoryButtons, getMeshFloorId, refreshShadows, resetCamera, clear3DGrid,
+  updateHistoryButtons, refreshShadows, resetCamera,
   refresh3DGrid, resetCurrentMaterial, setView, snapValue, snapWorldPoint, snapWorldPointForFurniture,
   snapToGridSegmentCenter, snapNumber, currentRooms, currentWalls, referenceFloorWalls,
-  currentOpenings, currentItems, currentRoofs, currentStairs, getFloorEntityCount,
-  ensureVisibleCurrentFloor, makeButton, hideContextMenu, showIconMenu, cancelLongPress,
+  currentOpenings, currentItems, currentRoofs, currentStairs,
+  ensureVisibleCurrentFloor, hideContextMenu, showIconMenu, cancelLongPress,
   handlePointerCancel, attachContextMenuTrigger, getSelectedTarget,
   cancelObjectInteractions, snapRoomPosition, snapRoomEdge, updateViewBounds
 } = ViewController;
-const { showFloorContextMenu, moveFloorAction, deleteFloorAction, renameCurrentFloor, formatFloorDisplayName, syncFloorControls } = FloorManager;
+const { syncFloorControls } = FloorManager;
 const {
-  getStructure, updateStructure, moveStructureTo, renderPlanItem, beginRoofResize,
+  getStructure, updateStructure, moveStructureTo, beginRoofResize,
   moveRoofResize, finishRoofResize, rememberPointer, updatePointer, forgetPointer,
-  pointerDistance, pointerAngle, canPlaceOnTable, findTableBelow, findBookshelfNearby,
-  snapToBookshelf, getShelfLayerHeights, getItemsCountOnBookshelf, moveItemTo,
+  pointerDistance, pointerAngle, getShelfLayerHeights, getItemsCountOnBookshelf, moveItemTo,
   findMetadataFromNode, findRoofComponentIdFromNode, findOpeningIdFromNode,
   findItemIdFromNode, findWallIdFromNode, findRoomIdFromNode, findRoofIdFromNode,
   findStairsIdFromNode, findFenceIdFromNode, findFenceGateIdFromNode,
   groundPointFromPointer, wallPointFromPointer, findWallSideFromNode, get2DWallSideFromPoint
 } = InteractionHelpers;
 const {
-  validateUploadedFurniture, registerCustomFurniture, saveCustomFurnitureToLocalStorage,
-  restoreCustomFurnitureFromLocalStorage, loadUploadedFurniture, initFurnitureUpload,
-  renderFurnitureGrid, cleanFloorplanMaterials, cleanMaterialLibraryForStorage, restoreFloorplanMaterials
+  registerCustomFurniture, saveCustomFurnitureToLocalStorage,
+  renderFurnitureGrid, cleanMaterialLibraryForStorage, restoreFloorplanMaterials
 } = UiControls;
-import { ensure3DGridControls, ensureStructureEditor, updateEditor, initUiEventListeners, updateDesignCursor, placeFurnitureAt, getPlacementInitialPoint } from './js/EditorUi.js';
+import { ensure3DGridControls, ensureStructureEditor, updateEditor, updateDesignCursor, placeFurnitureAt, getPlacementInitialPoint } from './js/EditorUi.js';
 import { initFurniturePlacementController } from './js/FurniturePlacementController.js';
 import { initBuildingPlacementController } from './js/BuildingPlacementController.js';
 import { initEditorUiContext } from './js/EditorUiContext.js';
 import { showCustomConfirm, showCustomAlert, showCustomPrompt, showProjectListModal, show3MFExportDialog, showFurnitureUploadHelp, showAiBuildingHelp } from './js/Dialogs.js';
 import { createCustomDropdown } from './js/Dropdown.js';
-import { handleHotkeys } from './js/Hotkeys.js';
-import { Store, showToast, formatTimestamp, readLocalSave } from './js/Store.js';
+import { Store, showToast, readLocalSave } from './js/Store.js';
 import { EMBEDDED, blankFloorplan, initEmbedBridge } from './js/Embed.js';
 import { EntityManager } from './js/EntityManager.js';
 import { Viewer3D } from './js/Viewer3D.js';
 import * as DragHandler from './js/DragHandler.js';
 import * as SvgEvents from './js/SvgEvents.js';
 import * as FileManager from './js/FileManager.js';
-import { takePhoto, updateLocalProjectCount } from './js/FileManager.js';
-import { iconSvg } from './js/Icons.js';
+import { takePhoto } from './js/FileManager.js';
 import { TARGET_TYPES } from './js/types.js';
 import {
   initTargetHandler,
   isAllowedTarget,
-  getTargetObject,
   isTargetLocked,
   setTargetLocked,
-  getTargetFloorId,
-  isTargetOnCurrentFloor,
   get2DTargetFromElement,
-  isSwitchableTarget,
-  isLightingTarget,
-  pickColorFromContextMenu,
-  showObjectContextMenu,
   toggleTargetLock,
-  toggleTarget,
   rotateTarget,
-  mirrorTarget,
   copyTarget,
-  deleteTarget,
-  selectTargetDescriptor,
-  get3DTarget,
 } from './js/TargetHandler.js';
 import {
   initMaterialManager,
@@ -106,20 +88,15 @@ import {
   applyMaterialToItemComponent,
   renderMaterialLibrary,
   saveCustomMaterialToLocalStorage,
-  removeCustomMaterialFromLocalStorage,
   extractMaterial,
   applyMaterial,
-  loadCustomColorMaterials,
-  setCustomColorMaterials,
-  isCustomColorMaterial
+  loadCustomColorMaterials
 } from './js/MaterialManager.js';
 import {
   initRender2D,
   renderPlan,
-  worldToSvg,
   svgToWorld,
   inchesToWorld,
-  createSvgElement,
   svgPointFromEvent,
   wallPointAt,
   getWallProjectionT
@@ -128,18 +105,12 @@ import {
   initViewer3DHandles,
   clear3DEditHandles,
   refresh3DEditHandles,
-  begin3DEditHandleDrag,
   move3DEditHandle,
-  pickNearest3DTarget,
   getEditHandleNodes,
   getEditHandleDragState,
   setEditHandleDragState,
-  get3DEditTargetBounds,
-  get3DEditHandleY,
-  create3DEditHandle,
   set3DEditTarget,
-  same3DEditTarget,
-  updateHandleHoverState
+  same3DEditTarget
 } from './js/Viewer3DHandles.js';
 import {
   playWindChimeSound,
@@ -155,13 +126,9 @@ import {
   DragHandler as LibDragHandler,
   Viewer3DHandles as LibViewer3DHandles,
   Topology,
-  sampleData,
-  FENCE_SUBTYPE_DEFAULTS,
   FURNITURE_DEFINITIONS,
   FURNITURE_LIST,
   DEFAULT_MATERIAL_PACKS,
-  createTextureMaterialDescriptor,
-  getRoomVertices,
   pointInRoom,
   isSymmetricShape
 } from '../src/index.js';
@@ -256,7 +223,7 @@ const stateSyncMap = [
 
 function syncLocalToStore() {
   // 1.   app.js   Store  
-  for (const [getLocal, setLocal, store, key] of stateSyncMap) {
+  for (const [getLocal, , store, key] of stateSyncMap) {
     store[key] = getLocal();
   }
 
@@ -464,16 +431,8 @@ DesignController.initDesignController(appState);
 ViewController.initViewController(appState);
 InteractionHelpers.initInteractionHelpers(appState);
 
-const stage = document.getElementById('stage');
-const viewToggleButton = document.getElementById('btn-view-toggle');
-const undoButton = document.getElementById('btn-undo');
-const redoButton = document.getElementById('btn-redo');
 const canvas = document.getElementById('render-canvas');
 const svg = document.getElementById('floorplan');
-const designSelectionPanel = document.getElementById('design-selection-panel');
-const materialCategorySelect = document.getElementById('material-category');
-const materialUploadInput = document.getElementById('material-upload');
-const materialLibraryPanel = document.getElementById('material-library');
 
 // ========== 3D  iewer3D   ?==========
 const viewer3d = new Viewer3D(canvas);
@@ -983,14 +942,6 @@ function currentFences() {
 
 
 
-function updateSelectedFenceGatePreview(patch) {
-  if (!selectedFenceGateId) return;
-  if (testMap.getEntity('fence_gate', selectedFenceGateId)?.locked && !('locked' in patch)) return;
-  testMap.updateFenceGate(selectedFenceGateId, patch, true);
-  refreshShadows();
-  updateEditor();
-  renderPlan();
-}
 
 function updateSelectedFenceGate(patch) {
   if (!selectedFenceGateId) return;
@@ -1011,11 +962,6 @@ function deleteSelectedFenceGate() {
   refreshShadows();
   renderPlan();
 }
-
-
-const findNearestSeat = (mannequinItem) => Topology.findNearestSeat(mannequinItem, testMap.getEntities('item'), (type) => testMap.getFurnitureDefinition(type));
-
-
 
 function revealRightPanelIfNeeded(hasSelection) {
   if (!hasSelection) return;

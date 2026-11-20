@@ -65,7 +65,7 @@ export function initMaterialControls() {
   Context.renderMaterialLibrary();
 }
 
-export function validateUploadedFurniture(definition) {
+function validateUploadedFurniture(definition) {
   if (!definition || typeof definition !== 'object') return 'The factory did not return a furniture definition object.';
   if (!/^[a-z][a-z0-9_]*$/.test(definition.type || '')) return 'type must start with a lowercase letter and contain only lowercase letters, digits, and underscores.';
   if (!definition.name || typeof definition.name !== 'string') return 'A valid furniture name is required.';
@@ -138,7 +138,7 @@ export function saveCustomFurnitureToLocalStorage(type, source) {
   }
 }
 
-export async function restoreCustomFurnitureFromLocalStorage() {
+async function restoreCustomFurnitureFromLocalStorage() {
   try {
     const storedStr = localStorage.getItem('custom_furniture_sources');
     if (!storedStr) return;
@@ -161,7 +161,7 @@ export async function restoreCustomFurnitureFromLocalStorage() {
   }
 }
 
-export async function loadUploadedFurniture(file) {
+async function loadUploadedFurniture(file) {
   const source = await file.text();
   const definition = await registerCustomFurniture(source);
   Context.renderFurnitureGrid();
@@ -169,7 +169,7 @@ export async function loadUploadedFurniture(file) {
   saveCustomFurnitureToLocalStorage(definition.type, source);
 }
 
-export function initFurnitureUpload() {
+function initFurnitureUpload() {
   const uploadButton = document.getElementById('btn-upload-furniture');
   const helpButton = document.getElementById('btn-furniture-upload-help');
   const input = document.getElementById('furniture-upload-input');

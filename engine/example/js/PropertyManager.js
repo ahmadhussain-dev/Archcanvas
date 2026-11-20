@@ -1,6 +1,3 @@
-import { Topology, DEFAULT_MATERIAL_PACKS } from '../../src/index.js';
-import { showToast } from './Store.js';
-import { showCustomPrompt } from './Dialogs.js';
 
 let Context = null;
 let structureRotationPreview = null;
@@ -42,7 +39,7 @@ export function initPropertyManager(appState) {
   Context = appState;
 }
 
-export function normalizeRotationDegrees(degrees, useSnap) {
+function normalizeRotationDegrees(degrees, useSnap) {
   const isSnap = useSnap !== undefined ? useSnap : Context.snapEnabled;
   let value = Number(degrees) || 0;
   if (isSnap) value = Math.round(value / 90) * 90;
@@ -93,7 +90,7 @@ export function commitSelectedStructureRotation(degrees) {
   return commitAfterPreview(selected.type, selected.id, commit, 'structure rotation');
 }
 
-export function getRotatedWallEndpoints(wall, degrees) {
+function getRotatedWallEndpoints(wall, degrees) {
   const angleRad = normalizeRotationDegrees(degrees) * Math.PI / 180;
   const x1 = wall.from[0];
   const z1 = wall.from[1];
@@ -119,16 +116,6 @@ export function previewSelectedWallRotation(degrees) {
   const preview = getRotatedWallEndpoints(wall, normalized);
   Context.testMap.beginEntityPreview('wall', wall.id);
   Context.testMap.updateEntityPreview('wall', wall.id, { from: preview.from, to: preview.to });
-}
-
-export function previewSelectedFenceRotation(degrees) {
-  if (!Context.selectedFenceId) return;
-  const fence = Context.testMap.getEntity('fence', Context.selectedFenceId);
-  if (!fence || fence.locked) return;
-  const normalized = syncRotationInputs('fence-rotation', 'fence-rotation-range', degrees);
-  const preview = getRotatedWallEndpoints(fence, normalized);
-  Context.testMap.beginEntityPreview('fence', fence.id);
-  Context.testMap.updateEntityPreview('fence', fence.id, { from: preview.from, to: preview.to });
 }
 
 export function updateSelectedStructure() {
@@ -179,12 +166,6 @@ export function updateSelectedStructure() {
   Context.refreshShadows();
   Context.updateEditor();
   Context.renderPlan();
-}
-
-export function updateSelectedStructureRotation(degrees) {
-  const selected = Context.getSelectedStructure();
-  if (selected?.value?.locked) return;
-  commitSelectedStructureRotation(degrees);
 }
 
 export function deleteSelectedStructure() {
@@ -341,26 +322,6 @@ export function updateSelectedFenceLength() {
   Context.renderPlan();
 }
 
-export function updateSelectedFenceRotation(deg) {
-  if (!Context.selectedFenceId) return;
-  const fenceId = Context.selectedFenceId;
-  const fence = Context.testMap.getEntity('fence', fenceId);
-  if (!fence || fence.locked) return;
-  const normalized = syncRotationInputs('fence-rotation', 'fence-rotation-range', deg);
-  const preview = getRotatedWallEndpoints(fence, normalized);
-  const commit = () => {
-    Context.pushHistory();
-    Context.testMap.executeCommand('updateFence', {
-      fenceId,
-      patch: { from: preview.from, to: preview.to }
-    });
-    Context.refreshShadows();
-    Context.updateEditor();
-    Context.renderPlan();
-  };
-  return commitAfterPreview('fence', fenceId, commit, 'fence rotation');
-}
-
 export function updateSelectedFenceHeight() {
   if (!Context.selectedFenceId) return;
   if (Context.testMap.getEntity('fence', Context.selectedFenceId)?.locked) return;
@@ -389,16 +350,6 @@ export function updateSelectedFenceColor() {
   Context.testMap.executeCommand('updateFence', { fenceId: Context.selectedFenceId, patch: { color: col, material: col } });
   Context.refreshShadows();
   Context.updateEditor();
-  Context.renderPlan();
-}
-
-export function deleteSelectedFence() {
-  if (!Context.selectedFenceId) return;
-  if (Context.testMap.getEntity('fence', Context.selectedFenceId)?.locked) return;
-  Context.pushHistory();
-  Context.testMap.executeCommand('deleteFence', { fenceId: Context.selectedFenceId });
-  Context.clearSelection();
-  Context.refreshShadows();
   Context.renderPlan();
 }
 

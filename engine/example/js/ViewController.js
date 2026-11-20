@@ -22,15 +22,13 @@ export function updateHistoryButtons() {
   if (redo) redo.disabled = !Context.store.canRedo;
 }
 
-export function getMeshFloorId(mesh) { return Context.viewer3d.getMeshFloorId(mesh); }
-
 export function refreshShadows() {
   Context.testMap.populateShadowGenerator(Context.viewer3d.shadowGenerator, Context.testMap.getCurrentFloorId());
   refresh3DGrid();
 }
 
 export function resetCamera() { return Context.viewer3d.resetCamera(); }
-export function clear3DGrid() { return Context.viewer3d.clear3DGrid(); }
+function clear3DGrid() { return Context.viewer3d.clear3DGrid(); }
 
 export function refresh3DGrid() {
   const floorId = Context.testMap.getCurrentFloorId();
@@ -142,7 +140,7 @@ export function snapValue(value) { return Topology.snapValue(value, Context.snap
  * Where the grid starts: the plot's corner when there is a plot (so a 1 ft
  * grid lines up with the plot edges), else the origin.
  */
-export function gridOrigin() {
+function gridOrigin() {
   const plot = Context.testMap?.getEntity?.('room', 'plot');
   if (!plot) return { x: 0, z: 0 };
   return { x: plot.x - plot.width / 2, z: plot.z - plot.depth / 2 };
@@ -293,17 +291,7 @@ export function currentItems() { return Context.testMap.getCurrentFloorEntities(
 export function currentRoofs() { return Context.testMap.getCurrentFloorEntities('roof'); }
 export function currentStairs() { return Context.testMap.getCurrentFloorEntities('stairs'); }
 export function referenceFloorWalls() { return FloorManager.referenceFloorWalls(); }
-export function getFloorEntityCount(floorId) { return FloorManager.getFloorEntityCount(floorId); }
 export function ensureVisibleCurrentFloor(options = {}) { return FloorManager.ensureVisibleCurrentFloor(options); }
-
-export function makeButton(id, label, className = '') {
-  const button = document.createElement('button');
-  button.type = 'button';
-  if (id) button.id = id;
-  if (className) button.className = className;
-  button.textContent = label;
-  return button;
-}
 
 export function hideContextMenu() {
   Context.contextMenuElement?.remove();

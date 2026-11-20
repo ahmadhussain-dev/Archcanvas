@@ -12,14 +12,10 @@ const INCHES_PER_UNIT = 39.37;
 const DEFAULT_WALL_COLOR = '#f9fbff';
 const DEFAULT_FLOOR_COLOR = '#d2b48c';
 const DEFAULT_FLOOR_ID = 'floor_1';
-const DEFAULT_WALL_BASEBOARD_HEIGHT = 0.1;
-const DEFAULT_WALL_WAINSCOT_HEIGHT = 1.0;
 
 function defaultRoofEaveOverhang(subtype) {
   return subtype === 'arch' || subtype === 'dome' ? 0 : 0.2;
 }
-
-const WALL_SURFACE_FIELD_MAP = MaterialResolver.WALL_SURFACE_FIELD_MAP;
 
 export const STAIR_SUBTYPE_DEFAULTS = {
   straight: {
@@ -189,10 +185,6 @@ function normalizePointPair(value, fallback = [0, 0]) {
   ];
 }
 
-function inchesToUnits(value) {
-  return Number((Number(value || 0) / INCHES_PER_UNIT).toFixed(4));
-}
-
 function normalizeWallDecorSettings(wall) {
   return MaterialResolver.normalizeWallDecorSettings(wall);
 }
@@ -201,16 +193,6 @@ function setWallEndpoints(wall, from, to) {
   if (!wall) return;
   wall.from = [Number(from[0].toFixed(3)), Number(from[1].toFixed(3))];
   wall.to = [Number(to[0].toFixed(3)), Number(to[1].toFixed(3))];
-}
-
-function pointToSegmentDistance(p, a, b) {
-  const dx = b.x - a.x;
-  const dz = b.z - a.z;
-  const l2 = dx * dx + dz * dz;
-  if (l2 === 0) return Math.hypot(p.x - a.x, p.z - a.z);
-  let t = ((p.x - a.x) * dx + (p.z - a.z) * dz) / l2;
-  t = Math.max(0, Math.min(1, t));
-  return Math.hypot(p.x - (a.x + t * dx), p.z - (a.z + t * dz));
 }
 
 function isWallOnEdge(wall, edgeFrom, edgeTo) {
@@ -1755,7 +1737,6 @@ export class FloorplanDocument {
   deleteFence(fenceId) {
     const fence = this.getFence(fenceId);
     if (!fence || fence.locked) return false;
-    const before = this.floorplan.fences.length;
 
     if (fence.sectionId) {
       const secId = fence.sectionId;

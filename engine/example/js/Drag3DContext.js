@@ -17,14 +17,6 @@ export function initDrag3DContext(appState) {
   Context = appState;
 }
 
-export function getDrag3DState() {
-  return Context.drag3DState;
-}
-
-export function setDrag3DState(val) {
-  Context.drag3DState = val;
-}
-
 export function onDrag3DDown(target, event) {
   const testMap = Context.testMap;
   const canvas = Context.canvas;

@@ -1,10 +1,5 @@
 // Pakistani plot units. Government standard: 1 Marla = 225 sq ft, 1 Kanal = 20 Marla.
 export const SQFT_PER_MARLA = 225
-export const MARLA_PER_KANAL = 20
-
-export function marlaToSqft(marla) {
-  return marla * SQFT_PER_MARLA
-}
 
 export function sqftToMarla(sqft) {
   return sqft / SQFT_PER_MARLA

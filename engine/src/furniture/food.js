@@ -1553,7 +1553,6 @@ export const sugarHawSkewerFurniture = {
     { id: 'haws', label: 'Component', defaultColor: '#d50000' }
   ],
   build(registry, item, node, size) {
-    const w = size.width;
     const h = size.height;
 
     //  

@@ -1,7 +1,7 @@
 import { pointInRoom } from '../rooms/index.js';
 
 export const INCHES_PER_UNIT = 39.37;
-export const DEFAULT_FLOOR_ID = 'floor_1';
+const DEFAULT_FLOOR_ID = 'floor_1';
 export const DEFAULT_WALL_THICKNESS = 0.18;
 
 export function escXml(value) {
@@ -44,7 +44,7 @@ export function orderedFloors(floorplan) {
   return [...floors].sort((a, b) => Number(a.level || 0) - Number(b.level || 0));
 }
 
-export function firstFloorId(floorplan) {
+function firstFloorId(floorplan) {
   return orderedFloors(floorplan)[0]?.id || DEFAULT_FLOOR_ID;
 }
 

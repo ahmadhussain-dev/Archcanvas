@@ -5,7 +5,7 @@ import Scaled from '../../components/Scaled.jsx'
 import planHero from '../../art/plan-hero.svg?raw'
 import iso from '../../art/iso-house.svg?raw'
 
-export const COST_BARS = [
+const COST_BARS = [
   ['Steel', 34, '#13202C'],
   ['Cement', 21, '#1E5AA8'],
   ['Bricks', 15, '#B2441C'],

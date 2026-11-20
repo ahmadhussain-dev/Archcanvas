@@ -16,8 +16,6 @@ import {
   cancelBuildingPlacement,
   commitBuildingPlacement,
   isBuildingPlacementActive,
-  isBuildingPlacementMode,
-  startBuildingPlacement,
   updateBuildingPlacement
 } from './BuildingPlacementController.js';
 
@@ -551,8 +549,5 @@ window.addEventListener('pointerup', end3DDrag);
   return API;
 }
 
-export function begin3DDrag(pointerInfo) { return API?.begin3DDrag(pointerInfo); }
-export function move3DDrag(pointerInfo) { return API?.move3DDrag(pointerInfo); }
 export function end3DDrag(event) { return API?.end3DDrag(event); }
-export function cancel3DDrag(event) { return API?.cancel3DDrag(event); }
 export function getCanvasPickFromEvent(event) { return API?.getCanvasPickFromEvent(event); }

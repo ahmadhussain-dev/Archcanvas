@@ -1882,25 +1882,6 @@ export const landscapeSunflowerPatch = {
           diameterTop: coreRadius * 2, diameterBottom: coreRadius * 2, height: size.width * 0.022, tessellation: 8
         }, { position: { x: 0, y: 0, z: size.width * 0.005 } }, { parent: headNode });
         core.rotation.x = Math.PI / 2;
-
-        // const petalCount = 12;
-        // const petalL = headRadius * 0.7;
-        // const petalW = headRadius * 0.25;
-        
-        // for (let p = 0; p < petalCount; p++) {
-        //   const angle = (p * Math.PI * 2) / petalCount;
-        //   const petal = sphereComponent(registry, seasonalItem, landscapeSunflowerPatch, 'sunflower-head', {
-        //     diameter: petalL, segments: 6
-        //   }, { position: { 
-        //     x: Math.cos(angle) * headRadius * 0.95, 
-        //     y: Math.sin(angle) * headRadius * 0.95, 
-        //     z: -size.width * 0.002 
-        //   } }, { parent: headNode });
-          
-        //   petal.scaling = new BABYLON.Vector3(1, 0.15, petalW / petalL);
-        //   petal.rotation.z = angle;
-        //   petal.rotation.y = 0.25;
-        // }
       }
     }
   }

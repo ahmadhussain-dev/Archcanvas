@@ -629,7 +629,7 @@ function emptyPlan(design, preset) {
 const along = (frame, side, at) => Math.round((['top', 'bottom'].includes(side) ? frame.minX + at * FT : frame.maxZ - at * FT) * 1000) / 1000
 
 /** The operations that build one floor of a design (applyAiPlan.js format). */
-export function floorOperations(design, floorIndex, frame) {
+function floorOperations(design, floorIndex, frame) {
   const floor = design.floors[floorIndex]
   const floorId = `floor_${floorIndex + 1}`
   const idOf = (name) => `${floorId}_${slug(name)}`

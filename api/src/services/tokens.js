@@ -1,8 +1,8 @@
 import jwt from 'jsonwebtoken'
 import env, { isProduction } from '../config/env.js'
 
-export const ACCESS_TTL = '15m'
-export const REFRESH_TTL_MS = 7 * 24 * 60 * 60 * 1000
+const ACCESS_TTL = '15m'
+const REFRESH_TTL_MS = 7 * 24 * 60 * 60 * 1000
 export const REFRESH_COOKIE = 'ac_refresh'
 
 export function signAccessToken(user) {

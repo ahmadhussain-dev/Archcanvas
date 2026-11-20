@@ -1,6 +1,6 @@
 // A quick check that the requested rooms can fit on the plot. Not the full plan check:
 // it compares minimum room areas (plus walls and circulation) with the covered area.
-export const MIN_ROOM = {
+const MIN_ROOM = {
   bedroom: { w: 10, d: 11 },
   bathroom: { w: 5, d: 7 },
   kitchen: { w: 8, d: 10 },

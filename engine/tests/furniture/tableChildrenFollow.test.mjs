@@ -79,7 +79,7 @@ test(' （< 10cm） ', () => {
  scale: 1
  };
 
- const { manager, entities } = createTestManager([shelf, bottom]);
+ const { manager } = createTestManager([shelf, bottom]);
 
  // 
  manager.moveItemTo('shelf-1', 5, 5);

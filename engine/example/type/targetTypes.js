@@ -2,7 +2,7 @@
  * targetTypes.js —  Furniture 
  */
 
-export const BUILDING_TARGET_TYPES = {
+const BUILDING_TARGET_TYPES = {
   ROOM: 'room',
   WALL: 'wall',
   OPENING: 'opening',

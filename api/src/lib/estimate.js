@@ -18,9 +18,9 @@
 // Per sq ft that is 26-30 bricks, 1.0-2.5 cft sand, 0.75-0.95 cft crush,
 // 0.22-0.35 bags and 1.25-1.8 kg steel. We take about the middle; site
 // wastage and transport are separate lines below.
-export const BASE_ROOF_HEIGHT_FT = 10.5
+const BASE_ROOF_HEIGHT_FT = 10.5
 
-export const QUANTITY_PER_SQFT = {
+const QUANTITY_PER_SQFT = {
   steel: { quantity: 0.0015, heightShare: 0 }, // ton (1.5 kg per sq ft)
   cement: { quantity: 0.28, heightShare: 0.5 }, // 50 kg bags
   bricks: { quantity: 28, heightShare: 1 }, // bricks (9 in outer walls, 4.5 in some partitions)
@@ -30,7 +30,7 @@ export const QUANTITY_PER_SQFT = {
   pipes: { quantity: 1, heightShare: 0 } // rate is per sq ft
 }
 
-export const ESTIMATE_ORDER = ['steel', 'cement', 'bricks', 'sand', 'crush', 'labour', 'pipes']
+const ESTIMATE_ORDER = ['steel', 'cement', 'bricks', 'sand', 'crush', 'labour', 'pipes']
 // Everything except labour is bought material, for the wastage and transport lines.
 const MATERIAL_KEYS = ['steel', 'cement', 'bricks', 'sand', 'crush', 'pipes']
 
@@ -63,7 +63,7 @@ export const EXTRAS = {
 export const RANGE = { low: 0.88, high: 1.25 }
 
 // Where the range and the "what changes the cost" notes come from.
-export const COST_SOURCE = {
+const COST_SOURCE = {
   name: 'Milkiyat: House construction cost in Pakistan 2026',
   url: 'https://milkiyat.com/articles/house-construction-cost-in-pakistan-2026-per-sq-ft-rates-per-marla-cost-full-budget-2'
 }

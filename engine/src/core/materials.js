@@ -1,7 +1,6 @@
 import { Color3, DynamicTexture, Material, StandardMaterial, Texture } from './babylon.js';
-import { DEFAULT_MATERIAL_PACKS } from './materialCatalog.js';
 import { MaterialResolver, isSingleTileTexture } from '../domain/MaterialResolver.js';
-import { resolveMaterialAssetDescriptor, toSameOriginUrl } from './materialAssets.js';
+import { resolveMaterialAssetDescriptor } from './materialAssets.js';
 
 const BABYLON = { Color3, DynamicTexture, Material, StandardMaterial, Texture };
 
@@ -11,7 +10,7 @@ const BABYLON = { Color3, DynamicTexture, Material, StandardMaterial, Texture };
  * a plan had about a dozen lamps (those surfaces then vanished). 8 lights plus the
  * scene, material and mesh blocks fits the WebGL 2 minimum of 12.
  */
-export const MAX_LIGHTS_PER_MATERIAL = 8;
+const MAX_LIGHTS_PER_MATERIAL = 8;
 
 function configureSpriteSheetAnimation(scene, texture, columns, rows, frameDuration) {
   const columnCount = Math.max(1, Number(columns) || 1);

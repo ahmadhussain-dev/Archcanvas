@@ -580,7 +580,6 @@ export function showSettingsModal(appContext = {}) {
   const snapToggleBtn = document.getElementById('btn-snap-toggle');
   
   const currentSkybox = skyboxEl ? skyboxEl.checked : true;
-  const currentAdvRender = advRenderEl ? advRenderEl.checked : false;
   const currentShowAllFloors = showAllFloorsEl ? showAllFloorsEl.checked : false;
   const currentSnapEnabled = snapToggleBtn ? !snapToggleBtn.classList.contains('off') : true;
 

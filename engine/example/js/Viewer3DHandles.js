@@ -13,9 +13,6 @@ export function pickNearest3DTarget(pointerX, pointerY) { return activeInstance?
 export function getEditHandleNodes() { return activeInstance?.getEditHandleNodes() ?? []; }
 export function getEditHandleDragState() { return activeInstance?.getEditHandleDragState() ?? null; }
 export function setEditHandleDragState(val) { activeInstance?.setEditHandleDragState(val); }
-export function get3DEditTargetBounds(type, id) { return activeInstance?.get3DEditTargetBounds(type, id) ?? null; }
-export function get3DEditHandleY(type, bounds) { return activeInstance?.get3DEditHandleY(type, bounds) ?? 0; }
-export function create3DEditHandle(type, id, action, side, position, color, rotationY) { return activeInstance?.create3DEditHandle(type, id, action, side, position, color, rotationY) ?? null; }
 export function set3DEditTarget(type, id) { activeInstance?.set3DEditTarget(type, id); }
 export function same3DEditTarget(type, id) { return activeInstance?.same3DEditTarget(type, id) ?? false; }
 export function updateHandleHoverState(pointerX, pointerY) { activeInstance?.updateHandleHoverState(pointerX, pointerY); }

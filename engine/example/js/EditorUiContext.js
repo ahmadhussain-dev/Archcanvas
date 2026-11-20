@@ -7,8 +7,6 @@ export let updateSelectedFloor;
 export let updateSelectedStructure;
 export let updateSelectedRotation;
 export let updateSelectedScale;
-export let updateSelectedPose;
-export let updateSelectedWallLength;
 export let updateSelectedWallRotation;
 export let previewSelectedWallRotation;
 export let commitSelectedStructureRotation;
@@ -64,8 +62,6 @@ export function initEditorUiContext(context) {
     updateSelectedStructure,
     updateSelectedRotation,
     updateSelectedScale,
-    updateSelectedPose,
-    updateSelectedWallLength,
     updateSelectedWallRotation,
     previewSelectedWallRotation,
     commitSelectedStructureRotation,

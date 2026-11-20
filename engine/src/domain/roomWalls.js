@@ -76,7 +76,7 @@ const toXZ = (axis, along, across) => (axis === 'x' ? [along, across] : [across,
  * outside wall has them on one side only, `side` (+1 or -1, across the line).
  * @param {object[]} rooms plain rectangular rooms on one floor
  */
-export function planRoomWalls(rooms) {
+function planRoomWalls(rooms) {
   const rects = rooms.map((room) => ({ room, ...rectOf(room) }));
   const covered = (x, z) => rects.some((r) => x > r.minX && x < r.maxX && z > r.minZ && z < r.maxZ);
   const groups = new Map();
@@ -127,7 +127,7 @@ export function planRoomWalls(rooms) {
  * met at the corners, inside walls stopped at the outside walls' inner face.
  * Each segment needs `thickness` set first.
  */
-export function placeRoomWalls(segments, covered) {
+function placeRoomWalls(segments, covered) {
   const perpendicularOutside = (seg, at) => segments.find((other) => other.kind === 'outside'
     && other.axis !== seg.axis
     && Math.abs(other.line - at) < 0.002

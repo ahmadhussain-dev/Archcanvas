@@ -3,7 +3,7 @@ const BABYLON = { AbstractMesh, ArcRotateCamera, Color3, Color4, CubeTexture, Di
 
 const SKYBOX_SIZE = 1000.0;
 /** Steepest the orbit camera may tilt: just above the horizon. */
-export const ORBIT_MAX_BETA = Math.PI / 2 - 0.05;
+const ORBIT_MAX_BETA = Math.PI / 2 - 0.05;
 /** How far (metres) the orbit target may wander from the plan's origin; the lawn is 120 m wide. */
 const MAX_TARGET_DISTANCE = 60;
 

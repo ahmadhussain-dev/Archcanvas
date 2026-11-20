@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { FloorplanDocument } from '../../src/domain/FloorplanDocument.js';
-import { getFurnitureDefinition, FURNITURE_DEFINITIONS } from '../../src/furniture/index.js';
+import { getFurnitureDefinition } from '../../src/furniture/index.js';
 
 test(' Vending Machine Food', () => {
  const doc = new FloorplanDocument();
