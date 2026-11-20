@@ -1,6 +1,6 @@
 import JSZip from 'jszip';
 import { getEditHandleNodes } from './Viewer3DHandles.js';
-import { showLoading, showAiBuildingHelp, showSettingsModal } from './Dialogs.js';
+import { showLoading, showSettingsModal } from './Dialogs.js';
 import {
   Tools,
   createBuildingFileName,
@@ -85,7 +85,7 @@ export function initFileManager(appContext) {
 /**
  * Export  .json  
  */
-export function downloadBuildingFile() {
+function downloadBuildingFile() {
   const json = ctx.testMap.stringifyBuildingFile({ name: getProjectName() });
   const blob = new Blob([json], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
@@ -101,7 +101,7 @@ export function downloadBuildingFile() {
 /**
  * Export  DXF  
  */
-export function downloadDXFFile() {
+function downloadDXFFile() {
   const dxfText = ctx.testMap.stringifyDXF();
   const blob = new Blob([dxfText], { type: 'image/vnd.dxf' });
   const url = URL.createObjectURL(blob);
@@ -117,7 +117,7 @@ export function downloadDXFFile() {
 /**
  * Export  3MF  
  */
-export async function download3MFFile() {
+async function download3MFFile() {
   const result = await ctx.show3MFExportDialog();
   if (!result) return;
   const { category, enableTenon } = result;
@@ -201,7 +201,7 @@ async function onFileInputChange(event) {
 /**
  * Save  LocalStorage  
  */
-export async function saveToLocalStorage() {
+async function saveToLocalStorage() {
   const defaultName = ctx.store.getCurrentProjectName() || getProjectName('');
   const name = await ctx.showCustomPrompt('Save project', 'Project name:', defaultName || 'Untitled project');
   if (!name) return;
@@ -228,7 +228,7 @@ export async function saveToLocalStorage() {
 /**
  *   LocalStorage  （Open、Delete ）
  */
-export async function openLocalStorageList() {
+async function openLocalStorageList() {
   const projects = ctx.store.listProjects();
   if (!projects.length) {
     await ctx.showCustomAlert('No saved projects', 'You have no saved projects yet. Use "Save project" first.');
@@ -378,7 +378,7 @@ function arrayBufferToBase64(buffer) {
 /**
  * Export  ZIP  ， JSON、Custom CustomFurnitureJS 
  */
-export async function downloadBuildingZIP() {
+async function downloadBuildingZIP() {
   try {
     ctx.showToast('Exporting ZIP package...');
     const zip = new JSZip();
@@ -474,7 +474,7 @@ export async function downloadBuildingZIP() {
 /**
  *   ZIP  ， Furniture， 
  */
-export async function loadBuildingZIP(file) {
+async function loadBuildingZIP(file) {
   if (!file) return;
   
   ctx.showToast('Importing ZIP package...');
@@ -484,11 +484,9 @@ export async function loadBuildingZIP(file) {
     
     // 1.   *.b3dbuilding.json  
     let mainJsonFile = null;
-    let mainJsonFileName = '';
     zip.forEach((relativePath, fileEntry) => {
       if (relativePath.endsWith('.b3dbuilding.json') && !relativePath.includes('/')) {
         mainJsonFile = fileEntry;
-        mainJsonFileName = relativePath;
       }
     });
     

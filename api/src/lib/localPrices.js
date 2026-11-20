@@ -26,8 +26,6 @@
 // price sits between the two; the "complex design / A+ material" end of the
 // range covers the rest.
 
-export const REFERENCE_DATE = '2026-11-20'
-
 // National reference, 20 November 2026. To update: change ratePkr and `checked`,
 // then run `npm test` in api/ (tests/calibration.test.js checks the result
 // still lands inside the published ranges and near the contractor's quote).
@@ -57,7 +55,7 @@ export const LOCAL_KEYS = REFERENCE_RATES.map((r) => r.key).filter((k) => !LIVE_
 
 // How much of the live cement price's move since the reference date the local
 // materials follow (0.5 = half), and how far the nudge may go either way.
-export const MARKET_LINK = 0.5
+const MARKET_LINK = 0.5
 export const MARKET_LIMITS = { min: 0.8, max: 1.25 }
 
 // cementNow: today's national online cement price, or null.

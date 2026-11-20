@@ -21,7 +21,7 @@ const fromEstimate = (key, market, at = null) => {
 
 // The national rates. A material with no saved price, a price older than 30
 // days, or a starting value uses the automatic national price instead.
-export async function nationalRates() {
+async function nationalRates() {
   const docs = await MaterialRate.find({ city: NATIONAL })
   const market = docs.find((d) => d.source?.origin === 'estimate' && d.source.market)?.source.market ?? 1
   const rates = {}

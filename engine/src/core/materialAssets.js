@@ -132,7 +132,7 @@ function textureFileName(src) {
  * textures (resolved again on load), anything else unchanged. Bundler URLs
  * depend on the machine and dev server (e.g. /@fs/D:/...), so they are never saved.
  */
-export function toPortableTextureSrc(src) {
+function toPortableTextureSrc(src) {
   if (typeof src !== 'string' || !src || src.startsWith('data:') || src.startsWith('blob:')) return src;
   const fileName = textureFileName(src);
   return fileName && TEXTURE_MAP[fileName] ? `textures/${fileName}` : src;

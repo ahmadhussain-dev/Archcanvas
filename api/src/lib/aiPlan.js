@@ -13,7 +13,7 @@ import { suggestedFloor } from './plotGuide.js'
 
 // Smallest clear inside size (between wall faces) for each kind of room, in
 // feet as [short side, long side]. Pakistani house planning rules of thumb.
-export const MIN_ROOM_SIZES = [
+const MIN_ROOM_SIZES = [
   { kind: 'bedroom', match: /bed\s*room|master|guest\s*room|kids?\s*room|children/i, min: [10, 10] },
   { kind: 'drawing room', match: /drawing|living|lounge|tv|family|sitting/i, min: [10, 12] },
   { kind: 'dining room', match: /dining/i, min: [9, 10] },
@@ -26,7 +26,7 @@ export const MIN_ROOM_SIZES = [
 ]
 
 // Floor finishes the AI may choose (ids from the editor's material catalog).
-export const FLOOR_MATERIALS = {
+const FLOOR_MATERIALS = {
   'wood-plank-oak-light': 'Oak plank',
   'wood-herringbone-oak-light': 'Herringbone parquet',
   'wood-chevron-oak-light': 'Chevron oak',
@@ -41,7 +41,7 @@ export const FLOOR_MATERIALS = {
 }
 
 // Furniture the AI may add (editor furniture types).
-export const FURNITURE = {
+const FURNITURE = {
   bed_double: 'Double bed', bed_single: 'Single bed', bunk_bed: 'Bunk bed', crib: 'Baby cot',
   wardrobe: 'Wardrobe', nightstand: 'Side table (bed)', chest_drawers: 'Chest of drawers', vanity: 'Dressing table',
   desk: 'Desk', computer_desk: 'Computer desk', officechair: 'Office chair', chair: 'Chair', bookshelf: 'Bookshelf',
@@ -57,7 +57,7 @@ export const FURNITURE = {
 const SIDES = ['top', 'right', 'bottom', 'left']
 const TOLERANCE = 0.05 // feet
 // How far an upstairs terrace or balcony may stick out past the front of the plot.
-export const MAX_OVERHANG_FT = 5
+const MAX_OVERHANG_FT = 5
 
 // Room kinds (planSummary.js) whose minimum is another kind's.
 const RULE_FOR_KIND = { lounge: 'drawing room', dining: 'dining room', laundry: 'store' }

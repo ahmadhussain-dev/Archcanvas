@@ -817,7 +817,6 @@ export function buildStairsGeometry(registry, group, stairs, material, width, de
     hitbox.metadata = { ...hitbox.metadata, isHitbox: true };
   } else if (subtype === 'lshape') {
     const n1 = Math.max(1, Math.min(steps - 2, stairs.cornerStep ?? Math.floor(steps / 2)));
-    const n2 = steps - n1;
     const stepHeight = height / steps;
     const landHeight = stepHeight * n1;
     const runBeforeCorner = Math.max(0.2, Number(stairs.runBeforeCorner ?? (depth - width)));
@@ -879,7 +878,6 @@ export function buildStairsGeometry(registry, group, stairs, material, width, de
     h2.visibility = 0; h2.isPickable = true; h2.metadata = { ...h2.metadata, isHitbox: true };
   } else if (subtype === 'ushape') {
     const n1 = Math.max(1, Math.min(steps - 2, stairs.cornerStep ?? Math.floor(steps / 2)));
-    const n2 = steps - n1;
     const stepHeight = height / steps;
     const landHeight = stepHeight * n1;
     const runBeforeCorner = Math.max(0.2, Number(stairs.runBeforeCorner ?? (depth - width)));

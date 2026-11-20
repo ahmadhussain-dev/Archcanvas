@@ -4,7 +4,7 @@ import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 import { FURNITURE_LIST } from '../../src/furniture/index.js';
 import {
- arecaPalmPlant,
+ 
  dwarfMonsteraFurniture,
  monsteraFurniture,
  plantFurniture

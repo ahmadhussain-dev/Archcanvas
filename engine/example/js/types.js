@@ -6,4 +6,4 @@
  *   2.   JSDoc  ， 。
  */
 
-export { BUILDING_TARGET_TYPES, TARGET_TYPES } from '../type/targetTypes.js';
+export { TARGET_TYPES } from '../type/targetTypes.js';

@@ -2,11 +2,8 @@ import { Color3 } from '../core/babylon.js';
 const BABYLON = { Color3 };
 import { BlueprintRegistry } from '../core/BlueprintRegistry.js';
 import { getFurnitureDefinition, FURNITURE_DEFINITIONS, FURNITURE_LIST } from '../furniture/index.js';
-import { FloorplanDocument, FENCE_SUBTYPE_DEFAULTS, STAIR_SUBTYPE_DEFAULTS } from '../domain/FloorplanDocument.js';
-import { ExportService } from '../services/ExportService.js';
+import { FENCE_SUBTYPE_DEFAULTS, STAIR_SUBTYPE_DEFAULTS } from '../domain/FloorplanDocument.js';
 import { roomClearBox } from '../domain/roomWalls.js';
-import { BabylonSceneRenderer } from '../runtime/BabylonSceneRenderer.js';
-import { SelectionController } from '../editor/SelectionController.js';
 import { EditorFacade } from '../editor/EditorFacade.js';
 
 

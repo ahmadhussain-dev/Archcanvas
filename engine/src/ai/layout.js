@@ -11,7 +11,7 @@ import { roomWallInsets } from '../domain/roomWalls.js';
 
 export const EPS = 1e-3;
 // Space kept clear inside a door, in metres.
-export const DOOR_CLEARANCE = 0.9;
+const DOOR_CLEARANCE = 0.9;
 const WALL_GAP = 0.02;
 
 export const round3 = (value) => Number(Number(value).toFixed(3));
@@ -81,7 +81,7 @@ export function isFloorObstacle(item) {
   return (Number(item.height) || 1) > 0.05;
 }
 
-export const isWallItem = (item) => getFurnitureDefinition(item.type).placeType === 'wall';
+const isWallItem = (item) => getFurnitureDefinition(item.type).placeType === 'wall';
 
 /**
  * Everything needed to place furniture in a rectangular room: the clear

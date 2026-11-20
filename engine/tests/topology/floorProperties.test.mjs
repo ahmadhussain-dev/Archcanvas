@@ -1,8 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import * as BABYLON from '@babylonjs/core';
-import { FloorplanDocument } from '../../src/domain/FloorplanDocument.js';
-import { BabylonSceneRenderer } from '../../src/index.js';
 import { Blueprint3DTestMap } from '../../src/presets/blueprintTestMap.js';
 
 test(' ： ， ', async () => {

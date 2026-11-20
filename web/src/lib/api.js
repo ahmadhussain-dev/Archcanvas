@@ -6,7 +6,7 @@ let accessToken = null
 let refreshing = null
 let onSessionEnd = () => {}
 
-export class ApiError extends Error {
+class ApiError extends Error {
   constructor(status, message, details) {
     super(message)
     this.status = status

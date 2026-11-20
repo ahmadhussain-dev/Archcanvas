@@ -6,12 +6,6 @@ import { updateFirstPersonConfig } from '../../example/js/FirstPersonController.
 import { set2DPanSpeed, pan2DSpeed } from '../../example/js/SvgEvents.js';
 
 test('Viewer3D: 3D 、Rotate FOV ', () => {
- const canvas = {
- addEventListener: () => {},
- removeEventListener: () => {},
- getBoundingClientRect: () => ({ width: 800, height: 600 }),
- style: {}
- };
  const engine = new BABYLON.NullEngine();
  const scene = new BABYLON.Scene(engine);
 

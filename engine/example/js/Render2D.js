@@ -141,7 +141,6 @@ export function renderPlan() {
   if (isPlanDrawing()) renderDimensions(planApi);
 
   // 2D  ， Room 
-  // ctx.currentRoofs().forEach((roof) => renderRoof(roof));
   ctx.currentStairs().forEach((stairs) => renderStairs(stairs));
   ctx.currentFences().forEach((fence) => renderFence(fence));
   ctx.testMap.getCurrentFloorEntities('fenceGate').forEach(gate => renderFenceGate(gate));
@@ -192,7 +191,7 @@ export function renderPlan() {
   renderPlanTools(planApi);
 }
 
-export function renderRoom(room) {
+function renderRoom(room) {
   const points = getRoomVertices(room).map((point) => worldToSvg(point.x, point.z));
   const polygon = createSvgElement('polygon', {
     class: `room-rect ${ctx.selectedRoomId === room.id ? 'selected' : ''}`,
@@ -283,33 +282,7 @@ export function renderRoom(room) {
   ctx.svg.appendChild(labelGroup);
 }
 
-export function renderRoomHandles(room, a, b) {
-  const minX = Math.min(a.x, b.x);
-  const maxX = Math.max(a.x, b.x);
-  const minY = Math.min(a.y, b.y);
-  const maxY = Math.max(a.y, b.y);
-  const handles = [
-    { side: 'north', x: (minX + maxX) / 2, y: minY },
-    { side: 'east', x: maxX, y: (minY + maxY) / 2 },
-    { side: 'south', x: (minX + maxX) / 2, y: maxY },
-    { side: 'west', x: minX, y: (minY + maxY) / 2 }
-  ];
-  handles.forEach((handle) => {
-    const node = createSvgElement('rect', {
-      class: `room-resize-handle handle-${handle.side}`,
-      x: handle.x - 8,
-      y: handle.y - 8,
-      width: 16,
-      height: 16,
-      rx: 4,
-      'data-room-handle': handle.side
-    });
-    node.addEventListener('pointerdown', (event) => ctx.beginRoomResize(event, room.id, handle.side));
-    ctx.svg.appendChild(node);
-  });
-}
-
-export function renderRoomInteraction(room) {
+function renderRoomInteraction(room) {
   if (ctx.mode !== 'select') return;
   const points = getRoomVertices(room).map((point) => worldToSvg(point.x, point.z));
   const polygon = createSvgElement('polygon', {
@@ -328,7 +301,7 @@ export function renderRoomInteraction(room) {
   ctx.svg.appendChild(polygon);
 }
 
-export function renderSelectedRoomHandles(room) {
+function renderSelectedRoomHandles(room) {
   //  （ Room Lock ）
   const points = getRoomVertices(room).map((point) => worldToSvg(point.x, point.z));
   const outline = createSvgElement('polygon', {
@@ -385,7 +358,7 @@ export function renderSelectedRoomHandles(room) {
   });
 }
 
-export function renderReferenceWall(wall) {
+function renderReferenceWall(wall) {
   const a = worldToSvg(wall.from[0], wall.from[1]);
   const b = worldToSvg(wall.to[0], wall.to[1]);
   ctx.svg.appendChild(createSvgElement('line', {
@@ -397,7 +370,7 @@ export function renderReferenceWall(wall) {
   }));
 }
 
-export function renderRoofHandles(roof, a, b) {
+function renderRoofHandles(roof, a, b) {
   const minX = Math.min(a.x, b.x);
   const maxX = Math.max(a.x, b.x);
   const minY = Math.min(a.y, b.y);
@@ -423,14 +396,14 @@ export function renderRoofHandles(roof, a, b) {
   });
 }
 
-export function renderSelectedRoofHandles(roof) {
+function renderSelectedRoofHandles(roof) {
   if (roof.locked) return;
   const a = worldToSvg((roof.x || 0) - (roof.width || 6) / 2, (roof.z || 0) - (roof.depth || 6) / 2);
   const b = worldToSvg((roof.x || 0) + (roof.width || 6) / 2, (roof.z || 0) + (roof.depth || 6) / 2);
   renderRoofHandles(roof, a, b);
 }
 
-export function renderWall(wall) {
+function renderWall(wall) {
   const a = worldToSvg(wall.from[0], wall.from[1]);
   const b = worldToSvg(wall.to[0], wall.to[1]);
   const line = createSvgElement('line', {
@@ -474,7 +447,7 @@ export function renderWall(wall) {
   ctx.svg.appendChild(line);
 }
 
-export function renderOpening(opening) {
+function renderOpening(opening) {
   const wall = ctx.testMap.getEntity('wall', opening.wallId);
   if (!wall) return;
   const [x1, z1] = wall.from;
@@ -510,7 +483,7 @@ export function renderOpening(opening) {
   ctx.svg.appendChild(line);
 }
 
-export function renderRoofOutline(roof) {
+function renderRoofOutline(roof) {
   const a = worldToSvg((roof.x || 0) - (roof.width || 6) / 2, (roof.z || 0) - (roof.depth || 6) / 2);
   const b = worldToSvg((roof.x || 0) + (roof.width || 6) / 2, (roof.z || 0) + (roof.depth || 6) / 2);
   const x = Math.min(a.x, b.x);
@@ -554,186 +527,7 @@ export function renderRoofOutline(roof) {
   ctx.svg.appendChild(group);
 }
 
-export function renderRoof(roof) {
-  const a = worldToSvg((roof.x || 0) - (roof.width || 6) / 2, (roof.z || 0) - (roof.depth || 6) / 2);
-  const b = worldToSvg((roof.x || 0) + (roof.width || 6) / 2, (roof.z || 0) + (roof.depth || 6) / 2);
-  
-  const minX = Math.min(a.x, b.x);
-  const minY = Math.min(a.y, b.y);
-  const w = Math.abs(b.x - a.x);
-  const h = Math.abs(b.y - a.y);
-  const centerX = minX + w / 2;
-  const centerY = minY + h / 2;
-  
-  const group = createSvgElement('g', {
-    class: `roof-group ${ctx.selectedRoofId === roof.id ? 'selected' : ''}`,
-    'data-roof-id': roof.id
-  });
-
-  const eaveOverhang = Math.max(0, Number(roof.eaveOverhang || 0));
-  if (eaveOverhang > 0) {
-    const eaveA = worldToSvg(
-      (roof.x || 0) - (roof.width || 6) / 2 - eaveOverhang,
-      (roof.z || 0) - (roof.depth || 6) / 2 - eaveOverhang
-    );
-    const eaveB = worldToSvg(
-      (roof.x || 0) + (roof.width || 6) / 2 + eaveOverhang,
-      (roof.z || 0) + (roof.depth || 6) / 2 + eaveOverhang
-    );
-    group.appendChild(createSvgElement('rect', {
-      class: 'roof-eave-rect',
-      x: Math.min(eaveA.x, eaveB.x),
-      y: Math.min(eaveA.y, eaveB.y),
-      width: Math.abs(eaveB.x - eaveA.x),
-      height: Math.abs(eaveB.y - eaveA.y),
-      rx: 4,
-      fill: roof.color || '#b75b54',
-      'fill-opacity': 0.38,
-      stroke: roof.color || '#b75b54',
-      'stroke-width': 1,
-      'pointer-events': 'none'
-    }));
-  }
-  
-  const rect = createSvgElement('rect', {
-    class: 'roof-rect',
-    x: minX,
-    y: minY,
-    width: w,
-    height: h,
-    rx: 4,
-    fill: roof.color || '#b75b54'
-  });
-  group.appendChild(rect);
-  
-  const subtype = roof.subtype || roof.type || 'gable';
-  const strokeColor = 'rgba(255,255,255,0.6)';
-  const strokeWidth = 1.5;
-  
-  if (subtype === 'gable') {
-    const line = createSvgElement('line', {
-      x1: centerX, y1: minY,
-      x2: centerX, y2: minY + h,
-      stroke: strokeColor,
-      'stroke-width': strokeWidth
-    });
-    group.appendChild(line);
-  } else if (subtype === 'shed') {
-    const arrow = createSvgElement('path', {
-      d: `M ${minX + w * 0.8} ${centerY} L ${minX + w * 0.2} ${centerY} M ${minX + w * 0.3} ${centerY - 6} L ${minX + w * 0.2} ${centerY} M ${minX + w * 0.3} ${centerY + 6} L ${minX + w * 0.2} ${centerY}`,
-      stroke: strokeColor,
-      fill: 'none',
-      'stroke-width': strokeWidth
-    });
-    group.appendChild(arrow);
-  } else if (subtype === 'arch') {
-    const step = w / 6;
-    for (let i = 1; i < 6; i++) {
-      const line = createSvgElement('line', {
-        x1: minX + step * i, y1: minY,
-        x2: minX + step * i, y2: minY + h,
-        stroke: strokeColor,
-        'stroke-width': 1,
-        'stroke-dasharray': '2,2'
-      });
-      group.appendChild(line);
-    }
-  } else if (subtype === 'dome') {
-    const circle = createSvgElement('circle', {
-      cx: centerX, cy: centerY,
-      r: Math.min(w, h) * 0.3,
-      stroke: strokeColor,
-      fill: 'none',
-      'stroke-width': strokeWidth,
-      'stroke-dasharray': '2,2'
-    });
-    const lineH = createSvgElement('line', {
-      x1: minX, y1: centerY, x2: minX + w, y2: centerY,
-      stroke: strokeColor, 'stroke-width': 1, 'stroke-dasharray': '4,4'
-    });
-    const lineV = createSvgElement('line', {
-      x1: centerX, y1: minY, x2: centerX, y2: minY + h,
-      stroke: strokeColor, 'stroke-width': 1, 'stroke-dasharray': '4,4'
-    });
-    group.appendChild(circle);
-    group.appendChild(lineH);
-    group.appendChild(lineV);
-  } else if (subtype === 'trapezoid') {
-    const innerW = w * 0.5;
-    const innerH = h * 0.5;
-    const innerRect = createSvgElement('rect', {
-      x: centerX - innerW / 2,
-      y: centerY - innerH / 2,
-      width: innerW,
-      height: innerH,
-      stroke: strokeColor,
-      fill: 'none',
-      'stroke-width': strokeWidth
-    });
-    group.appendChild(innerRect);
-    const lines = [
-      { x1: minX, y1: minY, x2: centerX - innerW / 2, y2: centerY - innerH / 2 },
-      { x1: minX + w, y1: minY, x2: centerX + innerW / 2, y2: centerY - innerH / 2 },
-      { x1: minX + w, y1: minY + h, x2: centerX + innerW / 2, y2: centerY + innerH / 2 },
-      { x1: minX, y1: minY + h, x2: centerX - innerW / 2, y2: centerY + innerH / 2 }
-    ];
-    lines.forEach(l => {
-      const line = createSvgElement('line', {
-        x1: l.x1, y1: l.y1, x2: l.x2, y2: l.y2,
-        stroke: strokeColor, 'stroke-width': strokeWidth
-      });
-      group.appendChild(line);
-    });
-  } else if (subtype === 'hip') {
-    if (w > h) {
-      const rw = (w - h) / 2;
-      const lx = centerX - rw;
-      const rx = centerX + rw;
-      const ridge = createSvgElement('line', {
-        x1: lx, y1: centerY, x2: rx, y2: centerY,
-        stroke: strokeColor, 'stroke-width': strokeWidth
-      });
-      group.appendChild(ridge);
-      group.appendChild(createSvgElement('line', { x1: minX, y1: minY, x2: lx, y2: centerY, stroke: strokeColor, 'stroke-width': strokeWidth }));
-      group.appendChild(createSvgElement('line', { x1: minX, y1: minY + h, x2: lx, y2: centerY, stroke: strokeColor, 'stroke-width': strokeWidth }));
-      group.appendChild(createSvgElement('line', { x1: minX + w, y1: minY, x2: rx, y2: centerY, stroke: strokeColor, 'stroke-width': strokeWidth }));
-      group.appendChild(createSvgElement('line', { x1: minX + w, y1: minY + h, x2: rx, y2: centerY, stroke: strokeColor, 'stroke-width': strokeWidth }));
-    } else {
-      const rh = (h - w) / 2;
-      const ty = centerY - rh;
-      const by = centerY + rh;
-      const ridge = createSvgElement('line', {
-        x1: centerX, y1: ty, x2: centerX, y2: by,
-        stroke: strokeColor, 'stroke-width': strokeWidth
-      });
-      group.appendChild(ridge);
-      group.appendChild(createSvgElement('line', { x1: minX, y1: minY, x2: centerX, y2: ty, stroke: strokeColor, 'stroke-width': strokeWidth }));
-      group.appendChild(createSvgElement('line', { x1: minX + w, y1: minY, x2: centerX, y2: ty, stroke: strokeColor, 'stroke-width': strokeWidth }));
-      group.appendChild(createSvgElement('line', { x1: minX, y1: minY + h, x2: centerX, y2: by, stroke: strokeColor, 'stroke-width': strokeWidth }));
-      group.appendChild(createSvgElement('line', { x1: minX + w, y1: minY + h, x2: centerX, y2: by, stroke: strokeColor, 'stroke-width': strokeWidth }));
-    }
-  } else if (subtype === 'flat') {
-    const border = createSvgElement('rect', {
-      x: minX + 4, y: minY + 4,
-      width: Math.max(0, w - 8), height: Math.max(0, h - 8),
-      stroke: strokeColor, fill: 'none',
-      'stroke-width': 1, 'stroke-dasharray': '2,2'
-    });
-    group.appendChild(border);
-  }
-  
-  rect.addEventListener('pointerdown', (event) => ctx.beginStructureDrag(event, 'roof', roof.id));
-  rect.addEventListener('click', (event) => {
-    if (ctx.mode === 'select') {
-      event.stopPropagation();
-      ctx.selectRoof(roof.id);
-    }
-  });
-  ctx.attachContextMenuTrigger(rect, () => ({ type: 'roof', id: roof.id }));
-  ctx.svg.appendChild(group);
-}
-
-export function renderStairs(stairs) {
+function renderStairs(stairs) {
   const subtype = stairs.subtype || 'straight';
   let wVal = stairs.width || 1;
   let dVal = stairs.depth || 3;
@@ -1217,7 +1011,7 @@ export function renderStairs(stairs) {
   ctx.svg.appendChild(group);
 }
 
-export function renderPlanItem(item) {
+function renderPlanItem(item) {
   if (isItemSnappedToBookshelfOrMannequin(item, ctx.testMap.getEntities('item'), (type) => ctx.testMap.getFurnitureDefinition(type))) {
     return;
   }
@@ -1251,7 +1045,7 @@ export function renderPlanItem(item) {
   ctx.svg.appendChild(group);
 }
 
-export function renderFence(fence) {
+function renderFence(fence) {
   const [fx1, fz1] = fence.from;
   const [fx2, fz2] = fence.to;
   const dx_total = fx2 - fx1;
@@ -1485,7 +1279,7 @@ export function renderFence(fence) {
   ctx.svg.appendChild(group);
 }
 
-export function renderFenceGate(gate) {
+function renderFenceGate(gate) {
   const [x1, z1] = gate.from;
   const [x2, z2] = gate.to;
   const a = worldToSvg(x1, z1);
@@ -1556,7 +1350,7 @@ export function renderFenceGate(gate) {
   ctx.svg.appendChild(group);
 }
 
-export function renderSelectedFenceHandles(fence) {
+function renderSelectedFenceHandles(fence) {
   if (fence.locked) return;
   const a = worldToSvg(fence.from[0], fence.from[1]);
   const b = worldToSvg(fence.to[0], fence.to[1]);

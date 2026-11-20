@@ -11,8 +11,6 @@ import {
   updateSelectedStructure,
   updateSelectedRotation,
   updateSelectedScale,
-  updateSelectedPose,
-  updateSelectedWallLength,
   updateSelectedWallRotation,
   previewSelectedWallRotation,
   commitSelectedStructureRotation,
@@ -47,7 +45,6 @@ import {
   
   getSnapEnabled,
   setSnapEnabled,
-  getSnapSize,
   setSnapSize,
   
   showCustomConfirm,
@@ -1924,7 +1921,6 @@ export function updateDesignCursor(customColor) {
   }
 
   //   HEX   SVG   CSS URL  （  #   %23）
-  const strokeColor = formatSvgColor(color);
 
   if (designMode === 'picker') {
     // 2px  ，  2 29

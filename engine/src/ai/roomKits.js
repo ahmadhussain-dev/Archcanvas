@@ -15,7 +15,7 @@ import {
   roomLayout, pointOn, againstWall, facing
 } from './layout.js';
 
-export const ROOM_KINDS = [
+const ROOM_KINDS = [
   ['staircase', /stair/i],
   ['terrace', /terrace|balcony|lawn|garden|veranda/i],
   ['dressing', /dress(?!ing\s*table)/i],
@@ -555,8 +555,6 @@ function flight(p, room, doc) {
   });
   p.placed.push({ type: 'stairs' });
 }
-
-export const FURNISHABLE_KINDS = Object.keys(KITS);
 
 /**
  * Replaces the furniture in a rectangular room with a full set for its kind.

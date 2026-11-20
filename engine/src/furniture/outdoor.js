@@ -730,7 +730,6 @@ export const patioSwingFurniture = {
         depth: postW
       }, { position: { x: side * xOffset, y: size.height * 0.47, z: zOffset } }, { parent: node });
       frontPost.rotation.x = -Math.PI * 0.08;
-      // frontPost.rotation.z = -side * Math.PI * 0.08;
 
       const rearPost = boxComponent(registry, item, patioSwingFurniture, 'frame', {
         width: postW,
@@ -738,7 +737,6 @@ export const patioSwingFurniture = {
         depth: postW
       }, { position: { x: side * xOffset, y: size.height * 0.47, z: -zOffset } }, { parent: node });
       rearPost.rotation.x = Math.PI * 0.08;
-      // rearPost.rotation.z = side * Math.PI * 0.08;
     });
 
     boxComponent(registry, item, patioSwingFurniture, 'frame', {
@@ -1884,7 +1882,7 @@ export const landscapeMarbleBridge = {
         }, { position: { x: xPos, y: yPos + size.height * 0.2, z: zPos } }, { parent: node });
       });
 
-      const handrail = boxComponent(registry, item, landscapeMarbleBridge, 'bridge-railing', {
+      boxComponent(registry, item, landscapeMarbleBridge, 'bridge-railing', {
         width: size.width, height: size.height * 0.05, depth: size.width * 0.04
       }, { position: { x: 0, y: size.height * 0.72, z: zPos } }, { parent: node });
     });

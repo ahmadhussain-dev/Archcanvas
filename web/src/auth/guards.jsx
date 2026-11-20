@@ -46,6 +46,6 @@ export function GuestOnly() {
 }
 
 // Only same-site paths, so ?next= can't send people to another website.
-export function safeNext(next, fallback = '/dashboard') {
+function safeNext(next, fallback = '/dashboard') {
   return next && next.startsWith('/') && !next.startsWith('//') ? next : fallback
 }

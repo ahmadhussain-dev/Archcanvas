@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import fs from 'node:path';
+import 'node:path';
 
 test('V4-55: 3D Agent Skill ', () => {
  // Skill 

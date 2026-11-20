@@ -19,11 +19,11 @@ import {
 let rawCtx = null;
 const ctx = createStoreProxy(() => rawCtx);
 
-export const viewPointers = new Map();
-export let isPanning2D = false;
-export let panStart2D = null;
-export let prevTouchDist2D = 0;
-export let prevTouchCenter2D = null;
+const viewPointers = new Map();
+let isPanning2D = false;
+let panStart2D = null;
+let prevTouchDist2D = 0;
+let prevTouchCenter2D = null;
 export let hasUserZoomedOrPanned = false;
 export let pan2DSpeed = 1.0;
 
@@ -65,10 +65,6 @@ export function resetSvgInteractionState() {
   hasUserZoomedOrPanned = false;
 }
 
-export function getHasUserZoomedOrPanned() {
-  return hasUserZoomedOrPanned;
-}
-
 export function setHasUserZoomedOrPanned(val) {
   hasUserZoomedOrPanned = val;
 }
@@ -85,7 +81,6 @@ function onWheel(event) {
   if (ctx.currentView !== '2d') return;
   event.preventDefault();
 
-  const svg = ctx.svg;
   const view = ctx.view;
   const { x: svgX, y: svgY } = svgPointFromClient(event.clientX, event.clientY);
   const worldCenter = ctx.svgToWorld(svgX, svgY);

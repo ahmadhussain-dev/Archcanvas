@@ -33,7 +33,7 @@ export function pkrShort(n) {
   return `${sign}PKR ${int.format(abs)}`
 }
 
-export const SQFT_PER_MARLA = 225
+const SQFT_PER_MARLA = 225
 
 export function marla(sqft) {
   const m = sqft / SQFT_PER_MARLA

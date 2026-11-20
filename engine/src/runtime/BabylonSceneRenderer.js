@@ -1,12 +1,11 @@
 import { CSG, Color3, MaterialPluginBase, Mesh, MeshBuilder, MirrorTexture, Plane, PointLight, ReflectionProbe, RenderTargetTexture, ShaderLanguage, SpotLight, Texture, TransformNode, Vector3, VertexBuffer, VertexData } from '../core/babylon.js';
 const BABYLON = { CSG, Color3, MaterialPluginBase, Mesh, MeshBuilder, MirrorTexture, Plane, PointLight, ReflectionProbe, RenderTargetTexture, ShaderLanguage, SpotLight, Texture, TransformNode, Vector3, VertexBuffer, VertexData };
-import { createFlatMaterial, createBlueprintMaterial, materialPreviewColor, normalizeMaterialDescriptor } from '../core/materials.js';
+import { createFlatMaterial, createBlueprintMaterial } from '../core/materials.js';
 import { MaterialResolver } from '../domain/MaterialResolver.js';
 import { wallThicknessOf } from '../domain/roomWalls.js';
-import { createBox, createCylinder, createSphere } from '../core/primitives.js';
-import { FURNITURE_DEFINITIONS, FURNITURE_LIST, getFurnitureDefinition, isAppliancePowerOn } from '../furniture/index.js';
+import { createBox } from '../core/primitives.js';
+import { getFurnitureDefinition, isAppliancePowerOn } from '../furniture/index.js';
 import { healingMusic } from '../audio/healingMusic.js';
-import { DEFAULT_MATERIAL_PACKS } from '../core/materialCatalog.js';
 import { buildOpeningGeometry, createOpeningCutterMesh, normalizeOpeningShape } from '../openings/index.js';
 import { getRoofGeometryData, getRoofFramePaths } from '../geometry/roofGeometry.js';
 import {
@@ -22,9 +21,7 @@ import { buildFenceGateGeometry } from '../geometry/fenceGateGeometry.js';
 import { shouldIncludeShadowCaster } from './shadowCasterFilter.js';
 import {
   normalizeRoomShape,
-  getRoomVertices,
   getRoomBounds,
-  getRoomWallKeys,
   pointInRoom,
   triangulateRoom
 } from '../rooms/index.js';
@@ -33,14 +30,6 @@ const INCHES_PER_UNIT = 39.37;
 const DEFAULT_WALL_COLOR = '#f9fbff';
 const DEFAULT_FLOOR_COLOR = '#d2b48c';
 const DEFAULT_FLOOR_ID = 'floor_1';
-const DEFAULT_WALL_BASEBOARD_HEIGHT = 0.1;
-const DEFAULT_WALL_WAINSCOT_HEIGHT = 1.0;
-
-const WALL_SURFACE_FIELD_MAP = MaterialResolver.WALL_SURFACE_FIELD_MAP;
-
-function normalizeWallDecorSettings(wall) {
-  return MaterialResolver.normalizeWallDecorSettings(wall);
-}
 
 export function isNoCeilingRoom(room) {
   if (!room) return false;
@@ -120,10 +109,6 @@ export function isParapetWall(floorplan, wall) {
     && Object.values(room.wallIds || {}).includes(wall.id));
   if (!rooms.length || !rooms.every(isNoCeilingRoom)) return false;
   return !(floorplan.openings || []).some((opening) => opening.wallId === wall.id);
-}
-
-function getWallSurfaceFields(side, component = 'main') {
-  return MaterialResolver.getWallSurfaceFields(side, component);
 }
 
 function resolveWallSurfaceDescriptor(wall, side, component = 'main') {
@@ -315,7 +300,7 @@ export class OpeningHolePreviewPlugin extends BABYLON.MaterialPluginBase {
   }
 }
 
-export class FenceGateGapPreviewPlugin extends BABYLON.MaterialPluginBase {
+class FenceGateGapPreviewPlugin extends BABYLON.MaterialPluginBase {
   constructor(material, renderer, gateId, fenceId) {
     super(material, `FenceGateGapPreview_${gateId}_${fenceId}`, 211, {}, true, true);
     this.renderer = renderer;

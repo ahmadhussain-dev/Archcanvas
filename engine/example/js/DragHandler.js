@@ -1,5 +1,4 @@
 //  
-import { Topology } from '../../src/index.js';
 
 let activeInstance = null;
 

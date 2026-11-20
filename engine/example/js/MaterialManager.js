@@ -1,5 +1,4 @@
 import { FENCE_SUBTYPE_DEFAULTS, MaterialResolver, resolveMaterialAssetDescriptor } from '../../src/index.js';
-import { TARGET_TYPES } from './types.js';
 import { isTargetLocked } from './TargetHandler.js';
 import { selection, editor } from '../store/index.js';
 
@@ -260,13 +259,7 @@ export function renderMaterialLibrary(isSwitchingCategory = false) {
 
   const header = document.createElement('div');
   header.className = 'material-library-header';
-  let activeName = 'No material selected';
-  if (editor.activeMaterialArray && editor.activeMaterialArray.length > 0) {
-    activeName = getActiveMaterialArrayDisplayName(editor.activeMaterialArray);
-  } else if (editor.activeMaterialDescriptor) {
-    activeName = getActiveMaterialDisplayName(editor.activeMaterialDescriptor);
-  }
-   const grid = document.createElement('div');
+  const grid = document.createElement('div');
   grid.className = 'material-grid';
 
   // Paint、Emissive、Glass、Metal Mirror ： Select （ ）
@@ -374,14 +367,11 @@ export function renderMaterialLibrary(isSwitchingCategory = false) {
     label.style.cssText = 'font-size: 13px; font-weight: 500; color: #172033;';
 
     const hint = document.createElement('span');
-    // hint.textContent = ' ， ';
-    // hint.style.cssText = 'font-size: 11px; color: #66758f;';
 
     const picker = document.createElement('input');
     picker.type = 'color';
     picker.value = activeTextureMaterial.color || '#ffffff';
     picker.style.cssText = 'border: none;background: none; width: 44px; height: 28px; cursor: pointer; padding: 0; overflow: hidden;';
-    // picker.style.cssText = 'border: 1px solid rgba(42, 65, 92, 0.16); background: none; width: 44px; height: 28px; cursor: pointer; padding: 0; border-radius: 4px; overflow: hidden;';
 
     picker.addEventListener('change', (event) => {
       const tintedDescriptor = createTintedTextureDescriptor(activeTextureMaterial, event.target.value);
@@ -628,10 +618,6 @@ function findWallComponentFromNode(node) {
     current = current.parent;
   }
   return 'main';
-}
-
-function getWallSurfaceFields(side, component = 'main') {
-  return MaterialResolver.getWallSurfaceFields(side, component);
 }
 
 function getWallSurfaceValue(wall, side, component = 'main') {
@@ -1463,7 +1449,7 @@ export function applyMaterial(target, designMode) {
         const [wx2, wz2] = w.to;
         const wdx = wx2 - wx1;
         const wdz = wz2 - wz1;
-        const wlen = Math.sqrt(wdx * wdx + wdx * wdx); //  ， 
+//  ， 
         const realLen = Math.sqrt(wdx * wdx + wdz * wdz);
         if (realLen < 0.01) return;
 

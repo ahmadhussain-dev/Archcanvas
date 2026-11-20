@@ -20,10 +20,10 @@ export const RETRY_AFTER_MS = 3 * 60 * 60 * 1000
 // An online price that moves more than this since yesterday waits one more
 // check: if the site still shows about the same price (within CONFIRM_WITHIN),
 // it is taken. A misread page rarely gives the same wrong number twice.
-export const MAX_DAILY_JUMP = 0.3
-export const CONFIRM_WITHIN = 0.05
+const MAX_DAILY_JUMP = 0.3
+const CONFIRM_WITHIN = 0.05
 // An admin price overrides the automatic one for this long, then the automatic one takes over.
-export const OVERRIDE_DAYS = STALE_AFTER_DAYS
+const OVERRIDE_DAYS = STALE_AFTER_DAYS
 const DAY_MS = 86_400_000
 const HISTORY_LIMIT = 50
 
@@ -80,7 +80,7 @@ export async function ensureNationalRates(at = new Date()) {
 }
 
 // Today's national online cement price, or null when there is no fresh one.
-export function cementIndex(cement, now = Date.now()) {
+function cementIndex(cement, now = Date.now()) {
   return cement && cement.source?.origin === 'auto' && isFresh(cement, now) ? cement.ratePkr : null
 }
 

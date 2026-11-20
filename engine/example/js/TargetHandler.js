@@ -16,7 +16,7 @@ export function isAllowedTarget(target) {
   return Object.values(TARGET_TYPES).includes(target?.type);
 }
 
-export function getTargetObject(target) {
+function getTargetObject(target) {
   if (!target) return null;
   if (target.type === TARGET_TYPES.ITEM) return ctx.testMap.getEntity('item', target.id);
   if (target.type === TARGET_TYPES.WALL) return ctx.testMap.getEntity('wall', target.id);
@@ -38,7 +38,7 @@ export function setTargetLocked(target, locked) {
   ctx.testMap.executeCommand('setTargetLocked', { type: target.type, id: target.id, locked });
 }
 
-export function getTargetFloorId(target) {
+function getTargetFloorId(target) {
   if (!target) return null;
   if (target.type === TARGET_TYPES.ROOM) return ctx.testMap.getEntity('room', target.id)?.floorId || 'floor_1';
   if (target.type === TARGET_TYPES.WALL) return ctx.testMap.getEntity('wall', target.id)?.floorId || 'floor_1';
@@ -77,7 +77,7 @@ export function get2DTargetFromElement(element) {
   return null;
 }
 
-export function isSwitchableTarget(target) {
+function isSwitchableTarget(target) {
   if (!target) return false;
   if (target.type === 'opening' || target.type === 'fence_gate') return true;
   if (target.type === 'item') {
@@ -89,7 +89,7 @@ export function isSwitchableTarget(target) {
   return false;
 }
 
-export function isLightingTarget(target) {
+function isLightingTarget(target) {
   if (!target || target.type !== 'item') return false;
   const item = ctx.testMap.getEntity('item', target.id);
   if (!item) return false;
@@ -111,7 +111,7 @@ function getSeasonalItemMeta(target) {
   return { currentSeason, currentLabel };
 }
 
-export function pickColorFromContextMenu(target) {
+function pickColorFromContextMenu(target) {
   extractMaterial(target, false);
 }
 
@@ -299,7 +299,7 @@ export function toggleTargetLock(target) {
   ctx.renderPlan();
 }
 
-export function toggleTarget(target) {
+function toggleTarget(target) {
   if (!isAllowedTarget(target)) return;
   if (isTargetLocked(target)) return;
   if (target.type === 'item') {
@@ -456,7 +456,7 @@ function findMatchingCurrentFloorWall(sourceWall, sourcePoint) {
   return bestWall;
 }
 
-export function mirrorTarget(target) {
+function mirrorTarget(target) {
   if (!isAllowedTarget(target)) return;
   if (isTargetLocked(target)) return;
   ctx.pushHistory();
@@ -861,7 +861,7 @@ export function copyTarget(target) {
   selectTargetDescriptor(nextSelection || target);
 }
 
-export function deleteTarget(target) {
+function deleteTarget(target) {
   if (!isAllowedTarget(target)) return;
   if (isTargetLocked(target)) return;
   if (target.type === 'item') {
@@ -898,7 +898,7 @@ export function deleteTarget(target) {
   ctx.renderPlan();
 }
 
-export function selectTargetDescriptor(target) {
+function selectTargetDescriptor(target) {
   if (!target || !isTargetOnCurrentFloor(target)) return;
   if (target.type === 'item') ctx.selectItem(target.id, true);
   if (target.type === 'wall') ctx.selectWall(target.id);

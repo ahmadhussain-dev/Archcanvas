@@ -68,7 +68,6 @@ function getFloorIdByHeight(Context, y) {
 
 
 //  
-let isInitialized = false;
 let puppetItemId = null;
 let puppetNode = null;
 let keys = {};
@@ -405,13 +404,7 @@ function showInteractToast(text) {
 
   const toast = document.createElement('div');
   toast.className = 'fp-toast-card';
-  // toast.innerHTML = `
-  //   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:4px;">
-  //     <circle cx="12" cy="12" r="10"/><path d="m10 15 5-5-5-5"/>
-  //   </svg>
-  //   <span>${text}</span>
-  // `;
-    toast.innerHTML = `
+  toast.innerHTML = `
     <span>${text}</span>
   `;
   container.appendChild(toast);
@@ -1000,7 +993,6 @@ function enterFirstPerson(Context, targetPuppetId = null) {
     spawnZ = spawn.z;
     spawnY = spawn.y;
 
-    const BABYLON = Context.BABYLON || window.BABYLON;
     puppetItemId = `fp_temp_puppet_${Date.now()}`;
     puppetNode = createTemporaryFirstPersonAvatar(Context, puppetItemId, {
       x: spawnX,

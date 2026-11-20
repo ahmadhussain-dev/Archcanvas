@@ -1,10 +1,10 @@
 import mongoose from 'mongoose'
 
-export const MATERIAL_KEYS = ['steel', 'cement', 'bricks', 'sand', 'crush', 'labour', 'pipes']
-export const RATE_STATUSES = ['unverified', 'verified']
+const MATERIAL_KEYS = ['steel', 'cement', 'bricks', 'sand', 'crush', 'labour', 'pipes']
+const RATE_STATUSES = ['unverified', 'verified']
 // Where a price came from: the built-in starting value, an admin override, the
 // daily online check, or the automatic national price (lib/localPrices.js).
-export const RATE_ORIGINS = ['seed', 'admin', 'auto', 'estimate']
+const RATE_ORIGINS = ['seed', 'admin', 'auto', 'estimate']
 export const STALE_AFTER_DAYS = 30
 
 const historySchema = new mongoose.Schema(

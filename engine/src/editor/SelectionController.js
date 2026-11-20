@@ -3,7 +3,7 @@ const BABYLON = { CSG, Color3, MaterialPluginBase, Mesh, MeshBuilder, MirrorText
 import { buildFenceGeometry } from '../geometry/fenceGeometry.js';
 import { createOpeningProfileMesh } from '../openings/geometry.js';
 import { triangulateRoom } from '../rooms/index.js';
-import { OpeningHolePreviewPlugin, FenceGateGapPreviewPlugin } from '../runtime/BabylonSceneRenderer.js';
+import { OpeningHolePreviewPlugin } from '../runtime/BabylonSceneRenderer.js';
 import { wallThicknessOf } from '../domain/roomWalls.js';
 
 function wallPoint(wall, t) {
@@ -103,7 +103,6 @@ export class SelectionController {
     const group = this.renderer.floorNodes.get(room.id);
     if (!group) return;
 
-    const floorY = this.document.getFloorElevation(room.floorId);
     const floorObj = this.document.getFloor(room.floorId);
     const floorplan = this.document.floorplan;
     const currentFloorHeight = floorObj ? (floorObj.floorHeight ?? floorplan.floorHeight ?? 0.2) : (floorplan.floorHeight ?? 0.2);
@@ -352,7 +351,6 @@ export class SelectionController {
     const dz = z2 - z1;
     const angle = -Math.atan2(dz, dx);
     const pos = wallPoint(wall, opening.t ?? 0.5);
-    const width = opening.width || (opening.type === 'door' ? 0.9 : 1.25);
     const height = opening.height ?? (opening.type === 'door' ? 2.05 : 0.85);
     const sillHeight = opening.sillHeight ?? (opening.type === 'door' ? 0 : 1.05);
     const localY = sillHeight + height / 2;

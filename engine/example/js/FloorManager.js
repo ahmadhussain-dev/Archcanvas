@@ -16,7 +16,7 @@ export function referenceFloorWalls() {
   return testMap.getEntities('wall', { floorId: referenceFloor.id });
 }
 
-export function getFloorEntityCount(floorId) {
+function getFloorEntityCount(floorId) {
   if (!floorId) return 0;
   const types = ['room', 'wall', 'opening', 'item', 'roof', 'stairs', 'fence', 'fenceGate'];
   let count = 0;
@@ -49,7 +49,7 @@ export function ensureVisibleCurrentFloor(options = {}) {
   return true;
 }
 
-export function showFloorContextMenu(target, clientX, clientY) {
+function showFloorContextMenu(target, clientX, clientY) {
   if (!target?.id) return;
   const sorted = [...Context.testMap.getFloors()].sort((a, b) => Number(a.level || 0) - Number(b.level || 0));
   const index = sorted.findIndex((floor) => floor.id === target.id);
@@ -62,7 +62,7 @@ export function showFloorContextMenu(target, clientX, clientY) {
   ]);
 }
 
-export function moveFloorAction(floorId, direction) {
+function moveFloorAction(floorId, direction) {
   Context.pushHistory();
   if (Context.testMap.moveFloor?.(floorId, direction)) {
     syncFloorControls();
@@ -71,7 +71,7 @@ export function moveFloorAction(floorId, direction) {
   }
 }
 
-export function deleteFloorAction(floorId) {
+function deleteFloorAction(floorId) {
   if (Context.testMap.getFloors().length <= 1) return;
   Context.pushHistory();
   if (Context.testMap.deleteFloor?.(floorId)) {
@@ -82,7 +82,7 @@ export function deleteFloorAction(floorId) {
   }
 }
 
-export async function renameCurrentFloor(floorId) {
+async function renameCurrentFloor(floorId) {
   const floor = Context.testMap.getFloor(floorId);
   if (!floor) return;
   const currentName = floor.name || `${Number(floor.level || 0) + 1}F`;
@@ -100,7 +100,7 @@ export async function renameCurrentFloor(floorId) {
   }
 }
 
-export function formatFloorDisplayName(name) {
+function formatFloorDisplayName(name) {
   if (!name) return '';
   const hasChinese = /[\u4e00-\u9fa5]/.test(name);
   if (hasChinese) {

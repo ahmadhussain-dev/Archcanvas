@@ -1,13 +1,13 @@
 import { createBlueprintMaterial, materialPreviewColor } from '../core/materials.js';
 import { createBox, createCylinder, createSphere, createLathe, createRightTriangle, createHalfCylinder, createCone, orientBoxTextureCoordinates } from '../core/primitives.js';
 
-export function getComponentColor(item, definition, componentId) {
+function getComponentColor(item, definition, componentId) {
   const component = definition.components.find((candidate) => candidate.id === componentId);
   const descriptor = item.materials?.[componentId] || item.colors?.[componentId] || component?.defaultMaterial || component?.defaultColor || '#ffffff';
   return materialPreviewColor(descriptor, component?.defaultColor || '#ffffff');
 }
 
-export function getComponentMaterialDescriptor(item, definition, componentId) {
+function getComponentMaterialDescriptor(item, definition, componentId) {
   const component = definition.components.find((candidate) => candidate.id === componentId);
   return item.materials?.[componentId] || item.colors?.[componentId] || component?.defaultMaterial || component?.defaultColor || '#ffffff';
 }

@@ -194,7 +194,7 @@ export function update3DStairsRailingPreview(stairsId, fenceSubtype) {
   Context.testMap.attachRuntimeOverlay(Context.stairsRailingPreview3DGroup);
 }
 
-export function removeRailingFromStairs(stairsId) {
+function removeRailingFromStairs(stairsId) {
   const fences = Context.testMap.getEntities ? Context.testMap.getEntities('fence') : [];
   const boundFences = fences.filter(f => f.stairsId === stairsId);
   if (boundFences.length > 0) {

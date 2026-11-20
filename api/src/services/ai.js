@@ -7,8 +7,8 @@
 import { HttpError } from '../lib/httpError.js'
 import { minSizeFor } from '../lib/aiPlan.js'
 
-export const DEFAULT_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/openai/'
-export const DEFAULT_MODEL = 'gemini-3.8-flash'
+const DEFAULT_BASE_URL = 'https://generativelanguage.googleapis.com/v1beta/openai/'
+const DEFAULT_MODEL = 'gemini-3.8-flash'
 
 // The provider's own error text. Gemini wraps it as [{ error: { message } }].
 function providerMessage(text) {

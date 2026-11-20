@@ -696,11 +696,9 @@ export function getStairsRailingSegments(stairs, testMap) {
       yOffset: yOffset2
     });
   } else if (subtype === 'ushape') {
-    const halfSteps = Math.floor((stairs.steps || 9) / 2);
     const slotW = stairs.uSlotWidth ?? 0.1;
     const voidL = stairs.uVoidLength ?? (depth - 1);
     const landDepth = Math.max(0.4, Math.min(depth - 0.2, depth - voidL));
-    const stepHeight = (height / 2) / halfSteps;
     const landHeight = height / 2;
 
     const u1Depth = depth - landDepth;

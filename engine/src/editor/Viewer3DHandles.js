@@ -1,6 +1,6 @@
 import { Color3, Engine, Mesh, MeshBuilder, StandardMaterial, Vector3 } from '../core/babylon.js';
 const BABYLON = { Color3, Engine, Mesh, MeshBuilder, StandardMaterial, Vector3 };
-import * as Topology from './Topology.js';
+import './Topology.js';
 
 function findMetadataFromNode(node, key) {
   let current = node;

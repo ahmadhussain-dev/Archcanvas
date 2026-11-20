@@ -222,11 +222,11 @@ function drawRoofPreview(r) {
   }
 }
 
-export function clearRoofDraw() {
+function clearRoofDraw() {
   roofDraw = { a: null, hover: null };
 }
 
-export function clearMeasure() {
+function clearMeasure() {
   measure = { a: null, b: null, hover: null };
 }
 

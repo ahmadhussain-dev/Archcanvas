@@ -2,9 +2,9 @@ import bcrypt from 'bcryptjs'
 import { User } from '../models/index.js'
 import { HttpError, conflict, unauthorized } from '../lib/httpError.js'
 
-export const BCRYPT_ROUNDS = 12
-export const MAX_FAILED_LOGINS = 5
-export const LOCK_MINUTES = 15
+const BCRYPT_ROUNDS = 12
+const MAX_FAILED_LOGINS = 5
+const LOCK_MINUTES = 15
 
 // Compared against when the email is unknown, so a wrong email takes as long as a wrong password.
 const DUMMY_HASH = bcrypt.hashSync('archcanvas-dummy-password', BCRYPT_ROUNDS)

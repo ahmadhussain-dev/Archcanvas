@@ -1,4 +1,4 @@
-import { boxComponent, cylinderComponent, sphereComponent } from './_helpers.js';
+import { boxComponent, cylinderComponent } from './_helpers.js';
 
 export const toiletFurniture = {
   type: 'toilet',

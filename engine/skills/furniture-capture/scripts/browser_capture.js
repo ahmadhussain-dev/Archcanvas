@@ -59,8 +59,6 @@
   // 4.  
   const originalCameraTarget = camera.target.clone();
   const originalCameraRadius = camera.radius;
-  const originalCameraAlpha = camera.alpha;
-  const originalCameraBeta = camera.beta;
   const originalCameraLowerRadiusLimit = camera.lowerRadiusLimit;
   const originalCameraMinZ = camera.minZ;
 
