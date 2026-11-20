@@ -1,13 +1,14 @@
 import { Router } from 'express'
 import mongoose from 'mongoose'
 import { z } from 'zod'
-import { MaterialRate } from '../models/index.js'
-import { CITIES, findCity } from '../lib/cities.js'
+import { MaterialRate, RegionAdjustment } from '../models/index.js'
+import { CITIES, NATIONAL, findCity } from '../lib/cities.js'
+import { ADJUSTMENT_LIMITS, REGION_KEYS, adjustmentFor } from '../lib/cityAdjustments.js'
 import { applyEstimate, checkRates, latestCheck } from '../services/rateUpdater.js'
 import { requireAuth, requireRole } from '../middleware/auth.js'
 import { validate } from '../middleware/validate.js'
 import { notFoundError } from '../lib/httpError.js'
-import { estimateFor, DEFAULT_CITY } from '../services/estimate.js'
+import { estimateFor, regionAdjustments, savedAdjustments, DEFAULT_CITY } from '../services/estimate.js'
 import { PLOT_PRESETS } from '../lib/units.js'
 
 // "lahore" and "Lahore" are the same city.
@@ -18,7 +19,6 @@ const cityName = z
   .max(60)
   .default(DEFAULT_CITY)
   .transform((city) => findCity(city)?.name ?? city)
-const cityQuery = z.object({ city: cityName })
 
 const estimateSchema = z.object({
   widthFt: z.number().min(5).max(500),
@@ -39,6 +39,12 @@ const rateUpdateSchema = z
   })
   .refine((body) => Object.keys(body).length > 0, 'Nothing to update')
 
+// A region's percentage on the national rates, or { reset: true } for the default.
+const adjustmentSchema = z.union([
+  z.object({ pct: z.number().int().min(ADJUSTMENT_LIMITS.min).max(ADJUSTMENT_LIMITS.max) }),
+  z.object({ reset: z.literal(true) })
+])
+
 // Public: plot presets, current rates and a quick estimate (used on the landing page and plot setup).
 export const publicRates = Router()
 
@@ -46,14 +52,26 @@ publicRates.get('/plots/presets', (req, res) => {
   res.json({ presets: PLOT_PRESETS })
 })
 
-// The 40 cities with their own prices, for the city pickers.
-publicRates.get('/rates/cities', (req, res) => {
-  res.json({ cities: CITIES.map(({ name, province }) => ({ name, province })) })
+// The 40 cities with their region's percentage, for the city pickers.
+publicRates.get('/rates/cities', async (req, res) => {
+  const saved = await savedAdjustments()
+  res.json({
+    cities: CITIES.map(({ name, province }) => {
+      const { region, pct } = adjustmentFor(name, saved)
+      return { name, province, region, adjustmentPct: pct }
+    })
+  })
 })
 
-publicRates.get('/rates', validate(cityQuery, 'query'), async (req, res) => {
-  const rates = await MaterialRate.find({ city: req.validQuery.city }).select('-history').sort({ key: 1 })
-  res.json({ city: req.validQuery.city, rates })
+// The regions, their percentage on the national rates and their cities.
+publicRates.get('/rates/regions', async (req, res) => {
+  res.json({ regions: await regionAdjustments() })
+})
+
+// The national rates every estimate starts from.
+publicRates.get('/rates', async (req, res) => {
+  const rates = await MaterialRate.find({ city: NATIONAL }).select('-history').sort({ key: 1 })
+  res.json({ city: NATIONAL, rates })
 })
 
 publicRates.post('/estimate', validate(estimateSchema), async (req, res) => {
@@ -64,9 +82,18 @@ publicRates.post('/estimate', validate(estimateSchema), async (req, res) => {
 export const adminRates = Router()
 adminRates.use(requireAuth, requireRole('admin'))
 
-adminRates.get('/rates', validate(cityQuery, 'query'), async (req, res) => {
-  const rates = await MaterialRate.find({ city: req.validQuery.city }).sort({ key: 1 })
-  res.json({ city: req.validQuery.city, rates })
+adminRates.get('/rates', async (req, res) => {
+  const rates = await MaterialRate.find({ city: NATIONAL }).sort({ key: 1 })
+  res.json({ city: NATIONAL, rates })
+})
+
+// Change a region's percentage, or put it back to the default.
+adminRates.patch('/rates/regions/:region', validate(adjustmentSchema), async (req, res) => {
+  const { region } = req.params
+  if (!REGION_KEYS.includes(region)) throw notFoundError('Region not found')
+  if (req.body.reset) await RegionAdjustment.deleteOne({ region })
+  else await RegionAdjustment.findOneAndUpdate({ region }, { pct: req.body.pct, updatedBy: req.auth.userId }, { upsert: true, runValidators: true })
+  res.json({ regions: await regionAdjustments() })
 })
 
 // The online price check: the latest run, and "Check now".
@@ -87,7 +114,7 @@ adminRates.patch('/rates/:id', validate(rateUpdateSchema), async (req, res) => {
 
   if (automatic) {
     // The next daily check puts an online price back on cement and steel.
-    const sibling = await MaterialRate.findOne({ city: rate.city, 'source.origin': 'estimate', 'source.market': { $gt: 0 } })
+    const sibling = await MaterialRate.findOne({ city: NATIONAL, 'source.origin': 'estimate', 'source.market': { $gt: 0 } })
     applyEstimate(rate, new Date(), sibling?.source.market ?? 1)
     await rate.save()
     return res.json({ rate })

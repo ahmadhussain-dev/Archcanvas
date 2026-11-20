@@ -1,15 +1,17 @@
 // The daily price check, fully automatic. For each source in rateSources.js it
-// downloads the page, reads the prices, and saves one price per city as
-// verified, with where it came from. Cities a page doesn't list use their
-// nearest listed city (see lib/cities.js), then the Pakistan average from the
-// same page. Then every other material (bricks, sand, crush, labour, pipes) is
-// worked out for each city (lib/localPrices.js), and so are cement and steel
-// wherever the online check has no fresh price. Nobody has to type a price.
+// downloads the page, reads the Pakistan-wide price (the middle of the cities
+// and brands it lists), and saves it on the national row as verified, with
+// where it came from. Then every other material (bricks, sand, crush, labour,
+// pipes) is worked out from the national reference (lib/localPrices.js), and
+// so are cement and steel when the online check has no fresh price. City
+// differences are a simple percentage on the whole estimate
+// (lib/cityAdjustments.js), not separate prices. Nobody has to type a price.
 import { MaterialRate, RateCheck } from '../models/index.js'
 import { STALE_AFTER_DAYS } from '../models/MaterialRate.js'
 import { DEFAULT_RATES } from '../seed/materialRates.js'
-import { CITIES, CITY_NAMES } from '../lib/cities.js'
-import { LIVE_KEYS, REGION_FACTORS, estimatedRate, marketFactor, regionOf } from '../lib/localPrices.js'
+import { NATIONAL } from '../lib/cities.js'
+import { median } from '../lib/priceTables.js'
+import { LIVE_KEYS, estimatedRate, marketFactor } from '../lib/localPrices.js'
 import { RATE_SOURCES, fetchPage as downloadPage } from './rateSources.js'
 
 export const CHECK_EVERY_MS = 24 * 60 * 60 * 1000
@@ -36,68 +38,58 @@ function setPrice(rate, value, at, origin) {
   return true
 }
 
-// Puts the automatic city price on a rate row. Returns true if the price changed.
+// Puts the automatic national price on a rate row. Returns true if the price changed.
 export function applyEstimate(rate, at, market = 1) {
-  const est = estimatedRate(rate.key, rate.city, market)
+  const est = estimatedRate(rate.key, market)
   const changed = setPrice(rate, est.ratePkr, at, 'estimate')
   rate.status = 'verified'
   rate.verifiedAt = at
   rate.verifiedBy = undefined
   rate.pending = undefined
-  rate.source = { origin: 'estimate', name: 'ArchCanvas city prices', region: est.region, market: est.market }
+  rate.source = { origin: 'estimate', name: 'ArchCanvas national prices', market: est.market }
   return changed
 }
 
-// Gives every city a row for every material, starting at the automatic price
-// for that city. Existing rows are untouched.
-export async function ensureCityRates(at = new Date()) {
-  const ops = []
-  for (const city of CITIES) {
-    for (const fallback of DEFAULT_RATES) {
-      const est = estimatedRate(fallback.key, city.name)
-      ops.push({
-        updateOne: {
-          filter: { key: fallback.key, city: city.name },
-          update: {
-            $setOnInsert: {
-              key: fallback.key,
-              name: fallback.name,
-              unit: fallback.unit,
-              ratePkr: est.ratePkr,
-              city: city.name,
-              status: 'verified',
-              verifiedAt: at,
-              source: { origin: 'estimate', name: 'ArchCanvas city prices', region: est.region, market: 1 },
-              history: []
-            }
-          },
-          upsert: true
-        }
-      })
+// Gives the national list a row for every material, starting at the automatic
+// price. Existing rows are untouched.
+export async function ensureNationalRates(at = new Date()) {
+  const ops = DEFAULT_RATES.map((fallback) => {
+    const est = estimatedRate(fallback.key)
+    return {
+      updateOne: {
+        filter: { key: fallback.key, city: NATIONAL },
+        update: {
+          $setOnInsert: {
+            key: fallback.key,
+            name: fallback.name,
+            unit: fallback.unit,
+            ratePkr: est.ratePkr,
+            city: NATIONAL,
+            status: 'verified',
+            verifiedAt: at,
+            source: { origin: 'estimate', name: 'ArchCanvas national prices', market: 1 },
+            history: []
+          }
+        },
+        upsert: true
+      }
     }
-  }
+  })
   const res = await MaterialRate.bulkWrite(ops, { ordered: false })
   return res.upsertedCount
 }
 
-// Today's online cement price in Faisalabad terms (each city's price divided by
-// its regional factor, then the median), or null when no fresh online price exists.
-export function cementIndex(cementRates, now = Date.now()) {
-  const values = cementRates
-    .filter((r) => r.source?.origin === 'auto' && isFresh(r, now))
-    .map((r) => r.ratePkr / (REGION_FACTORS[regionOf(r.city)].cement ?? 1))
-    .sort((a, b) => a - b)
-  if (!values.length) return null
-  const mid = Math.floor(values.length / 2)
-  return values.length % 2 ? values[mid] : (values[mid - 1] + values[mid]) / 2
+// Today's national online cement price, or null when there is no fresh one.
+export function cementIndex(cement, now = Date.now()) {
+  return cement && cement.source?.origin === 'auto' && isFresh(cement, now) ? cement.ratePkr : null
 }
 
-// Works out every price that has no fresh online or admin price.
-export async function updateCityPrices(at = new Date()) {
+// Works out every national price that has no fresh online or admin price.
+export async function updateNationalPrices(at = new Date()) {
   const now = at.getTime()
-  const rates = await MaterialRate.find({ city: { $in: CITY_NAMES } })
-  const market = marketFactor(cementIndex(rates.filter((r) => r.key === 'cement'), now))
-  const result = { key: 'city', source: 'ArchCanvas city prices', ok: true, changed: 0, unchanged: 0, held: [] }
+  const rates = await MaterialRate.find({ city: NATIONAL })
+  const market = marketFactor(cementIndex(rates.find((r) => r.key === 'cement'), now))
+  const result = { key: 'national', source: 'ArchCanvas national prices', ok: true, changed: 0, unchanged: 0, held: [] }
   let kept = 0
   for (const rate of rates) {
     if (isOverride(rate, now)) {
@@ -111,32 +103,17 @@ export async function updateCityPrices(at = new Date()) {
   }
   const nudge = market === 1 ? '' : ` Market change since the reference prices: ${market > 1 ? '+' : ''}${Math.round((market - 1) * 1000) / 10}%.`
   const admin = kept ? ` ${kept} admin prices kept.` : ''
-  result.message = `${result.changed + result.unchanged} prices worked out for ${CITIES.length} cities, ${result.changed} changed.${nudge}${admin}`
+  result.message = `${result.changed + result.unchanged} national prices worked out, ${result.changed} changed.${nudge}${admin}`
   return result
 }
 
-// Price lists name cities loosely ("Islamabad/Rawalpindi", " Lahore "), so index every part.
-function listedPrices(byCity, { min, max }) {
-  const listed = {}
-  for (const [name, value] of Object.entries(byCity ?? {})) {
-    if (!(value >= min && value <= max)) continue
-    for (const part of name.split(/\/|,|&|\band\b/i)) {
-      const key = part.trim().toLowerCase()
-      if (key && listed[key] === undefined) listed[key] = value
-    }
-  }
-  return listed
-}
-
-// { value, basedOn } for one city, or null when the page gave nothing usable.
-export function priceForCity(city, { byCity, national }, bounds) {
-  const listed = listedPrices(byCity, bounds)
-  for (const near of city.near) {
-    const value = listed[near.toLowerCase()]
-    if (value !== undefined) return { value: Math.round(value), basedOn: near }
-  }
-  if (national >= bounds.min && national <= bounds.max) return { value: Math.round(national), basedOn: 'Pakistan average' }
-  return null
+// The Pakistan-wide price on a page: the source's own national figure, or the
+// middle of the city prices it lists. null when the page gave nothing usable.
+export function nationalPrice({ byCity, national }, { min, max }) {
+  if (national >= min && national <= max) return Math.round(national)
+  const values = Object.values(byCity ?? {}).filter((v) => v >= min && v <= max)
+  const mid = median(values)
+  return mid ? Math.round(mid) : null
 }
 
 async function checkSource(source, fetchPage, at) {
@@ -148,55 +125,50 @@ async function checkSource(source, fetchPage, at) {
     result.message = `Could not read the site: ${err.message}`
     return result
   }
-
-  const rates = await MaterialRate.find({ key: source.key, city: { $in: CITY_NAMES } })
-  let found = 0
-  for (const city of CITIES) {
-    const price = priceForCity(city, parsed, source)
-    const rate = rates.find((r) => r.city === city.name)
-    if (!price || !rate) continue
-    found++
-    // An admin price is kept for 30 days, then the online price takes over.
-    if (isOverride(rate, at.getTime())) continue
-    const old = rate.ratePkr
-    // A big overnight move from yesterday's online price is more likely a misread
-    // page than the market. Wait for the next check to show the same price.
-    if (rate.source?.origin === 'auto' && old > 0 && Math.abs(price.value - old) / old > MAX_DAILY_JUMP) {
-      const waiting = rate.pending?.ratePkr
-      const confirmed = waiting > 0 && Math.abs(price.value - waiting) / waiting <= CONFIRM_WITHIN
-      if (!confirmed) {
-        rate.pending = { ratePkr: price.value, at }
-        await rate.save()
-        result.held.push(city.name)
-        continue
-      }
-    }
-    if (setPrice(rate, price.value, at, 'auto')) result.changed++
-    else result.unchanged++
-    rate.status = 'verified'
-    rate.verifiedAt = at
-    rate.verifiedBy = undefined
-    rate.pending = undefined
-    rate.source = { origin: 'auto', name: source.name, url: source.url, basedOn: price.basedOn }
-    await rate.save()
-  }
-
-  if (!found) {
+  const value = nationalPrice(parsed, source)
+  if (!value) {
     result.message = 'No prices found on the page. The site layout may have changed.'
     return result
   }
   result.ok = true
-  const held = result.held.length ? `, ${result.held.length} big jumps waiting for the next check to confirm` : ''
-  result.message = `${result.changed} cities changed, ${result.unchanged} the same${held}.`
+  const rate = await MaterialRate.findOne({ key: source.key, city: NATIONAL })
+  // An admin price is kept for 30 days, then the online price takes over.
+  if (!rate || isOverride(rate, at.getTime())) {
+    result.message = `Pakistan price Rs ${value.toLocaleString('en-US')}; the admin price is kept.`
+    return result
+  }
+  const old = rate.ratePkr
+  // A big overnight move from yesterday's online price is more likely a misread
+  // page than the market. Wait for the next check to show the same price.
+  if (rate.source?.origin === 'auto' && old > 0 && Math.abs(value - old) / old > MAX_DAILY_JUMP) {
+    const waiting = rate.pending?.ratePkr
+    const confirmed = waiting > 0 && Math.abs(value - waiting) / waiting <= CONFIRM_WITHIN
+    if (!confirmed) {
+      rate.pending = { ratePkr: value, at }
+      await rate.save()
+      result.held.push(NATIONAL)
+      result.message = `Pakistan price Rs ${value.toLocaleString('en-US')} is a big jump from Rs ${old.toLocaleString('en-US')}, waiting for the next check to confirm.`
+      return result
+    }
+  }
+  if (setPrice(rate, value, at, 'auto')) result.changed++
+  else result.unchanged++
+  rate.status = 'verified'
+  rate.verifiedAt = at
+  rate.verifiedBy = undefined
+  rate.pending = undefined
+  rate.source = { origin: 'auto', name: source.name, url: source.url, basedOn: 'Pakistan average' }
+  await rate.save()
+  result.message = `Pakistan price Rs ${value.toLocaleString('en-US')}${result.changed ? `, was Rs ${old.toLocaleString('en-US')}` : ', the same as before'}.`
   return result
 }
 
 async function runCheck({ fetchPage = downloadPage, sources = RATE_SOURCES, trigger = 'schedule' }) {
   const check = await RateCheck.create({ trigger, startedAt: new Date() })
-  await ensureCityRates()
+  await ensureNationalRates()
   for (const source of sources) check.results.push(await checkSource(source, fetchPage, new Date()))
-  // Always runs, even when every website failed, so no city is left on a starting value.
-  check.results.push(await updateCityPrices(new Date()))
+  // Always runs, even when every website failed, so nothing is left on a starting value.
+  check.results.push(await updateNationalPrices(new Date()))
   check.finishedAt = new Date()
   await check.save()
   return check

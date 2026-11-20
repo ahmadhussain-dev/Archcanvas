@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react'
 import Button from '../../components/Button.jsx'
 import Chip from '../../components/Chip.jsx'
-import CitySelect from '../../components/CitySelect.jsx'
 import Icon from '../../components/Icon.jsx'
 import StatePanel from '../../components/StatePanel.jsx'
 import FullPageSpinner from '../../components/FullPageSpinner.jsx'
@@ -9,8 +8,8 @@ import { api } from '../../lib/api.js'
 import { useApi } from '../../lib/useApi.js'
 import { formatDate, num, timeAgo } from '../../lib/format.js'
 
-const STATUS = { verified: ['Verified', 'green'], estimated: ['City price', 'blue'], stale: ['Stale', 'amber'], unverified: ['Unverified', 'grey'] }
-const CHECK_LABELS = { cement: 'Cement', steel: 'Steel', city: 'City prices' }
+const STATUS = { verified: ['Verified', 'green'], estimated: ['Automatic', 'blue'], stale: ['Stale', 'amber'], unverified: ['Unverified', 'grey'] }
+const CHECK_LABELS = { cement: 'Cement', steel: 'Steel', national: 'Other materials', city: 'City prices' }
 
 function Spark({ values }) {
   if (values.length < 2) return <span className="text-xs text-muted">—</span>
@@ -36,11 +35,11 @@ function check(rate, text) {
 }
 
 // Where a price came from, in a few words.
-function sourceLabel(r, city) {
+function sourceLabel(r) {
   const src = r.source ?? {}
-  if (src.origin === 'auto') return { text: `Online${src.basedOn && src.basedOn !== city ? `, ${src.basedOn} price` : ''}`, url: src.url, title: src.name }
+  if (src.origin === 'auto') return { text: `Online, ${src.basedOn ?? 'Pakistan average'}`, url: src.url, title: src.name }
   if (src.origin === 'admin') return { text: 'Admin override' }
-  if (src.origin === 'estimate') return { text: `Automatic (${src.region ?? 'regional'} prices)` }
+  if (src.origin === 'estimate') return { text: 'Automatic (national reference)' }
   return { text: src.basedOn ? `Starting value (${src.basedOn})` : 'Starting value' }
 }
 
@@ -70,7 +69,7 @@ function PriceCheck({ onChecked }) {
       <div className="flex min-w-0 flex-col gap-1.5">
         <b className="text-sm">Online price check</b>
         <span className="text-[13px] text-muted">
-          Every price for all 40 cities updates by itself once a day. Cement and steel are read from online price lists; bricks, sand, crush, labour and pipes are worked out for each city from regional prices and today's cement price.
+          The national prices update by themselves once a day. Cement and steel take the Pakistan average from online price lists; bricks, sand, crush, labour and pipes follow the national reference and today's cement price.
           {check?.finishedAt ? ` Last check ${timeAgo(check.finishedAt)}.` : check ? ' A check is running.' : ' No check has run yet.'}
         </span>
         {check?.results?.map((r) => (
@@ -92,19 +91,113 @@ function PriceCheck({ onChecked }) {
   )
 }
 
-function downloadCsv(city, rates) {
+function downloadCsv(rates) {
   const rows = [['Material', 'Unit', 'Rate (PKR)', 'Status', 'Verified on', 'Source', 'Source link']]
-  for (const r of rates) rows.push([r.name, r.unit, r.ratePkr, r.displayStatus, r.verifiedAt ? formatDate(r.verifiedAt) : '', sourceLabel(r, city).text, r.source?.url ?? ''])
+  for (const r of rates) rows.push([r.name, r.unit, r.ratePkr, r.displayStatus, r.verifiedAt ? formatDate(r.verifiedAt) : '', sourceLabel(r).text, r.source?.url ?? ''])
   const csv = rows.map((row) => row.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n')
   const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }))
-  const a = Object.assign(document.createElement('a'), { href: url, download: `archcanvas-prices-${city.toLowerCase()}.csv` })
+  const a = Object.assign(document.createElement('a'), { href: url, download: 'archcanvas-national-prices.csv' })
   a.click()
   URL.revokeObjectURL(url)
 }
 
+// One percentage per region on top of the national rates. Easy to change, and
+// "Default" puts a region back to the built-in figure.
+function RegionAdjustments() {
+  const { data, setData, error } = useApi('/rates/regions')
+  const [drafts, setDrafts] = useState({})
+  const [busy, setBusy] = useState('')
+  const [message, setMessage] = useState(null)
+  const regions = data?.regions ?? []
+
+  async function save(region, body) {
+    setBusy(region.key)
+    setMessage(null)
+    try {
+      const res = await api.patch(`/admin/rates/regions/${region.key}`, body)
+      setData(res)
+      setDrafts((d) => ({ ...d, [region.key]: undefined }))
+      const pct = res.regions.find((r) => r.key === region.key).pct
+      setMessage({ tone: 'green', text: `${region.label}: ${pct > 0 ? '+' : ''}${pct}% saved. New estimates use it now.` })
+    } catch (err) {
+      setMessage({ tone: 'red', text: err.message })
+    } finally {
+      setBusy('')
+    }
+  }
+
+  const th = 'px-3 py-2.5 text-left text-xs font-semibold text-muted'
+  return (
+    <section className="flex flex-col gap-3 rounded-card border border-line bg-white px-4 py-4">
+      <div className="flex flex-col gap-1">
+        <b className="text-sm">City and region adjustments</b>
+        <span className="text-[13px] text-muted">
+          Every estimate starts from the national prices above, then moves up or down by one percentage for the project's region. For example +8 makes Islamabad 8% dearer than the national figure, −5 makes Multan 5% cheaper. Allowed: −30 to +30.
+        </span>
+      </div>
+      {error && <span className="text-[13px] text-red">{error.message}</span>}
+      {message && (
+        <div role="status" className={`rounded-control px-3 py-2 text-sm ${message.tone === 'green' ? 'bg-green-tint text-[#1f5a41]' : 'bg-red-tint text-[#8f1c13]'}`}>
+          {message.text}
+        </div>
+      )}
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[760px] border-collapse text-sm">
+          <thead>
+            <tr className="bg-paper">
+              <th scope="col" className={th}>Region</th>
+              <th scope="col" className={th}>Cities</th>
+              <th scope="col" className={th}>Change (%)</th>
+              <th scope="col" className={th}><span className="sr-only">Actions</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            {regions.map((r) => {
+              const text = drafts[r.key] ?? String(r.pct)
+              const value = Number(text.replace('−', '-'))
+              const valid = text.trim() !== '' && Number.isInteger(value) && value >= -30 && value <= 30
+              const dirty = drafts[r.key] !== undefined && value !== r.pct
+              return (
+                <tr key={r.key} className="border-t border-[#eef1f3] align-top">
+                  <td className="px-3 py-2.5 font-medium">{r.label}</td>
+                  <td className="max-w-[420px] px-3 py-2.5 text-[12.5px] text-muted">{r.cities.join(', ')}</td>
+                  <td className="px-3 py-2">
+                    <input
+                      inputMode="numeric"
+                      aria-label={`${r.label} change in percent`}
+                      aria-invalid={!valid}
+                      className={`h-[34px] w-[84px] rounded-control border px-2.5 font-mono text-[13.5px] text-navy outline-none focus:ring-2 ${
+                        valid ? 'border-line-strong focus:border-blueprint focus:ring-blueprint/20' : 'border-red focus:ring-red/20'
+                      }`}
+                      value={text}
+                      onChange={(e) => setDrafts((d) => ({ ...d, [r.key]: e.target.value }))}
+                    />
+                    {r.pct !== r.defaultPct && <span className="block pt-1 text-xs text-muted">Default {r.defaultPct > 0 ? '+' : ''}{r.defaultPct}</span>}
+                  </td>
+                  <td className="px-3 py-2">
+                    <span className="flex gap-1.5">
+                      <Button size="sm" variant="primary" disabled={!dirty || !valid || busy === r.key} onClick={() => save(r, { pct: value })}>
+                        Save
+                      </Button>
+                      {r.pct !== r.defaultPct && (
+                        <Button size="sm" variant="ghost" disabled={busy === r.key} onClick={() => save(r, { reset: true })}>
+                          Default
+                        </Button>
+                      )}
+                    </span>
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  )
+}
+
 export default function AdminPrices() {
-  const [city, setCity] = useState('Faisalabad')
-  const { data, error, loading, reload, setData } = useApi(`/admin/rates?city=${encodeURIComponent(city)}`)
+  const { data, error, loading, reload, setData } = useApi('/admin/rates')
   const [edits, setEdits] = useState({})
   const [selected, setSelected] = useState([])
   const [busy, setBusy] = useState(false)
@@ -177,16 +270,10 @@ export default function AdminPrices() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="flex flex-col gap-1">
           <h1 className="m-0 text-2xl font-bold">Material prices</h1>
-          <span className="text-[13.5px] text-muted">These rates drive every grey structure estimate and update automatically every day. Typing a price here is optional: it overrides the automatic one for 30 days.</span>
+          <span className="text-[13.5px] text-muted">One national price list drives every grey structure estimate and updates automatically every day; each region then gets a simple percentage. Typing a price here is optional: it overrides the automatic one for 30 days.</span>
         </div>
         <div className="flex flex-wrap gap-2">
-          <CitySelect
-            aria-label="City"
-            className="field-input h-10 w-auto text-sm"
-            value={city}
-            onChange={(next) => (setCity(next), setEdits({}), setSelected([]), setMessage(null))}
-          />
-          <Button icon="download" onClick={() => downloadCsv(city, rates)} disabled={!rates.length}>Export CSV</Button>
+          <Button icon="download" onClick={() => downloadCsv(rates)} disabled={!rates.length}>Export CSV</Button>
           <Button variant="primary" onClick={save} disabled={busy || !changed.length || hardErrors.length > 0}>
             {busy ? 'Saving…' : changed.length ? `Save ${changed.length} change${changed.length === 1 ? '' : 's'}` : 'Save changes'}
           </Button>
@@ -203,14 +290,14 @@ export default function AdminPrices() {
         <StatePanel
           compact
           kind="empty"
-          title={`No prices for ${city} yet`}
-          text={city === 'Faisalabad' ? 'Run the seed script to add the starting prices: npm run seed -w @archcanvas/api' : `Estimates for ${city} already use automatic city prices. "Check prices now" saves them here for all 40 cities.`}
+          title="No national prices saved yet"
+          text={'Estimates already use the automatic national prices. "Check prices now" (or npm run seed -w @archcanvas/api) saves them here.'}
         />
       ) : (
         <>
           <div className="flex flex-wrap gap-2">
             {counts.verified > 0 && <Chip tone="green" icon="check">{counts.verified} verified</Chip>}
-            {counts.estimated > 0 && <Chip tone="blue">{counts.estimated} automatic city prices</Chip>}
+            {counts.estimated > 0 && <Chip tone="blue">{counts.estimated} automatic national prices</Chip>}
             {counts.stale > 0 && <Chip tone="amber" icon="warn">{counts.stale} stale</Chip>}
             {counts.unverified > 0 && <Chip>{counts.unverified} unverified</Chip>}
             {Object.keys(errors).length > 0 && <Chip tone="red" icon="error">{Object.keys(errors).length} to check</Chip>}
@@ -300,7 +387,7 @@ export default function AdminPrices() {
                       </td>
                       <td className="px-3 py-2.5 text-[13px]">
                         {(() => {
-                          const src = sourceLabel(r, city)
+                          const src = sourceLabel(r)
                           if (r.source?.origin === 'admin') {
                             return (
                               <span className="flex flex-col items-start gap-1">
@@ -333,10 +420,12 @@ export default function AdminPrices() {
             </table>
           </div>
           <span className="text-[12.5px] text-muted">
-            Green means read online or set by an admin, blue an automatic city price, amber older than 30 days, red a price to check before saving. A saved price overrides the automatic one for 30 days; "Use automatic price" ends it sooner.
+            Green means read online or set by an admin, blue an automatic national price, amber older than 30 days, red a price to check before saving. A saved price overrides the automatic one for 30 days; "Use automatic price" ends it sooner.
           </span>
         </>
       )}
+
+      <RegionAdjustments />
     </main>
   )
 }

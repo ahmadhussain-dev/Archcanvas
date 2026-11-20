@@ -11,7 +11,7 @@ test('5 Marla, 2 floors, standard roof', () => {
   const est = calculateEstimate(fiveMarlaTwoFloors, rates)
   assert.equal(est.coveredAreaSqft, 2250)
   const qty = Object.fromEntries(est.lines.map((l) => [l.key, l.quantity]))
-  assert.deepEqual(qty, { steel: 4.05, cement: 765, bricks: 60750, sand: 4950, crush: 2025, labour: 2250, pipes: 2250 })
+  assert.deepEqual(qty, { steel: 3.38, cement: 630, bricks: 63000, sand: 4050, crush: 1913, labour: 2250, pipes: 2250 })
   const all = [...est.lines, ...est.extras]
   assert.equal(est.totalPkr, all.reduce((s, l) => s + l.amountPkr, 0))
   assert.equal(est.perSqftPkr, Math.round(est.totalPkr / 2250))
@@ -20,9 +20,10 @@ test('5 Marla, 2 floors, standard roof', () => {
   assert.deepEqual(est.missingRates, [])
 })
 
-test('extra lines: groundwork, frames, tanks, wastage, transport and contingency', () => {
+test('extra lines: groundwork, frames, tanks, gate, wastage, transport and contingency', () => {
   const est = calculateEstimate(fiveMarlaTwoFloors, rates)
-  assert.deepEqual(est.extras.map((x) => x.key), ['groundwork', 'frames', 'tanks', 'wastage', 'transport', 'contingency'])
+  assert.deepEqual(est.extras.map((x) => x.key), ['groundwork', 'frames', 'tanks', 'gate', 'wastage', 'transport', 'contingency'])
+  assert.equal(est.location.pct, 0)
   // Groundwork is for the footprint only, not both floors.
   assert.equal(amount(est, 'groundwork'), 25 * 45 * EXTRAS.groundworkPerFootprintSqft)
   assert.equal(amount(est, 'tanks'), EXTRAS.tanksPerHouse)
@@ -32,11 +33,28 @@ test('extra lines: groundwork, frames, tanks, wastage, transport and contingency
   assert.ok(Math.abs(amount(est, 'contingency') - beforeContingency * EXTRAS.contingency) <= 1)
 })
 
-test('low, likely and high', () => {
+test('low, likely and high, with the source of the range', () => {
   const est = calculateEstimate(fiveMarlaTwoFloors, rates)
   assert.equal(est.range.lowPkr, Math.round(est.totalPkr * RANGE.low))
   assert.equal(est.range.highPkr, Math.round(est.totalPkr * RANGE.high))
+  assert.equal(est.range.lowPct, -12)
+  assert.equal(est.range.highPct, 25)
   assert.ok(est.range.lowPerSqftPkr < est.perSqftPkr && est.perSqftPkr < est.range.highPerSqftPkr)
+  assert.match(est.source.url, /^https:\/\/milkiyat\.com\//)
+})
+
+test('a city percentage moves everything before the contingency', () => {
+  const national = calculateEstimate(fiveMarlaTwoFloors, rates)
+  const isb = calculateEstimate(fiveMarlaTwoFloors, rates, { pct: 8, city: 'Islamabad' })
+  const multan = calculateEstimate(fiveMarlaTwoFloors, rates, { pct: -5, city: 'Multan' })
+  const line = isb.extras.find((x) => x.key === 'location')
+  assert.equal(line.basis, 'Islamabad: +8% on national rates')
+  assert.ok(Math.abs(isb.totalPkr / national.totalPkr - 1.08) < 0.0005)
+  assert.ok(Math.abs(multan.totalPkr / national.totalPkr - 0.95) < 0.0005)
+  assert.equal(multan.extras.find((x) => x.key === 'location').basis, 'Multan: -5% on national rates')
+  // The material lines themselves stay at the national rates.
+  assert.deepEqual(isb.lines, national.lines)
+  assert.equal(isb.totalPkr, [...isb.lines, ...isb.extras].reduce((s, l) => s + l.amountPkr, 0))
 })
 
 test('share of money on prices checked online', () => {
@@ -54,7 +72,7 @@ test('cost grows with floors and roof height', () => {
   assert.ok(tall.totalPkr > two.totalPkr)
   const bricks = (e) => e.lines.find((l) => l.key === 'bricks').quantity
   const steel = (e) => e.lines.find((l) => l.key === 'steel').quantity
-  assert.equal(bricks(tall), Math.round(60750 * 12 / 10.5))
+  assert.equal(bricks(tall), Math.round(63000 * 12 / 10.5))
   assert.equal(steel(tall), steel(two))
 })
 

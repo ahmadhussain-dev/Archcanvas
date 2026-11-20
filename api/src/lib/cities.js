@@ -1,7 +1,7 @@
-// The 40 largest cities of Pakistan by census population (2023), used for
-// city-wise material prices. Online price lists only cover the biggest cities,
-// so each city names the nearest cities whose prices it borrows, in order.
-// The first entry of `near` is the city itself when a source lists it.
+// The 40 largest cities of Pakistan by census population (2023). A project's
+// city picks the region percentage applied to the national rates
+// (lib/cityAdjustments.js). `near` lists the cities an online price list may
+// name for it, in order; it is kept for reference and for adding sources.
 export const CITIES = [
   { name: 'Karachi', province: 'Sindh', near: ['Karachi'] },
   { name: 'Lahore', province: 'Punjab', near: ['Lahore'] },
@@ -45,8 +45,11 @@ export const CITIES = [
   { name: 'Jhelum', province: 'Punjab', near: ['Rawalpindi', 'Islamabad'] }
 ]
 
-// Where the starting prices were collected, and the fallback for any other city.
+// The default city for new projects and quick estimates.
 export const DEFAULT_CITY = 'Faisalabad'
+
+// The one national price list is saved under this name.
+export const NATIONAL = 'Pakistan'
 
 export const CITY_NAMES = CITIES.map((c) => c.name)
 
