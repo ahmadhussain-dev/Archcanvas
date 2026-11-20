@@ -12,19 +12,20 @@
 //   Zameen 5 Marla (1,975 sq ft, Oct 2023): 56,000 bricks, 3,052 cft sand,
 //     1,721 cft crush, 605 bags, 3 t steel;
 //   Glorious Builders 10 Marla (3,400 sq ft, Nov 2026): 88,000 bricks,
-//     7,200 cft sand, 3,200 cft crush, 1,200 bags, 6 t steel.
-// Per sq ft that is 26-28 bricks, 1.5-2.5 cft sand, 0.8-0.95 cft crush,
-// 0.24-0.35 bags and 1.5-1.8 kg steel. We take the upper half so foundations,
-// a framed (column and beam) structure and plaster are covered; site wastage
-// and transport are separate lines below.
+//     7,200 cft sand, 3,200 cft crush, 1,200 bags, 6 t steel;
+//   a contractor's 5 Marla quote (2,000 sq ft, 20 Oct 2026): 60,000 bricks,
+//     2,000 cft sand, 1,500 cft crush, 450 bags, 2.5 t steel.
+// Per sq ft that is 26-30 bricks, 1.0-2.5 cft sand, 0.75-0.95 cft crush,
+// 0.22-0.35 bags and 1.25-1.8 kg steel. We take about the middle; site
+// wastage and transport are separate lines below.
 export const BASE_ROOF_HEIGHT_FT = 10.5
 
 export const QUANTITY_PER_SQFT = {
-  steel: { quantity: 0.0018, heightShare: 0 }, // ton (1.8 kg per sq ft)
-  cement: { quantity: 0.34, heightShare: 0.5 }, // 50 kg bags
-  bricks: { quantity: 27, heightShare: 1 }, // bricks (9 in outer walls, 4.5 in some partitions)
-  sand: { quantity: 2.2, heightShare: 0.5 }, // cft
-  crush: { quantity: 0.9, heightShare: 0 }, // cft
+  steel: { quantity: 0.0015, heightShare: 0 }, // ton (1.5 kg per sq ft)
+  cement: { quantity: 0.28, heightShare: 0.5 }, // 50 kg bags
+  bricks: { quantity: 28, heightShare: 1 }, // bricks (9 in outer walls, 4.5 in some partitions)
+  sand: { quantity: 1.8, heightShare: 0.5 }, // cft
+  crush: { quantity: 0.85, heightShare: 0 }, // cft
   labour: { quantity: 1, heightShare: 0 }, // rate is per sq ft
   pipes: { quantity: 1, heightShare: 0 } // rate is per sq ft
 }
@@ -35,12 +36,16 @@ const MATERIAL_KEYS = ['steel', 'cement', 'bricks', 'sand', 'crush', 'pipes']
 
 // Costs the per-material lines leave out. All tunable.
 export const EXTRAS = {
-  // Digging, earth filling under the ground floor and the damp-proof course, per sq ft of footprint.
-  groundworkPerFootprintSqft: 150,
-  // Door and window frames (chowkat), per sq ft covered.
-  framesPerSqft: 60,
+  // Digging, termite spray, brick aggregate, back filling and the damp-proof
+  // course, per sq ft of footprint (contractor's 5 Marla quote: Rs 267,500
+  // for a 1,000-1,125 sq ft footprint).
+  groundworkPerFootprintSqft: 220,
+  // Door and window frames (chowkat), per sq ft covered (contractor: 15 frames, Rs 150,000).
+  framesPerSqft: 70,
   // Underground and overhead water tanks, septic tank and the sewer line, per house.
   tanksPerHouse: 250000,
+  // Main gate, safety grills and the roof-top finish, per house (contractor: Rs 224,200).
+  gatePerHouse: 225000,
   // Share of the material cost lost on site (breakage, cutting, spillage).
   wastage: 0.03,
   // Share of the material cost for delivery and loading.
@@ -49,8 +54,19 @@ export const EXTRAS = {
   contingency: 0.05
 }
 
-// The likely figure, and how far a real quote usually lands from it.
-export const RANGE = { low: 0.9, high: 1.15 }
+// The likely figure, and how far a real quote usually lands from it. Published
+// 2026 grey structure costs for the same plot size overlap by this much
+// (Milkiyat: 10 Marla PKR 95 lakh-1.2 crore, 5 Marla PKR 56-90 lakh), because
+// covered area, steel grade, brick quality and design complexity differ.
+// low: a simple rectangular design with few beams and standard materials.
+// high: double-height lounges, large spans, a heavy elevation or A+ materials.
+export const RANGE = { low: 0.88, high: 1.25 }
+
+// Where the range and the "what changes the cost" notes come from.
+export const COST_SOURCE = {
+  name: 'Milkiyat: House construction cost in Pakistan 2026',
+  url: 'https://milkiyat.com/articles/house-construction-cost-in-pakistan-2026-per-sq-ft-rates-per-marla-cost-full-budget-2'
+}
 
 const round = (value, places = 0) => {
   const f = 10 ** places
@@ -58,7 +74,9 @@ const round = (value, places = 0) => {
 }
 
 // rates: { [key]: { name, unit, ratePkr, status, source?, checkedAt? } }
-export function calculateEstimate({ widthFt, depthFt, floors, roofHeightFt }, rates) {
+// location: { pct, city?, label? } moves everything before the contingency by
+// pct percent (see lib/cityAdjustments.js). 0 or none means the national figure.
+export function calculateEstimate({ widthFt, depthFt, floors, roofHeightFt }, rates, location = null) {
   const coveredAreaSqft = widthFt * depthFt * floors
   const heightFactor = roofHeightFt / BASE_ROOF_HEIGHT_FT
 
@@ -90,9 +108,16 @@ export function calculateEstimate({ widthFt, depthFt, floors, roofHeightFt }, ra
     extra('groundwork', 'Excavation, earth filling and DPC', `${round(footprintSqft)} sq ft footprint`, footprintSqft * EXTRAS.groundworkPerFootprintSqft),
     extra('frames', 'Door and window frames', `${round(coveredAreaSqft)} sq ft`, coveredAreaSqft * EXTRAS.framesPerSqft),
     extra('tanks', 'Water tanks, septic tank and sewer line', 'per house', EXTRAS.tanksPerHouse),
+    extra('gate', 'Main gate, safety grills and roof-top finish', 'per house', EXTRAS.gatePerHouse),
     extra('wastage', 'Site wastage', `${pct(EXTRAS.wastage)} of materials`, materialsPkr * EXTRAS.wastage),
     extra('transport', 'Transport and loading', `${pct(EXTRAS.transport)} of materials`, materialsPkr * EXTRAS.transport)
   ]
+  const pctLocation = Number(location?.pct) || 0
+  if (pctLocation !== 0) {
+    const where = location.city ? `${location.city}: ` : ''
+    const sign = pctLocation > 0 ? '+' : ''
+    extras.push(extra('location', 'Location adjustment', `${where}${sign}${pctLocation}% on national rates`, (sum(lines) + sum(extras)) * (pctLocation / 100)))
+  }
   const beforeContingency = sum(lines) + sum(extras)
   extras.push(extra('contingency', 'Contingency', `${pct(EXTRAS.contingency)} of the total`, beforeContingency * EXTRAS.contingency))
 
@@ -104,6 +129,7 @@ export function calculateEstimate({ widthFt, depthFt, floors, roofHeightFt }, ra
     coveredAreaSqft: round(coveredAreaSqft, 2),
     floors,
     roofHeightFt,
+    location: { pct: pctLocation, city: location?.city ?? null, label: location?.label ?? null },
     lines,
     extras,
     totalPkr,
@@ -112,8 +138,11 @@ export function calculateEstimate({ widthFt, depthFt, floors, roofHeightFt }, ra
       lowPkr: round(totalPkr * RANGE.low),
       highPkr: round(totalPkr * RANGE.high),
       lowPerSqftPkr: perSqft(totalPkr * RANGE.low),
-      highPerSqftPkr: perSqft(totalPkr * RANGE.high)
+      highPerSqftPkr: perSqft(totalPkr * RANGE.high),
+      lowPct: round((RANGE.low - 1) * 100),
+      highPct: round((RANGE.high - 1) * 100)
     },
+    source: COST_SOURCE,
     checkedSharePct: sum(lines) > 0 ? round((checkedPkr / sum(lines)) * 100) : 0,
     missingRates: ESTIMATE_ORDER.filter((key) => !rates[key]),
     hasUnverifiedRates: lines.some((line) => !['verified', 'estimated'].includes(line.rateStatus))

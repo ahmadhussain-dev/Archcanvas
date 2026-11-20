@@ -1,99 +1,66 @@
-// Automatic prices for every city, with no admin step.
+// One national price list for every material, with no admin step.
 //
-// Cement and steel come from the daily online check (services/rateSources.js).
-// No website lists bricks, sand, crush, labour or pipes city by city every day,
-// so those are worked out here: a reference price (Faisalabad, November 2026)
-// times a regional factor for the city, then nudged by how the live cement
-// price has moved since the reference date, because kiln fuel, diesel and
-// wages tend to move with it. The same rule is the fallback for cement and
-// steel when the online check has never worked for a city or its price is
-// older than 30 days.
+// Pinpoint accuracy for one city is not honestly possible: real quotes for the
+// same house in the same city differ by 20% or more with covered area, steel
+// grade, brick quality, design complexity, soil, labour and timing. So the
+// estimate uses ONE national rate set (a typical big-city price, November 2026)
+// and then moves the whole total up or down by a simple percentage for the
+// city's region (lib/cityAdjustments.js, editable on /admin/prices).
+//
+// Cement and steel come from the daily online check (services/rateSources.js),
+// as the Pakistan-wide middle of the price list. No website lists bricks, sand,
+// crush, labour or pipes every day, so those are the national reference price
+// nudged by how the live cement price has moved since the reference date,
+// because kiln fuel, diesel and wages tend to move with it. The same reference
+// is the fallback for cement and steel when the online check has never worked
+// or its price is older than 30 days.
 //
 // Every number below is a tunable planning figure, not a quote. Where each one
 // comes from, and how to update them, is in docs/price-sources.md. In short:
-//   - cement and steel: PBS weekly SPI city prices (17 Nov 2026) and the
-//     ICONS brand lists (19 Nov 2026), the same lists the daily check reads;
-//   - bricks, sand, crush and mason wages: the PBS urban construction input
-//     prices by city (January 2026, The News 3 Feb 2026), moved forward with
-//     PBS's +6.6% construction input index (Oct 2026 on a year earlier) and
-//     checked against Nov 2026 dealer lists;
-//   - labour: Zameen's 10 Marla grey structure calculator (labour ~Rs 480-500
-//     per sq ft, 16 Oct and 11 Nov 2026) and Lahore labour-only quotes (Rs 450-850).
-import { findCity, DEFAULT_CITY } from './cities.js'
+//   - a real contractor's 5 Marla grey structure quote (2,000 sq ft, 20 Oct 2026):
+//     bricks Rs 25 (A+ awwal), cement Rs 1,650, steel Rs 255/kg, labour Rs 700/sq ft;
+//   - PBS weekly SPI and ICONS brand lists for cement and steel (Nov 2026);
+//   - PBS city construction input prices and dealer lists for bricks, sand, crush;
+//   - Zameen's grey structure calculators for labour (Rs 480-500/sq ft).
+// Where the contractor's A+ quote is above the market middle, the national
+// price sits between the two; the "complex design / A+ material" end of the
+// range covers the rest.
 
-export const REFERENCE_DATE = '2026-11-19'
+export const REFERENCE_DATE = '2026-11-20'
 
-// Faisalabad, 19 November 2026. To update: change ratePkr and `checked`, then
-// run `npm test` in api/ (tests/calibration.test.js checks each city still
-// lands inside its market range).
+// National reference, 20 November 2026. To update: change ratePkr and `checked`,
+// then run `npm test` in api/ (tests/calibration.test.js checks the result
+// still lands inside the published ranges and near the contractor's quote).
 export const REFERENCE_RATES = [
-  // Grade 60 sariya: ICONS brands Rs 256-261/kg; PBS SPI Rs 254-263/kg (17 Nov 2026).
+  // Grade 60 sariya: contractor Rs 255/kg (Oct 2026); ICONS brands Rs 256-261/kg; PBS SPI Rs 254-263/kg.
   { key: 'steel', name: 'Steel (sariya)', unit: 'ton', ratePkr: 257000, checked: '2026-11-19' },
-  // PBS SPI Faisalabad Rs 1,580 (17 Nov 2026); ICONS brand list Rs 1,505-1,610.
-  { key: 'cement', name: 'Cement', unit: 'bag (50 kg)', ratePkr: 1560, checked: '2026-11-17' },
-  // First-class (awwal) brick, ex-kiln plus local delivery: Rs 15,000-19,000 per 1,000.
-  { key: 'bricks', name: 'Bricks', unit: 'brick', ratePkr: 17, checked: '2026-11-19' },
-  // Mix of Ravi sand (masonry, plaster) and Chenab sand (concrete): Rs 50-75/cft.
-  { key: 'sand', name: 'Sand', unit: 'cft', ratePkr: 65, checked: '2026-11-19' },
-  // Sargodha crush, close to Faisalabad: Rs 130-160/cft delivered.
-  { key: 'crush', name: 'Crush (bajri)', unit: 'cft', ratePkr: 145, checked: '2026-11-19' },
-  // Labour-only contract (theka) for the grey structure, shuttering included.
-  { key: 'labour', name: 'Labour', unit: 'sq ft', ratePkr: 480, checked: '2026-11-16' },
-  // Conduits, wiring pipes, water supply, drainage and gas pipes with fittings
-  // (Zameen 10 Marla plumbing and electric material, without pumps: ~Rs 170/sq ft).
-  { key: 'pipes', name: 'Plumbing and electric pipes', unit: 'sq ft', ratePkr: 170, checked: '2026-11-16' }
+  // Contractor Rs 1,650 (Bestway/DG); PBS SPI 17 Nov 2026 Rs 1,486-1,657 across cities; ICONS Rs 1,505-1,610.
+  { key: 'cement', name: 'Cement', unit: 'bag (50 kg)', ratePkr: 1600, checked: '2026-11-20' },
+  // First-class (awwal) brick delivered: dealers Rs 15,000-19,000 per 1,000;
+  // PBS Islamabad Rs 24,700; contractor A+ quote Rs 25 each.
+  { key: 'bricks', name: 'Bricks', unit: 'brick', ratePkr: 20, checked: '2026-11-20' },
+  // Ravi sand (masonry, plaster) and Chenab sand (concrete): contractor Rs 60; dealers Rs 50-66.
+  { key: 'sand', name: 'Sand', unit: 'cft', ratePkr: 62, checked: '2026-11-20' },
+  // Sargodha crush: contractor Rs 165 (A plant); Lahore dealers Rs 130-137.
+  { key: 'crush', name: 'Crush (bajri)', unit: 'cft', ratePkr: 150, checked: '2026-11-20' },
+  // Labour-only contract (theka) for the grey structure, shuttering included:
+  // Zameen Rs 480-500; contractor Rs 700; Lahore labour-only quotes Rs 450-850.
+  { key: 'labour', name: 'Labour', unit: 'sq ft', ratePkr: 580, checked: '2026-11-20' },
+  // Conduits, wiring, water supply, drainage and gas pipes with fittings:
+  // contractor Rs 265,000 for 2,000 sq ft (~Rs 133); Zameen ~Rs 170.
+  { key: 'pipes', name: 'Plumbing and electric pipes', unit: 'sq ft', ratePkr: 150, checked: '2026-11-20' }
 ]
 
 // Materials the online check reads. All others are always worked out here.
 export const LIVE_KEYS = ['cement', 'steel']
 export const LOCAL_KEYS = REFERENCE_RATES.map((r) => r.key).filter((k) => !LIVE_KEYS.includes(k))
 
-// Price of each material in a region compared with Faisalabad (1 = the same).
-// Cement follows the PBS SPI city prices of 17 Nov 2026; steel, bricks, sand,
-// crush and wages follow the PBS January 2026 city prices (see the doc).
-export const REGION_FACTORS = {
-  // Faisalabad, Sargodha, Jhang, Sahiwal and the rest of central Punjab.
-  'central-punjab': { steel: 1, cement: 1, bricks: 1, sand: 1, crush: 1, labour: 1, pipes: 1 },
-  // Lahore, Gujranwala, Sialkot and nearby: PBS bricks Rs 17,463/1,000 in Lahore,
-  // cement Rs 1,653, and PBS materials per sq ft ~7% (Lahore) to ~12% (Gujranwala) above Faisalabad.
-  lahore: { steel: 1, cement: 1.05, bricks: 1.08, sand: 1.05, crush: 1.05, labour: 1.07, pipes: 1 },
-  // Islamabad, Rawalpindi and nearby: PBS bricks Rs 24,732 and sand 1.55x Lahore; crush from Margalla close by.
-  potohar: { steel: 1.03, cement: 0.97, bricks: 1.45, sand: 1.5, crush: 0.95, labour: 1.1, pipes: 1.02 },
-  // Multan, Bahawalpur and south Punjab: PBS mason wage Rs 1,909 (Lahore Rs 2,461); crush comes a long way.
-  'south-punjab': { steel: 1, cement: 1.05, bricks: 0.92, sand: 0.95, crush: 1.1, labour: 0.88, pipes: 1 },
-  // Karachi: PBS bricks Rs 18,000, cheap Malir sand and Karachi crush, highest mason wage (Rs 2,478-2,482).
-  karachi: { steel: 1, cement: 0.95, bricks: 1.12, sand: 0.95, crush: 0.8, labour: 1.1, pipes: 1 },
-  // Hyderabad, Sukkur and the rest of Sindh: lowest PBS material cost per sq ft.
-  sindh: { steel: 0.98, cement: 1.02, bricks: 0.8, sand: 0.75, crush: 0.85, labour: 0.85, pipes: 1 },
-  // Peshawar and Khyber Pakhtunkhwa: PBS bricks Rs 18,331, cheap sand and crush.
-  kp: { steel: 0.99, cement: 1.01, bricks: 1.1, sand: 0.85, crush: 0.8, labour: 0.95, pipes: 1.02 },
-  // Quetta, Turbat: cheaper bricks (Rs 14,742), dearer steel (+7% on Lahore), long hauls.
-  balochistan: { steel: 1.05, cement: 1, bricks: 0.9, sand: 0.9, crush: 0.85, labour: 0.97, pipes: 1.05 }
-}
-
-const REGION_BY_CITY = {
-  Lahore: 'lahore', Gujranwala: 'lahore', Sialkot: 'lahore', Sheikhupura: 'lahore', Kasur: 'lahore',
-  Gujrat: 'lahore', Kamoke: 'lahore', Hafizabad: 'lahore',
-  Karachi: 'karachi',
-  Hyderabad: 'sindh', Sukkur: 'sindh', Larkana: 'sindh', Nawabshah: 'sindh', 'Mirpur Khas': 'sindh',
-  Islamabad: 'potohar', Rawalpindi: 'potohar', 'Wah Cantonment': 'potohar', Abbottabad: 'potohar', Jhelum: 'potohar',
-  Multan: 'south-punjab', Bahawalpur: 'south-punjab', 'Rahim Yar Khan': 'south-punjab', 'Dera Ghazi Khan': 'south-punjab',
-  Sadiqabad: 'south-punjab', Burewala: 'south-punjab', Khanewal: 'south-punjab', Muzaffargarh: 'south-punjab',
-  Peshawar: 'kp', Mardan: 'kp', Mingora: 'kp', Kohat: 'kp', 'Dera Ismail Khan': 'kp',
-  Quetta: 'balochistan', Turbat: 'balochistan'
-}
-
-export function regionOf(city) {
-  const name = findCity(city)?.name ?? city
-  return REGION_BY_CITY[name] ?? 'central-punjab'
-}
-
 // How much of the live cement price's move since the reference date the local
 // materials follow (0.5 = half), and how far the nudge may go either way.
 export const MARKET_LINK = 0.5
 export const MARKET_LIMITS = { min: 0.8, max: 1.25 }
 
-// cementNow: today's average online cement price (Faisalabad terms), or null.
+// cementNow: today's national online cement price, or null.
 export function marketFactor(cementNow) {
   const base = REFERENCE_RATES.find((r) => r.key === 'cement').ratePkr
   if (!(cementNow > 0)) return 1
@@ -101,14 +68,12 @@ export function marketFactor(cementNow) {
   return Math.round(Math.min(MARKET_LIMITS.max, Math.max(MARKET_LIMITS.min, f)) * 1000) / 1000
 }
 
-// The automatic price of one material in one city.
-export function estimatedRate(key, city = DEFAULT_CITY, market = 1) {
+// The automatic national price of one material.
+export function estimatedRate(key, market = 1) {
   const ref = REFERENCE_RATES.find((r) => r.key === key)
   if (!ref) return null
-  const region = regionOf(city)
-  const factor = REGION_FACTORS[region][key] ?? 1
-  const raw = ref.ratePkr * factor * (LOCAL_KEYS.includes(key) ? market : 1)
+  const raw = ref.ratePkr * (LOCAL_KEYS.includes(key) ? market : 1)
   // Whole rupees, or to the nearest 0.5 for a single brick, and to Rs 100 for steel.
   const ratePkr = key === 'bricks' ? Math.round(raw * 2) / 2 : key === 'steel' ? Math.round(raw / 100) * 100 : Math.round(raw)
-  return { key, name: ref.name, unit: ref.unit, ratePkr, region, regionFactor: factor, market }
+  return { key, name: ref.name, unit: ref.unit, ratePkr, market }
 }

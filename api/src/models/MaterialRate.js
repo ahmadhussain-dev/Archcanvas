@@ -3,7 +3,7 @@ import mongoose from 'mongoose'
 export const MATERIAL_KEYS = ['steel', 'cement', 'bricks', 'sand', 'crush', 'labour', 'pipes']
 export const RATE_STATUSES = ['unverified', 'verified']
 // Where a price came from: the built-in starting value, an admin override, the
-// daily online check, or the automatic city price (lib/localPrices.js).
+// daily online check, or the automatic national price (lib/localPrices.js).
 export const RATE_ORIGINS = ['seed', 'admin', 'auto', 'estimate']
 export const STALE_AFTER_DAYS = 30
 
@@ -22,25 +22,27 @@ const sourceSchema = new mongoose.Schema(
     origin: { type: String, enum: RATE_ORIGINS, default: 'seed' },
     name: { type: String, trim: true, maxlength: 80 },
     url: { type: String, trim: true, maxlength: 300 },
-    // The city whose listed price this one uses, or 'Pakistan average'.
+    // What the online price was taken from, e.g. 'Pakistan average'.
     basedOn: { type: String, trim: true, maxlength: 60 },
-    // For automatic city prices: the region and how far the market nudged it.
+    // Older city-wise rows only.
     region: { type: String, trim: true, maxlength: 40 },
+    // For automatic prices: how far today's cement price nudged it.
     market: { type: Number }
   },
   { _id: false }
 )
 
-// Grey structure material prices, one per material per city, all kept up to
-// date by the daily check: cement and steel from websites, the rest worked out
-// for the city. An admin price on /admin/prices is an optional override.
+// Grey structure material prices: one national row per material (city
+// 'Pakistan'), kept up to date by the daily check: cement and steel from
+// websites, the rest worked out. An admin price on /admin/prices is an optional
+// override. Rows for single cities are left from older versions and not used.
 const materialRateSchema = new mongoose.Schema(
   {
     key: { type: String, enum: MATERIAL_KEYS, required: true },
     name: { type: String, required: true, trim: true, maxlength: 60 },
     unit: { type: String, required: true, trim: true, maxlength: 30 },
     ratePkr: { type: Number, required: true, min: 0 },
-    city: { type: String, default: 'Faisalabad', trim: true, maxlength: 60 },
+    city: { type: String, default: 'Pakistan', trim: true, maxlength: 60 },
     status: { type: String, enum: RATE_STATUSES, default: 'unverified' },
     verifiedAt: { type: Date },
     verifiedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
@@ -55,8 +57,8 @@ const materialRateSchema = new mongoose.Schema(
 
 materialRateSchema.index({ key: 1, city: 1 }, { unique: true })
 
-// What the UI shows: green = verified (online or admin), blue = estimated for
-// the city automatically, amber = older than 30 days, grey = unverified.
+// What the UI shows: green = verified (online or admin), blue = worked out
+// automatically, amber = older than 30 days, grey = unverified.
 materialRateSchema.virtual('displayStatus').get(function () {
   if (this.status !== 'verified' || !this.verifiedAt) return 'unverified'
   const ageDays = (Date.now() - this.verifiedAt.getTime()) / 86_400_000

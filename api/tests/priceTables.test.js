@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import { readTables, parsePrice, median, decodeEntities } from '../src/lib/priceTables.js'
 import { RATE_SOURCES } from '../src/services/rateSources.js'
-import { priceForCity, checkIsDue, CHECK_EVERY_MS, RETRY_AFTER_MS } from '../src/services/rateUpdater.js'
+import { nationalPrice, checkIsDue, CHECK_EVERY_MS, RETRY_AFTER_MS } from '../src/services/rateUpdater.js'
 import { CITIES, CITY_NAMES, findCity } from '../src/lib/cities.js'
 
 const page = (name) => readFile(new URL(`./fixtures/${name}`, import.meta.url), 'utf8')
@@ -72,16 +72,13 @@ describe('cities', () => {
     assert.equal(findCity('Atlantis'), null)
   })
 
-  test('a city uses its own price, then the nearest listed city, then the average', () => {
+  test('one Pakistan price: the page average, else the middle of its cities', () => {
     const bounds = { min: 500, max: 5000 }
     const parsed = { byCity: { Lahore: 1475, 'Karachi ': 1425, 'Islamabad/Rawalpindi': 1390, Multan: 40 }, national: 1400 }
-    assert.deepEqual(priceForCity(findCity('Lahore'), parsed, bounds), { value: 1475, basedOn: 'Lahore' })
-    assert.deepEqual(priceForCity(findCity('Kasur'), parsed, bounds), { value: 1475, basedOn: 'Lahore' })
-    assert.deepEqual(priceForCity(findCity('Hyderabad'), parsed, bounds), { value: 1425, basedOn: 'Karachi' })
-    assert.deepEqual(priceForCity(findCity('Rawalpindi'), parsed, bounds), { value: 1390, basedOn: 'Rawalpindi' })
+    assert.equal(nationalPrice(parsed, bounds), 1400)
     // Multan's 40 is outside the plausible range, so it is not used.
-    assert.deepEqual(priceForCity(findCity('Bahawalpur'), parsed, bounds), { value: 1400, basedOn: 'Pakistan average' })
-    assert.equal(priceForCity(findCity('Bahawalpur'), { byCity: null, national: null }, bounds), null)
+    assert.equal(nationalPrice({ ...parsed, national: null }, bounds), 1425)
+    assert.equal(nationalPrice({ byCity: null, national: null }, bounds), null)
   })
 
   test('a check is due daily, or a few hours after a failure', () => {

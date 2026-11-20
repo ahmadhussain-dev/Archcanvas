@@ -1,29 +1,28 @@
-import { MaterialRate } from '../models/index.js'
+import { MaterialRate, RegionAdjustment } from '../models/index.js'
 import { DEFAULT_RATES } from '../seed/materialRates.js'
 import { calculateEstimate } from '../lib/estimate.js'
-import { DEFAULT_CITY, findCity } from '../lib/cities.js'
+import { DEFAULT_CITY, NATIONAL, findCity } from '../lib/cities.js'
 import { estimatedRate } from '../lib/localPrices.js'
+import { adjustmentFor, regionTable } from '../lib/cityAdjustments.js'
 
 export { DEFAULT_CITY }
 
-const fromEstimate = (key, city, market, at = null) => {
-  const est = estimatedRate(key, city, market)
+const fromEstimate = (key, market, at = null) => {
+  const est = estimatedRate(key, market)
   return {
     name: est.name,
     unit: est.unit,
     ratePkr: est.ratePkr,
     status: 'estimated',
     checkedAt: at,
-    source: { origin: 'estimate', region: est.region, market: est.market, city }
+    source: { origin: 'estimate', market: est.market }
   }
 }
 
-// Rates for a city, always the city's own. A material with no saved price, a
-// price older than 30 days, or an old starting value copied from another city
-// uses the automatic price for this city (lib/localPrices.js) instead.
-export async function ratesForCity(city = DEFAULT_CITY) {
-  const name = findCity(city)?.name ?? city
-  const docs = await MaterialRate.find({ city: name })
+// The national rates. A material with no saved price, a price older than 30
+// days, or a starting value uses the automatic national price instead.
+export async function nationalRates() {
+  const docs = await MaterialRate.find({ city: NATIONAL })
   const market = docs.find((d) => d.source?.origin === 'estimate' && d.source.market)?.source.market ?? 1
   const rates = {}
   for (const { key } of DEFAULT_RATES) {
@@ -36,15 +35,26 @@ export async function ratesForCity(city = DEFAULT_CITY) {
           ratePkr: doc.ratePkr,
           status: doc.displayStatus,
           checkedAt: doc.verifiedAt ?? null,
-          source: { ...doc.source?.toObject?.(), city: doc.city }
+          source: doc.source?.toObject?.() ?? doc.source
         }
-      : fromEstimate(key, name, market)
+      : fromEstimate(key, market)
   }
   return rates
 }
 
+// { [region]: pct } that admins have set.
+export async function savedAdjustments() {
+  const rows = await RegionAdjustment.find()
+  return Object.fromEntries(rows.map((r) => [r.region, r.pct]))
+}
+
+export async function regionAdjustments() {
+  return regionTable(await savedAdjustments())
+}
+
 export async function estimateFor({ widthFt, depthFt, floors, roofHeightFt, city }) {
   const name = findCity(city)?.name ?? (city || DEFAULT_CITY)
-  const rates = await ratesForCity(name)
-  return { city: name, ...calculateEstimate({ widthFt, depthFt, floors, roofHeightFt }, rates) }
+  const [rates, saved] = await Promise.all([nationalRates(), savedAdjustments()])
+  const location = { ...adjustmentFor(name, saved), city: name }
+  return { city: name, ...calculateEstimate({ widthFt, depthFt, floors, roofHeightFt }, rates, location) }
 }

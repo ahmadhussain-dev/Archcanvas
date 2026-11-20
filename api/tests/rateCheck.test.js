@@ -6,8 +6,16 @@ import { createApp } from '../src/app.js'
 import { MaterialRate, RateCheck, User } from '../src/models/index.js'
 import { DEFAULT_RATES } from '../src/seed/materialRates.js'
 import { estimatedRate } from '../src/lib/localPrices.js'
-import { checkRates } from '../src/services/rateUpdater.js'
+import { NATIONAL } from '../src/lib/cities.js'
+import { checkRates, nationalPrice } from '../src/services/rateUpdater.js'
 import { connectTestDatabase, closeTestDatabase } from './helpers/db.js'
+
+test('the national price is the page figure, or the middle of its cities', () => {
+  const bounds = { min: 500, max: 5000 }
+  assert.equal(nationalPrice({ national: 1500.4, byCity: { Lahore: 1600 } }, bounds), 1500)
+  assert.equal(nationalPrice({ national: null, byCity: { Lahore: 1600, Karachi: 1400, Multan: 1500, Typo: 15 } }, bounds), 1500)
+  assert.equal(nationalPrice({ national: null, byCity: null }, bounds), null)
+})
 
 const hasDb = await connectTestDatabase('ratecheck')
 const pages = {
@@ -21,7 +29,13 @@ const fetchPage = async (url) => {
   return edit(url, pages[url])
 }
 const app = createApp({ rateLimited: false, fetchPage })
-const rate = (key, city) => MaterialRate.findOne({ key, city })
+const rate = (key) => MaterialRate.findOne({ key, city: NATIONAL })
+// Every price on the steel page's city table times `factor`.
+const steelTimes = (factor) => (url, html) => {
+  if (!url.includes('steel')) return html
+  const [head, cities] = html.split('Major Cities')
+  return `${head}Major Cities${cities.replace(/<td>(\d{3})<\/td><td>(\d{3}),000<\/td>/g, (m, kg, ton) => `<td>${Math.round(kg * factor)}</td><td>${Math.round(ton * factor)},000</td>`)}`
+}
 
 async function signUp(email, role) {
   await request(app).post('/api/auth/register').send({ name: 'Test User', email, password: 'secret123' })
@@ -35,17 +49,16 @@ describe('daily online price check', { skip: !hasDb }, () => {
   let user
 
   before(async () => {
-    await MaterialRate.insertMany(DEFAULT_RATES.map((r) => ({ ...r, city: 'Faisalabad' })))
     admin = await signUp('admin@example.com', 'admin')
     user = await signUp('user@example.com')
   })
   after(closeTestDatabase)
 
-  test('the 40 cities are public', async () => {
+  test('the 40 cities are public, each with its region percentage', async () => {
     const res = await request(app).get('/api/rates/cities')
     assert.equal(res.status, 200)
     assert.equal(res.body.cities.length, 40)
-    assert.deepEqual(res.body.cities[0], { name: 'Karachi', province: 'Sindh' })
+    assert.deepEqual(res.body.cities[0], { name: 'Karachi', province: 'Sindh', region: 'karachi', adjustmentPct: 0 })
   })
 
   test('only admins can run a check', async () => {
@@ -53,110 +66,104 @@ describe('daily online price check', { skip: !hasDb }, () => {
     assert.equal((await request(app).post('/api/admin/rates/check')).status, 401)
   })
 
-  test('a check gives all 40 cities cement and steel prices, verified, with their source', async () => {
+  test('a check saves one national cement and steel price, verified, with its source', async () => {
     const res = await request(app).post('/api/admin/rates/check').set(admin)
     assert.equal(res.status, 200)
     const { check } = res.body
     assert.equal(check.trigger, 'admin')
     assert.ok(check.finishedAt)
-    assert.deepEqual(check.results.map((r) => [r.key, r.ok]), [['cement', true], ['steel', true], ['city', true]])
+    assert.deepEqual(check.results.map((r) => [r.key, r.ok]), [['cement', true], ['steel', true], ['national', true]])
 
-    // Every city has every material.
-    assert.equal(await MaterialRate.countDocuments(), 40 * DEFAULT_RATES.length)
+    // One national row per material, no city rows.
+    assert.equal(await MaterialRate.countDocuments(), DEFAULT_RATES.length)
+    assert.equal(await MaterialRate.countDocuments({ city: NATIONAL }), DEFAULT_RATES.length)
 
-    const lahore = await rate('cement', 'Lahore')
-    assert.equal(lahore.ratePkr, 1475)
-    assert.equal(lahore.displayStatus, 'verified')
-    assert.equal(lahore.source.origin, 'auto')
-    assert.equal(lahore.source.basedOn, 'Lahore')
-    assert.equal(lahore.source.url, 'https://icons.com.pk/cement-rate-today')
-    assert.equal(lahore.history.at(-1).origin, 'auto')
+    const cement = await rate('cement')
+    assert.equal(cement.ratePkr, 1386)
+    assert.equal(cement.displayStatus, 'verified')
+    assert.equal(cement.source.origin, 'auto')
+    assert.equal(cement.source.basedOn, 'Pakistan average')
+    assert.equal(cement.source.url, 'https://icons.com.pk/cement-rate-today')
+    assert.equal(cement.history.at(-1).origin, 'auto')
+    assert.equal((await rate('steel')).ratePkr, 246000)
+    assert.match(check.results[0].message, /Pakistan price Rs 1,386/)
 
-    const kasur = await rate('cement', 'Kasur')
-    assert.equal(kasur.ratePkr, 1475)
-    assert.equal(kasur.source.basedOn, 'Lahore')
-
-    // Quetta is not on the cement list, so it borrows Karachi's price.
-    assert.equal((await rate('cement', 'Quetta')).source.basedOn, 'Karachi')
-    assert.equal((await rate('steel', 'Quetta')).ratePkr, 247000)
-    assert.equal((await rate('steel', 'Sialkot')).source.basedOn, 'Gujranwala')
-
-    // Materials no website lists are worked out for each city automatically.
-    const bricks = await rate('bricks', 'Karachi')
-    // Karachi bricks: 17 x 1.05, nudged by today's online cement price.
-    assert.equal(bricks.ratePkr, estimatedRate('bricks', 'Karachi', bricks.source.market).ratePkr)
-    assert.ok(bricks.ratePkr >= 16 && bricks.ratePkr <= 19)
+    // Materials no website lists are worked out, nudged by today's cement price.
+    const bricks = await rate('bricks')
+    assert.equal(bricks.ratePkr, estimatedRate('bricks', bricks.source.market).ratePkr)
+    assert.ok(bricks.source.market < 1)
     assert.equal(bricks.displayStatus, 'estimated')
     assert.equal(bricks.source.origin, 'estimate')
-    assert.equal(bricks.source.region, 'karachi')
-    // Even Faisalabad's old starting rows are replaced; no row is left as a starting value.
-    assert.equal(await MaterialRate.countDocuments({ 'source.origin': 'seed' }), 0)
     assert.equal(await MaterialRate.countDocuments({ status: { $ne: 'verified' } }), 0)
   })
 
-  test('an estimate shows where each price came from', async () => {
+  test('an estimate uses the national prices and shows where each came from', async () => {
     const res = await request(app).post('/api/estimate').send({ widthFt: 25, depthFt: 45, city: 'kasur' })
     assert.equal(res.status, 200)
     const { estimate } = res.body
     assert.equal(estimate.city, 'Kasur')
     const cement = estimate.lines.find((l) => l.key === 'cement')
-    assert.equal(cement.ratePkr, 1475)
+    assert.equal(cement.ratePkr, 1386)
     assert.equal(cement.rateStatus, 'verified')
     assert.equal(cement.rateSource.origin, 'auto')
-    assert.equal(cement.rateSource.basedOn, 'Lahore')
     assert.ok(cement.rateCheckedAt)
+    // Kasur is in the Lahore region: +2% on the whole estimate.
+    assert.equal(estimate.location.pct, 2)
+    assert.ok(estimate.extras.some((x) => x.key === 'location'))
   })
 
   test('the next day: small changes are saved, a big jump waits one check', async () => {
-    edit = (url, html) => html.replace('Rs. 1,400 &#8211; 1,550', 'Rs. 1,500 – 1,550').replace('<td>Karachi</td><td>248</td><td>248,000</td>', '<td>Karachi</td><td>480</td><td>480,000</td>')
+    edit = (url, html) => steelTimes(1.9)(url, html.replace('Rs.&nbsp;1,370 – 1,380', 'Rs.&nbsp;1,390 – 1,400'))
     const check = await checkRates({ fetchPage, trigger: 'script' })
     const [cement, steel] = check.results
     assert.ok(cement.ok && steel.ok)
-    assert.equal((await rate('cement', 'Lahore')).ratePkr, 1525)
-    assert.ok(cement.changed >= 1)
-    // Karachi steel nearly doubled overnight: kept at yesterday's price for now.
-    assert.ok(steel.held.includes('Karachi'))
-    const karachi = await rate('steel', 'Karachi')
-    assert.equal(karachi.ratePkr, 248000)
-    assert.equal(karachi.pending.ratePkr, 480000)
+    // Faisalabad's small rise moves the middle of the list to Rs 1,395.
+    assert.equal((await rate('cement')).ratePkr, 1395)
+    // Steel nearly doubled overnight: kept at yesterday's price for now.
+    assert.deepEqual(steel.held, [NATIONAL])
+    const s = await rate('steel')
+    assert.equal(s.ratePkr, 246000)
+    assert.ok(s.pending.ratePkr > 400000)
     assert.match(steel.message, /waiting for the next check/)
     // Local materials follow the live cement price a little.
-    const city = check.results[2]
-    assert.equal(city.key, 'city')
-    const lahoreBricks = await rate('bricks', 'Lahore')
-    assert.equal(lahoreBricks.ratePkr, estimatedRate('bricks', 'Lahore', lahoreBricks.source.market).ratePkr)
-    assert.match(city.message, /prices worked out for 40 cities/)
+    const national = check.results[2]
+    assert.equal(national.key, 'national')
+    const bricks = await rate('bricks')
+    assert.equal(bricks.ratePkr, estimatedRate('bricks', bricks.source.market).ratePkr)
+    assert.match(national.message, /national prices worked out/)
   })
 
   test('the next check sees the same price and accepts it, with no admin step', async () => {
     const check = await checkRates({ fetchPage, trigger: 'script' })
-    assert.ok(!check.results[1].held.includes('Karachi'))
-    const karachi = await rate('steel', 'Karachi')
-    assert.equal(karachi.ratePkr, 480000)
-    assert.equal(karachi.source.origin, 'auto')
-    assert.equal(karachi.pending?.ratePkr, undefined)
+    assert.deepEqual(check.results[1].held, [])
+    const s = await rate('steel')
+    assert.ok(s.ratePkr > 400000)
+    assert.equal(s.source.origin, 'auto')
+    assert.equal(s.pending?.ratePkr, undefined)
   })
 
   test('an admin price is an optional override the check keeps', async () => {
-    const karachi = await rate('steel', 'Karachi')
-    const res = await request(app).patch(`/api/admin/rates/${karachi.id}`).set(admin).send({ ratePkr: 300000 })
+    edit = (url, html) => html
+    const steel = await rate('steel')
+    const res = await request(app).patch(`/api/admin/rates/${steel.id}`).set(admin).send({ ratePkr: 300000 })
     assert.equal(res.status, 200)
     assert.equal(res.body.rate.source.origin, 'admin')
-    const bricks = await rate('bricks', 'Karachi')
+    const bricks = await rate('bricks')
     await request(app).patch(`/api/admin/rates/${bricks.id}`).set(admin).send({ ratePkr: 19 })
-    await checkRates({ fetchPage, trigger: 'script' })
-    assert.equal((await rate('steel', 'Karachi')).ratePkr, 300000)
-    assert.equal((await rate('bricks', 'Karachi')).ratePkr, 19)
+    let check = await checkRates({ fetchPage, trigger: 'script' })
+    assert.match(check.results[1].message, /admin price is kept/)
+    assert.equal((await rate('steel')).ratePkr, 300000)
+    assert.equal((await rate('bricks')).ratePkr, 19)
     // Back to automatic: the next check puts the online price back.
-    await request(app).patch(`/api/admin/rates/${karachi.id}`).set(admin).send({ automatic: true })
-    await checkRates({ fetchPage, trigger: 'script' })
-    const after = await rate('steel', 'Karachi')
-    assert.equal(after.ratePkr, 480000)
+    await request(app).patch(`/api/admin/rates/${steel.id}`).set(admin).send({ automatic: true })
+    check = await checkRates({ fetchPage, trigger: 'script' })
+    const after = await rate('steel')
     assert.equal(after.source.origin, 'auto')
+    assert.ok(after.ratePkr > 0)
   })
 
   test('a site that is down or changed keeps the old prices', async () => {
-    const before = (await rate('cement', 'Lahore')).ratePkr
+    const before = (await rate('cement')).ratePkr
     edit = (url, html) => (url.includes('cement') ? '<html><body>New design, no tables</body></html>' : html)
     let check = await checkRates({ fetchPage, trigger: 'script' })
     assert.equal(check.results[0].ok, false)
@@ -167,7 +174,7 @@ describe('daily online price check', { skip: !hasDb }, () => {
     assert.ok(check.results.slice(0, 2).every((r) => !r.ok))
     assert.equal(check.results[2].ok, true)
     assert.match(check.results[0].message, /Could not read the site: getaddrinfo/)
-    assert.equal((await rate('cement', 'Lahore')).ratePkr, before)
+    assert.equal((await rate('cement')).ratePkr, before)
   })
 
   test('admins see the latest check', async () => {
@@ -177,14 +184,14 @@ describe('daily online price check', { skip: !hasDb }, () => {
     assert.equal(await RateCheck.countDocuments(), 7)
   })
 
-  test('when the site has been down for over 30 days, cement falls back to the city price', async () => {
+  test('when the site has been down for over 30 days, cement falls back to the national reference', async () => {
     const old = new Date(Date.now() - 31 * 86_400_000)
     await MaterialRate.updateMany({ key: 'cement', 'source.origin': 'auto' }, { verifiedAt: old })
     await checkRates({ fetchPage: async () => { throw new Error('getaddrinfo ENOTFOUND') }, trigger: 'script' })
-    const quetta = await rate('cement', 'Quetta')
-    assert.equal(quetta.source.origin, 'estimate')
-    assert.equal(quetta.displayStatus, 'estimated')
-    assert.equal(quetta.ratePkr, estimatedRate('cement', 'Quetta').ratePkr)
+    const cement = await rate('cement')
+    assert.equal(cement.source.origin, 'estimate')
+    assert.equal(cement.displayStatus, 'estimated')
+    assert.equal(cement.ratePkr, estimatedRate('cement').ratePkr)
   })
 
   test('two checks at once run only once', async () => {

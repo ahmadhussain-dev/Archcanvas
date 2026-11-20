@@ -1,7 +1,8 @@
 import { useApi } from '../lib/useApi.js'
 
-// The 40 cities with their own material prices, grouped by province.
-// While the list loads (or if it can't), the current city is still shown.
+// The 40 cities, grouped by province, each with its region's percentage on
+// the national rates. While the list loads (or if it can't), the current city
+// is still shown.
 export default function CitySelect({ value, onChange, className = '', ...props }) {
   const { data } = useApi('/rates/cities')
   const cities = data?.cities ?? []
@@ -15,7 +16,10 @@ export default function CitySelect({ value, onChange, className = '', ...props }
           {cities
             .filter((c) => c.province === p)
             .map((c) => (
-              <option key={c.name}>{c.name}</option>
+              <option key={c.name} value={c.name}>
+                {c.name}
+                {Number.isFinite(c.adjustmentPct) && c.adjustmentPct !== 0 ? ` (${c.adjustmentPct > 0 ? '+' : '−'}${Math.abs(c.adjustmentPct)}%)` : ''}
+              </option>
             ))}
         </optgroup>
       ))}

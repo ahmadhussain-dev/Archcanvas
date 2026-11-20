@@ -1,19 +1,18 @@
-// Adds automatic prices for every material in all 40 cities.
+// Adds the automatic national price for every material.
 // Safe to run again: online and admin prices are kept.
 // Usage: npm run seed -w @archcanvas/api
 import mongoose from 'mongoose'
 import env from '../config/env.js'
 import { connectDatabase } from '../config/db.js'
 import { MaterialRate } from '../models/index.js'
-import { ensureCityRates, updateCityPrices } from '../services/rateUpdater.js'
-import { CITIES } from '../lib/cities.js'
+import { ensureNationalRates, updateNationalPrices } from '../services/rateUpdater.js'
 
 async function seed() {
   await connectDatabase(env.mongoUri)
   await MaterialRate.syncIndexes()
-  const added = await ensureCityRates()
-  const city = await updateCityPrices()
-  console.log(`Material rates: ${added} added for ${CITIES.length} cities. ${city.message}`)
+  const added = await ensureNationalRates()
+  const national = await updateNationalPrices()
+  console.log(`Material rates: ${added} added. ${national.message}`)
 }
 
 seed()
